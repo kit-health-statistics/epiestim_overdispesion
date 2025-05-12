@@ -1,0 +1,1 @@
+This repository contains scripts and figures for a paper currently being drafted, addressing the problem of overdispersion in the [EpiEstim](https://mrc-ide.github.io/EpiEstim/index.html) method Cori et al. (2013).
