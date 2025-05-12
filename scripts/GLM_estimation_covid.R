@@ -31,7 +31,10 @@ incidence_subset <- incidence %>%
 
 # Plot the subset data =========================================================
 
-p_incidence <- ggplot(incidence_subset, aes(x = Date, y = Cases, color = "Cases")) +
+p_incidence <- ggplot(
+  incidence_subset, 
+  aes(x = Date, y = Cases, color = "Cases")
+) +
   geom_line(key_glyph = "timeseries", linewidth = 0.3) +
   scale_color_manual(values = "black", name = "") +
   scale_x_date(date_labels = "%b %Y") +
@@ -39,23 +42,13 @@ p_incidence <- ggplot(incidence_subset, aes(x = Date, y = Cases, color = "Cases"
   theme(plot.title = element_text(hjust = 0.5))
 print(p_incidence)
 
-# Set the parameter values for the Rt calculations =============================
+# Prepare the model parameters and matrices ====================================
 
-# How many observations
-n_obs <- nrow(incidence_subset)
-
-# Size of the estimation window
-window_width <- 13
-
-# Calculate the starting and end points of the time windows
-t_starts <- 2:n_obs
-
-# Compute R_t using EpiEstim ===================================================
+n_obs <- nrow(incidence_subset)  # How many observations
+window_width <- 13  # Size of the estimation window
 
 # Calculate the starting and end points of the time windows
 t_starts <- 2:(n_obs - window_width + 1)
-
-# Use different t_ends
 t_ends <- t_starts + 12
 
 # Prior of Rt - gamma distribution with shape and scale parameters.
@@ -185,15 +178,18 @@ df_AIC_diff <- tibble(
 from <- c(xmin = 0.65, xmax = 2.35, ymin = 150, ymax = 300)
 to <- c(xmin = 0.6, xmax = 2.5, ymin = 10000, ymax = 40000)
 
+# Boxplots of AIC values
 p_AIC_box <- ggplot(df_AIC, aes(x = model, y = AIC, fill = model)) +
   geom_boxplot(staplewidth = 1, width = 0.6) +
   scale_fill_manual(
     name = "Model",
-    values = c("NegBin1" = "dodgerblue", "NegBin2" = "firebrick3", "Poisson" = "forestgreen")
+    values = c("NegBin1" = "dodgerblue", "NegBin2" = "firebrick3", 
+               "Poisson" = "forestgreen")
   ) +
   labs(x = "Model") +
   geom_magnify(from = from, to = to, axes = "y")
 
+# Boxplot of AIC differences between NegBin1 and NegBin2
 p_AIC_box_diff_nbin <- ggplot(
   df_AIC_diff,
   aes(x = models, y = AIC_diff, fill = models)
@@ -229,15 +225,15 @@ p_AIC_box_diff_nbin <- ggplot(
   labs(x = "Model pair", y = "AIC difference") +
   coord_cartesian(xlim = c(0.5, 1.4))
 
+# Combine the plots
 AIC_boxplots_full_plot <- p_AIC_box + p_AIC_box_diff_nbin + 
   plot_layout(guides = "collect", design = "AAB")
-
 ggsave("figure/AIC_boxplots_all_in_1.pdf", 
        AIC_boxplots_full_plot, width = 7, height = 4)
 
 # Plot the R estimates =========================================================
 
-df_R_hat_glm <- tibble(
+df_R_hat <- tibble(
   Date = rep(incidence_subset$Date[t_ends], 4),
   R = c(R_hat$pois, R_hat$qpois, R_hat$nbin2, R_hat$nbin1),
   # CI via the endpoint transformation to avoid including negative values
@@ -256,7 +252,7 @@ df_R_hat_glm <- tibble(
 )
 
 p_nbin1_vs_qpois <- ggplot(
-  df_R_hat_glm, 
+  df_R_hat, 
   aes(x = Date, y = R, ymin = lwr, ymax = upr, color = Model, fill = Model,
       alpha = Model)
 ) +
@@ -268,11 +264,13 @@ p_nbin1_vs_qpois <- ggplot(
   ) +
   scale_color_manual(
     name = "Model",
-    values = c("Poiss" = "forestgreen", "Q-Poiss" = "gray40", "NegBin2" = "firebrick3", "NegBin1" = "dodgerblue")
+    values = c("Poiss" = "forestgreen", "Q-Poiss" = "gray40", 
+               "NegBin2" = "firebrick3", "NegBin1" = "dodgerblue")
   ) +
   scale_fill_manual(
     name = "Model",
-    values = c("Poiss" = "forestgreen", "Q-Poiss" = "gray40", "NegBin2" = "firebrick3", "NegBin1" = "dodgerblue")
+    values = c("Poiss" = "forestgreen", "Q-Poiss" = "gray40", 
+               "NegBin2" = "firebrick3", "NegBin1" = "dodgerblue")
   ) +
   labs(
     title = "NegBin1 vs. Quasi-Poisson",
@@ -281,7 +279,7 @@ p_nbin1_vs_qpois <- ggplot(
   theme(plot.title = element_text(hjust = 0.5))
 
 p_nbin1_vs_nbin2 <- ggplot(
-  df_R_hat_glm, 
+  df_R_hat, 
   aes(x = Date, y = R, ymin = lwr, ymax = upr, color = Model, fill = Model,
       alpha = Model)
 ) +
@@ -293,11 +291,13 @@ p_nbin1_vs_nbin2 <- ggplot(
   ) +
   scale_color_manual(
     name = "Model",
-    values = c("Poiss" = "forestgreen", "Q-Poiss" = "gray40", "NegBin2" = "firebrick3", "NegBin1" = "dodgerblue")
+    values = c("Poiss" = "forestgreen", "Q-Poiss" = "gray40", 
+               "NegBin2" = "firebrick3", "NegBin1" = "dodgerblue")
   ) +
   scale_fill_manual(
     name = "Model",
-    values = c("Poiss" = "forestgreen", "Q-Poiss" = "gray40", "NegBin2" = "firebrick3", "NegBin1" = "dodgerblue")
+    values = c("Poiss" = "forestgreen", "Q-Poiss" = "gray40", 
+               "NegBin2" = "firebrick3", "NegBin1" = "dodgerblue")
   ) +
   labs(
     title = "NegBin1 vs. NegBin2",
@@ -307,7 +307,7 @@ p_nbin1_vs_nbin2 <- ggplot(
   theme(plot.title = element_text(hjust = 0.5))
 
 p_pois_only <- ggplot(
-  df_R_hat_glm, 
+  df_R_hat, 
   aes(x = Date, y = R, ymin = lwr, ymax = upr, color = Model, fill = Model,
       alpha = Model)
 ) +
@@ -319,11 +319,13 @@ p_pois_only <- ggplot(
   ) +
   scale_color_manual(
     name = "Model",
-    values = c("Poiss" = "forestgreen", "Q-Poiss" = "gray40", "NegBin2" = "firebrick3", "NegBin1" = "dodgerblue")
+    values = c("Poiss" = "forestgreen", "Q-Poiss" = "gray40", 
+               "NegBin2" = "firebrick3", "NegBin1" = "dodgerblue")
   ) +
   scale_fill_manual(
     name = "Model",
-    values = c("Poiss" = "forestgreen", "Q-Poiss" = "gray40", "NegBin2" = "firebrick3", "NegBin1" = "dodgerblue")
+    values = c("Poiss" = "forestgreen", "Q-Poiss" = "gray40",
+               "NegBin2" = "firebrick3", "NegBin1" = "dodgerblue")
   ) +
   labs(
     title = "Poisson",
@@ -332,29 +334,41 @@ p_pois_only <- ggplot(
   ) +
   theme(plot.title = element_text(hjust = 0.5))
 
-p_R_hat_comparison <- (p_incidence + p_pois_only + p_nbin1_vs_nbin2 + p_nbin1_vs_qpois) + 
+p_R_hat_comparison <- (p_incidence + p_pois_only + p_nbin1_vs_nbin2 +
+                         p_nbin1_vs_qpois) + 
   plot_layout(guides = "collect", axes = "collect")
 ggsave("figure/R_hat_comparison.pdf", p_R_hat_comparison, width = 7, height = 4)
 
 # Display the differences between NegBin1 and NegBin2 ==========================
 
-df_nbin_diff_boxplots <- df_R_hat_glm %>% 
+df_nbin_diff_boxplots <- df_R_hat %>% 
   filter(Model %in% c("NegBin1", "NegBin2")) %>% 
   group_by(Date) %>% 
   summarise(
-    diffs = list(tibble(R_diff = diff(R), lwr_diff = diff(lwr), upr_diff = diff(upr)))
+    diffs = list(tibble(R_diff = diff(R), lwr_diff = diff(lwr), 
+                        upr_diff = diff(upr)))
   ) %>% unnest(diffs) %>%   # NegBin1 - NegBin2
-  pivot_longer(R_diff:upr_diff, names_to = "Quantity", values_to = "Difference") %>% 
+  pivot_longer(
+    R_diff:upr_diff, 
+    names_to = "Quantity",
+    values_to = "Difference"
+  ) %>% 
   mutate(
     Difference = -Difference,
     Quantity = factor(
       Quantity, 
       levels = c("R_diff", "lwr_diff", "upr_diff"),
-      labels = c("lwr_diff" = "Lower bound", "upr_diff" = "Upper bound", "R_diff" = "Point estimate")
+      labels = c("lwr_diff" = "Lower bound", "upr_diff" = "Upper bound", 
+                 "R_diff" = "Point estimate")
     )
   )
 
-p_boxplots_values_nbin <- ggplot(df_nbin_diff_boxplots, aes(x = Quantity, y = Difference, fill = Quantity)) +
+# Boxplots of differences between the point estimates and lower and upper bounds
+# of the confidence intervals
+p_boxplots_values_nbin <- ggplot(
+  df_nbin_diff_boxplots,
+  aes(x = Quantity, y = Difference, fill = Quantity)
+) +
   geom_boxplot(staplewidth = 1, width = 0.6) +
   coord_cartesian(xlim = c(0.5, 3)) +
   annotate(
@@ -376,22 +390,28 @@ p_boxplots_values_nbin <- ggplot(df_nbin_diff_boxplots, aes(x = Quantity, y = Di
     angle = 90
   )
 
+# Plot of diferences in the point estimates in time
 p_diff_values_nbin <- ggplot(
   filter(df_nbin_diff_boxplots, Quantity == "Point estimate"), 
   aes(x = Date, y = Difference, color = Quantity),
 ) +
   geom_line() +
   annotate(
-    "segment", x = as.Date("2021-09-15"), y = 0.01, xend = as.Date("2021-09-15"), yend = 0.15,
+    "segment", 
+    x = as.Date("2021-09-15"), y = 0.01, 
+    xend = as.Date("2021-09-15"), yend = 0.15,
     arrow = arrow(type = "closed", length = unit(0.02, "npc"))
   ) +
   annotate(
-    "text", x = as.Date("2021-09-30"), y = 0.08,
+    "text",
+    x = as.Date("2021-09-30"), y = 0.08,
     label = "NegBin2\nhigher",
     angle = 90
   ) +
   annotate(
-    "segment", x = as.Date("2021-09-15"), y = -0.01, xend = as.Date("2021-09-15"), yend = -0.15,
+    "segment", 
+    x = as.Date("2021-09-15"), y = -0.01, 
+    xend = as.Date("2021-09-15"), yend = -0.15,
     arrow = arrow(type = "closed", length = unit(0.02, "npc"))
   ) +
   annotate(
@@ -400,7 +420,11 @@ p_diff_values_nbin <- ggplot(
     angle = 90
   ) +
   coord_cartesian(xlim = as.Date(c("2021-09-15", "2022-04-01"))) +
-  scale_color_manual(values = "black", name = "", labels = "Difference in\npoint estimates")
+  scale_color_manual(
+    values = "black",
+    name = "", 
+    labels = "Difference in\npoint estimates"
+  )
 
 p_nbin_diffs <- (p_boxplots_values_nbin / p_diff_values_nbin) + 
   plot_layout(axes = "collect_y", design = "A\nA\nB")
@@ -409,18 +433,19 @@ ggsave("figure/Nbin_values_diffs.pdf", p_nbin_diffs, width = 6, height = 7)
 
 # Sanity check: compare estimates from GLM to the official estimates ===========
 
-# Read the Austrian estimates
+# Load the Austrian estimates of Rt
 R_ests <- read_delim(
   "data/R_eff.csv", 
   delim = ";", 
   locale = locale("de", decimal_mark = ",")
 ) %>% filter(Datum <= max(incidence$Date)) %>% 
-  rename("Date" = "Datum", "R" = "R_eff", "lwr" = "R_eff_lwr", "upr" = "R_eff_upr") %>% 
+  rename("Date" = "Datum", "R" = "R_eff", "lwr" = "R_eff_lwr", 
+         "upr" = "R_eff_upr") %>% 
   mutate(Model = "Official estimate")
 R_ests_subset <- R_ests %>% 
   filter(Date >= start_date & Date <= end_date)
 
-df_compare_to_original <- df_R_hat_glm %>% 
+df_compare_to_original <- df_R_hat %>% 
   filter(Model %in% c("Poiss", "Official estimate")) %>% 
   rbind(R_ests_subset)
 

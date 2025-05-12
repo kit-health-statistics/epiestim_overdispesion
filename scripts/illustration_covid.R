@@ -303,7 +303,8 @@ p_loglik_individual_bw <- ggplot() +
 p_incidence_loglik_bw <- p_incidence_bw + p_loglik_individual_bw + 
   plot_layout(design = "A\nB\nB\nB\nB")
 
-ggsave("figure/Incidence_and_llik_bw.pdf", p_incidence_loglik_bw, width = 6, height = 7)
+ggsave("figure/Incidence_and_llik_bw.pdf", p_incidence_loglik_bw, width = 6, 
+       height = 7)
 
 # Generate the illustrative plot in color ======================================
 
@@ -372,7 +373,8 @@ p_loglik_individual <- ggplot() +
 p_incidence_loglik <- p_incidence + p_loglik_individual + 
   plot_layout(design = "A\nB\nB\nB\nB")
 
-ggsave("figure/Incidence_and_llik.pdf", p_incidence_loglik, width = 6, height = 7)
+ggsave("figure/Incidence_and_llik.pdf", p_incidence_loglik, width = 6,
+       height = 7)
 
 # Extra plot comparing the curvature of the total log-likelihood ===============
 
@@ -443,8 +445,13 @@ p_curvature <- ggplot() +
   scale_shape_manual(values = c("NegBin1" = 20, "NegBin2" = 15, "Poisson" =  17)) +
   scale_color_manual(
     name = "Model",
-    values = c("NegBin1" = "dodgerblue", "NegBin2" = "firebrick3", "Poisson" = "forestgreen"),
-    guide = guide_legend(override.aes = list(shape = c("NegBin1" = 20, "NegBin2" = 15, "Poisson" =  17)))
+    values = c("NegBin1" = "dodgerblue", "NegBin2" = "firebrick3",
+               "Poisson" = "forestgreen"),
+    guide = guide_legend(
+      override.aes = list(
+        shape = c("NegBin1" = 20, "NegBin2" = 15, "Poisson" =  17)
+        )
+      )
   ) +
   coord_cartesian(ylim = c(-10, 0), xlim = c(1.05, 1.95))
 
