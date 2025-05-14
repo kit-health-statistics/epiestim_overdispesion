@@ -5,7 +5,8 @@ library("gamlss")  # For the gamlss() function
 theme_set(theme_bw())
 
 # Script illustrating the contributions to the log-likelihood for the 
-# Poisson model vs. Negative binomial models.
+# Poisson model vs. Negative binomial models. The log link is used in the
+# estimation.
 
 # Read the data ================================================================
 

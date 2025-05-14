@@ -6,7 +6,7 @@ library("gamlss")  # For the gamlss() function
 library("ggmagnify")  # For the geom_magnify() function
 theme_set(theme_bw())
 
-# Script estimating Rt for COVID-19 in Austria using GLMs
+# Script estimating Rt for COVID-19 in Austria using GLMs with the log link
 # (October 2021 - March 2022 inclusive).
 
 # Read the data ================================================================
