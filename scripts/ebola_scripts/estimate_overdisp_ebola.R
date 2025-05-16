@@ -83,10 +83,11 @@ lambda_subset <- lambda[incidence$Date >= start_date & incidence$Date <= end_dat
 pairs <- cbind(lambda_subset, incidence_subset$Cases)
 colnames(pairs) <- c("lambda", "Cases")
 
-# Calculate Rt for all time windows using GLM ==================================
+# Calculate Rt for all time windows using GLM with the identity link ===========
 
 models_pois <- models_qpois <- models_nbin2 <- models_nbin1 <- 
   vector(mode = "list", length = length(t_starts))
+models_nbin1_log <- models_nbin2_log <- models_qpois_log <- models_pois
 model_mats <- sapply(
   t_starts, 
   function(x) {pairs[0:(window_width - 1) + x, ]}, simplify = FALSE
@@ -97,43 +98,42 @@ for (k in 1:length(t_starts)) {
   # Poisson model
   models_pois[[k]] <- glm(
     data = model_mats[[k]],
-    Cases ~ 1, 
-    offset = log(lambda), 
-    family = poisson(link ="log")
+    Cases ~ lambda - 1, 
+    family = poisson(link = "identity")
   )
   
   # Quasipoisson model
   models_qpois[[k]] <- glm(
     data = model_mats[[k]],
-    Cases ~ 1, 
-    offset = log(lambda), 
-    family = quasipoisson(link ="log")
+    Cases ~ lambda - 1, 
+    family = quasipoisson(link = "identity")
   )
   
-  # NegBin2 model (possible to supply the initial value for the dispersion 
-  # parameter as the quasipoisson estimates)
+  # NegBin2 model. We use the log link for the dispersion parameter. 
+  # Otherwise the algorithm does not converge.
   models_nbin2[[k]] <- gamlss(
     data = model_mats[[k]],
-    formula = Cases ~ offset(log(lambda)),
-    family = NBI(mu.link = "log"), 
+    formula = Cases ~ lambda - 1,
+    family = NBI(mu.link = "identity", sigma.link = "log"), 
     trace = FALSE
   )
   
-  # NegBin1 model
+  # NegBin1 model. We use the log link for the dispersion parameter to be
+  # consistent with the NegBin2 fitting.
   models_nbin1[[k]] <- gamlss(
     data = model_mats[[k]],
-    formula = Cases ~ offset(log(lambda)),
-    family = NBII(mu.link = "log"), 
+    formula = Cases ~ lambda - 1,
+    family = NBII(mu.link = "identity", sigma.link = "log"), 
     trace = FALSE
   )
 }
 
 # Extract the coefficient
 R_hat <- list()
-R_hat$pois <- models_pois %>% lapply(coefficients) %>% unlist() %>% exp()
-R_hat$qpois <- models_qpois %>% lapply(coefficients) %>% unlist() %>% exp()
-R_hat$nbin2 <- models_nbin2 %>% lapply(coefficients) %>% unlist() %>% exp()
-R_hat$nbin1 <- models_nbin1 %>% lapply(coefficients) %>% unlist() %>% exp()
+R_hat$pois <- models_pois %>% lapply(coefficients) %>% unlist()
+R_hat$qpois <- models_qpois %>% lapply(coefficients) %>% unlist()
+R_hat$nbin2 <- models_nbin2 %>% lapply(coefficients) %>% unlist()
+R_hat$nbin1 <- models_nbin1 %>% lapply(coefficients) %>% unlist()
 
 # Extract the dispersion parameter estimates
 disp <- list()
@@ -146,18 +146,18 @@ disp$nbin1 <- models_nbin1 %>%
   lapply(function (x) {exp(x$sigma.coefficients[1])}) %>% 
   unlist() %>% unname()
 
-# Extract the standard error on the log scale
-log_R_hat_sd <- list()
-log_R_hat_sd$pois <- models_pois %>% lapply(summary) %>% 
+# Extract the standard error
+R_hat_sd <- list()
+R_hat_sd$pois <- models_pois %>% lapply(summary) %>% 
   lapply(function (x) x$coefficients[2]) %>% 
   unlist()
-log_R_hat_sd$qpois <- models_qpois %>% lapply(summary) %>% 
+R_hat_sd$qpois <- models_qpois %>% lapply(summary) %>% 
   lapply(function (x) x$coefficients[2]) %>% 
   unlist()
-log_R_hat_sd$nbin2 <- models_nbin2 %>% lapply(summary) %>% 
+R_hat_sd$nbin2 <- models_nbin2 %>% lapply(summary) %>% 
   lapply(function (x) x[3]) %>% 
   unlist()
-log_R_hat_sd$nbin1 <- models_nbin1 %>% lapply(summary) %>% 
+R_hat_sd$nbin1 <- models_nbin1 %>% lapply(summary) %>% 
   lapply(function (x) x[3]) %>% 
   unlist()
 
@@ -168,15 +168,17 @@ df_R_hat <- tibble(
   Date = rep(incidence_subset$Date[t_ends], 2),
   R = c(R_hat$pois, R_hat$qpois),
   # CI via the endpoint transformation to avoid including negative values
-  lwr = exp(c(log(R_hat$pois) - qnorm(0.975) * log_R_hat_sd$pois,
-              log(R_hat$qpois) - qnorm(0.975) * log_R_hat_sd$qpois)),
-  upr = exp(c(log(R_hat$pois) + qnorm(0.975) * log_R_hat_sd$pois,
-              log(R_hat$qpois) + qnorm(0.975) * log_R_hat_sd$qpois)),
+  lwr = c(R_hat$pois - qnorm(0.975) * R_hat_sd$pois,
+          R_hat$qpois - qnorm(0.975) * R_hat_sd$qpois),
+  upr = c(R_hat$pois + qnorm(0.975) * R_hat_sd$pois,
+          R_hat$qpois + qnorm(0.975) * R_hat_sd$qpois),
   Model = factor(rep(
     c("Poiss", "Q-Poiss"), 
     each = length(models_pois)
   ))
 )
+
+
 
 pois_vs_qpois <- ggplot(
   df_R_hat, 
