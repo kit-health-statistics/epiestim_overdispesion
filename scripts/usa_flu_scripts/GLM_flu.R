@@ -138,13 +138,16 @@ df_R_hat <- tibble(
 # 1. Incidence
 p_incidence <- ggplot(
   incidence,
-  aes(x = Date, y = Cases, color = "Cases")
+  aes(x = Date, y = Cases)
 ) +
   geom_line(key_glyph = "timeseries", linewidth = 0.3) +
   scale_color_manual(values = "black", name = "") +
   scale_x_date(date_labels = "%b %Y") +
   labs(title = "Incidence") +
-  theme(plot.title = element_text(hjust = 0.5)) +
+  theme(
+    plot.title = element_text(hjust = 0.5),
+    legend.position = "none"
+  ) +
   theme_bw()
 
 # 2. Poisson vs. QP
@@ -170,7 +173,7 @@ p_pois_vs_qpois <- ggplot(
                "NegBin2" = "firebrick3", "NegBin1" = "dodgerblue")
   ) +
   labs(
-    title = "NegBin1 vs. Quasi-Poisson",
+    title = "Poisson vs. Quasi-Poisson",
     y = expression(hat(R)[t])
   ) +
   theme(plot.title = element_text(hjust = 0.5)) +
@@ -207,9 +210,10 @@ p_nbin1_vs_nbin2 <- ggplot(
   theme_bw()
 
 # 4. Overdisp Params (just for QP and NegBin1? NegBin2 is not really comparable)
+disp$nbin2_transformed <- sapply(model_mats, function(x) mean(x$Cases)) * disp$nbin2
 df_disp <- tibble(
   Date = rep(incidence$Date[t_ends], 3),
-  Dispersion = c(disp$qpois, disp$nbin1, disp$nbin2),
+  Dispersion = c(disp$qpois, disp$nbin1, disp$nbin2_transformed),
   Model = factor(rep(c("Q-Poiss", "NegBin1", "NegBin2"), each = length(disp$qpois)))
 )
 p_disp <- ggplot(
@@ -223,13 +227,13 @@ p_disp <- ggplot(
   ) +
   labs(
     title = "Overdispersion Parameters",
-    y = "Dispersion Parameter"
+    y = "Overdispersion"
   ) +
   theme(
-    plot.title = element_text(hjust = 0.5),
-    legend.position = "none"
+    plot.title = element_text(hjust = 0.5)
   ) +
-  theme_bw()
+  theme_bw() +
+  guides(color = "none")
 
 # 5. Generation Time Distribution (GTD)
 gtd_data <- tibble(
@@ -238,7 +242,7 @@ gtd_data <- tibble(
 )
 
 p_gtd <- ggplot(gtd_data, aes(x = x, y = y)) +
-  geom_histogram(stat = "identity", fill = "#b4e0f1", color = "black", binwidth = 0.1) +
+  geom_histogram(stat = "identity", fill = "#f8e161b3", color = "black", binwidth = 0.1) +
   labs(
     title = "Generation Time Distribution",
     x = "Days",
