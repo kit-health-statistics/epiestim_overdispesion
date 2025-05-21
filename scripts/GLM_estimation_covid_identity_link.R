@@ -49,7 +49,7 @@ window_width <- 13  # Size of the estimation window
 
 # Calculate the starting and end points of the time windows
 t_starts <- 2:(n_obs - window_width + 1)
-t_ends <- t_starts + 12
+t_ends <- t_starts + window_width - 1
 
 # Prior of Rt - gamma distribution with shape and scale parameters.
 # Parameter values taken from (AGES; Richter et al. 2020)
