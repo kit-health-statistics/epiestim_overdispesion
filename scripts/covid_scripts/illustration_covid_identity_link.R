@@ -14,7 +14,7 @@ window_width <- 13
 
 # Data from the ECDC web:
 # https://www.ecdc.europa.eu/en/publications-data/data-daily-new-cases-covid-19-eueea-country
-incidence <- read_csv("data/covid_ecdc.csv") %>%
+incidence <- read_csv("data/covid/covid_ecdc.csv") %>%
   filter(geoId == "AT") %>%
   dplyr::select(dateRep, cases) %>%
   rename("Date" = "dateRep", "Cases" = "cases") %>%

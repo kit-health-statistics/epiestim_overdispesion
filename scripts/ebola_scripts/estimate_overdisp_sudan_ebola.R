@@ -11,7 +11,7 @@ library(patchwork)
 # Data are transcribed by eye from Figure 1 of:
 # https://www.thelancet.com/journals/langlo/article/PIIS2214-109X(24)00555-2/fulltext
 # date range is 8/8/22 - 11/19/22 
-incidence <- read_csv(here::here("data", "ebola_2022_sudan.csv")) |>
+incidence <- read_csv(here::here("data", "ebola", "ebola_2022_sudan.csv")) |>
   rename("Cases" = "cases") |>
   mutate(
     Date = as.Date(date, format = "%m/%d/%Y")

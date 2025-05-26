@@ -9,7 +9,7 @@ library("gamlss")  # For the gamlss() function
 library("ggmagnify")  # For the geom_magnify() function
 theme_set(theme_bw())
 
-ebola_df <- read_csv(file = here::here("data", "ebola_df.csv"))
+ebola_df <- read_csv(file = here::here("data", "ebola", "ebola_df.csv"))
 
 # mean and sd of ebola gen time will be 12 and 5.2 days
 # midpoint weibull estimate is scale 13.6 shape 2.6 
