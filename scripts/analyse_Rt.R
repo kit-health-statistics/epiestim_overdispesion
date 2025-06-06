@@ -166,13 +166,12 @@ analyse_Rt <- function(incidence, start_date, end_date, window_width, mean_si, s
   ) +
     geom_line(key_glyph = "timeseries", linewidth = 0.3) +
     scale_color_manual(values = "black", name = "") +
-    scale_x_date(date_labels = "%b %Y") +
     labs(title = "Incidence") +
+    theme_bw() +
     theme(
       plot.title = element_text(hjust = 0.5),
       legend.position = "none"
-    ) +
-    theme_bw()
+    )
 
   # 2. Poisson vs. QP
   p_pois_vs_qpois <- ggplot(
@@ -200,8 +199,8 @@ analyse_Rt <- function(incidence, start_date, end_date, window_width, mean_si, s
       title = "Poisson vs. Quasi-Poisson",
       y = expression(hat(R)[t])
     ) +
-    theme(plot.title = element_text(hjust = 0.5)) +
-    theme_bw()
+    theme_bw() +
+    theme(plot.title = element_text(hjust = 0.5))
 
   # 3. NegBin1 vs. NegBin2
   p_nbin1_vs_nbin2 <- ggplot(
@@ -229,8 +228,8 @@ analyse_Rt <- function(incidence, start_date, end_date, window_width, mean_si, s
       title = "NegBin1 vs. NegBin2",
       y = expression(hat(R)[t])
     ) +
-    theme(plot.title = element_text(hjust = 0.5)) +
-    theme_bw()
+    theme_bw() +
+    theme(plot.title = element_text(hjust = 0.5))
 
   # 4. Overdisp Params. Negbin2 plotted on using a second plot axis
   sec_axis_scale <- median(disp$nbin2 / disp$nbin1)
@@ -255,10 +254,10 @@ analyse_Rt <- function(incidence, start_date, end_date, window_width, mean_si, s
       title = "Overdispersion Parameters",
       y = "Overdispersion"
     ) +
+    theme_bw() +
     theme(
       plot.title = element_text(hjust = 0.5)
     ) +
-    theme_bw() +
     guides(color = "none")
 
   # 5. Generation Time Distribution (GTD)
@@ -274,8 +273,8 @@ analyse_Rt <- function(incidence, start_date, end_date, window_width, mean_si, s
       x = "Days",
       y = "Density"
     ) +
-    theme(plot.title = element_text(hjust = 0.5)) +
-    theme_bw()
+    theme_bw() +
+    theme(plot.title = element_text(hjust = 0.5))
   
   # 6. NegBin1 vs. QP (Extra plot, will probably go to the supplement)
   p_nbin1_vs_qpois <- ggplot(
@@ -303,21 +302,14 @@ analyse_Rt <- function(incidence, start_date, end_date, window_width, mean_si, s
       title = "NegBin1 vs. NegBin2",
       y = expression(hat(R)[t])
     ) +
-    theme(plot.title = element_text(hjust = 0.5)) +
-    theme_bw()
-
-  # Combine all plots into a single figure
-  p_R_hat_comparison <- (p_incidence / p_pois_vs_qpois / p_nbin1_vs_nbin2 / p_disp / p_gtd) +
-    plot_layout(heights = c(1, 1, 1, 1, 1), guides = "collect") & 
-    theme(legend.position = "none")
-  
-  p_legend <- ggpubr::get_legend(p_nbin1_vs_nbin2)
+    theme_bw() +
+    theme(plot.title = element_text(hjust = 0.5))
 
   ret <- list(
-    R_hat = R_hat, R_hat_sd = R_hat_sd, disp = disp,
-    plt = p_R_hat_comparison, AIC = AIC_vals,
-    plt_legend = p_legend,
-    plt_nbin1_vs_qpois = p_nbin1_vs_qpois
+    R_hat = R_hat, R_hat_sd = R_hat_sd, disp = disp, AIC = AIC_vals,
+    plt = list(p_incidence = p_incidence, p_pois_vs_qpois = p_pois_vs_qpois, 
+               p_nbin1_vs_nbin2 = p_nbin1_vs_nbin2, p_disp = p_disp,
+               p_gtd = p_gtd, p_nbin1_vs_qpois = p_nbin1_vs_qpois)
   )
   return(ret)
 }

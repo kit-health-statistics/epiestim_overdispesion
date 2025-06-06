@@ -109,27 +109,90 @@ ebola_results <- with(
 
 # Plot the results --------------------------------------------------
 
-flu_plot <- (flu_results$plt &
+# Adjust individual plots
+flu_results$plt$p_incidence <- flu_results$plt$p_incidence +
+  scale_x_date(date_breaks = "2 weeks", date_labels = "%b %d")
+covid_results$plt$p_incidence <- covid_results$plt$p_incidence +
+  scale_x_date(date_breaks = "3 months", date_labels = "%b %Y")
+ebola_results$plt$p_incidence <- ebola_results$plt$p_incidence +
+  scale_x_date(date_breaks = "4 months", date_labels = "%b %Y")
+flu_results$plt$p_gtd <- flu_results$plt$p_gtd +
+  scale_x_continuous(breaks = seq(0, 15, by = 3))
+covid_results$plt$p_gtd <- covid_results$plt$p_gtd +
+  scale_x_continuous(breaks = seq(0, 15, by = 3))
+ebola_results$plt$p_gtd <- ebola_results$plt$p_gtd +
+  labs(x = "Weeks") +
+  scale_x_continuous(breaks = seq(0, 8, by = 2))
+covid_results$plt$p_pois_vs_qpois <- covid_results$plt$p_pois_vs_qpois +
+  scale_x_date(date_labels = "%b %Y", date_breaks = "2 months")
+covid_results$plt$p_nbin1_vs_nbin2 <- covid_results$plt$p_nbin1_vs_nbin2 +
+  scale_x_date(date_labels = "%b %Y", date_breaks = "2 months")
+covid_results$plt$p_disp <- covid_results$plt$p_disp +
+  scale_x_date(date_labels = "%b %Y", date_breaks = "2 months")
+ebola_results$plt$p_pois_vs_qpois <- ebola_results$plt$p_pois_vs_qpois +
+  scale_x_date(date_labels = "%b %Y", date_breaks = "4 months")
+ebola_results$plt$p_nbin1_vs_nbin2 <- ebola_results$plt$p_nbin1_vs_nbin2 +
+  scale_x_date(date_labels = "%b %Y", date_breaks = "4 months")
+ebola_results$plt$p_disp <- ebola_results$plt$p_disp +
+  scale_x_date(date_labels = "%b %Y", date_breaks = "4 months")
+  
+# Compose the plots
+p_legend <- ggpubr::get_legend(flu_results$plt$p_nbin1_vs_nbin2)
+flu_plot <- (with(
+  flu_results$plt,
+  p_incidence / p_pois_vs_qpois / p_nbin1_vs_nbin2 / p_disp / p_gtd
+) +
+  plot_layout(heights = c(1, 1, 1, 1, 1), guides = "collect") &
+  theme(legend.position = "none") &
   plot_annotation(
     title = "Influenza,\nUSA Active Military Personnel,\n2009-2010",
     theme = theme(
-      plot.title = element_text(size = 16, hjust = 0.5, face = "bold", lineheight = 0.9)
+      plot.title = element_text(
+        size = 16,
+        hjust = 0.5,
+        face = "bold",
+        lineheight = 0.9
+      )
     )
-  )) |> wrap_elements()
-covid_plot <- (covid_results$plt &
+  )) |>
+  wrap_elements()
+covid_plot <- (with(
+  covid_results$plt,
+  p_incidence / p_pois_vs_qpois / p_nbin1_vs_nbin2 / p_disp / p_gtd
+) +
+  plot_layout(heights = c(1, 1, 1, 1, 1), guides = "collect") &
+  theme(legend.position = "none") &
   plot_annotation(
     title = "COVID-19,\nAustria,\n2021-2022",
     theme = theme(
-      plot.title = element_text(size = 16, hjust = 0.5, face = "bold", lineheight = 0.9)
+      plot.title = element_text(
+        size = 16,
+        hjust = 0.5,
+        face = "bold",
+        lineheight = 0.9
+      )
     )
-  )) |> wrap_elements()
-ebola_plot <- (ebola_results$plt &
+  )) |>
+  wrap_elements()
+ebola_plot <- (with(
+  ebola_results$plt,
+  p_incidence / p_pois_vs_qpois / p_nbin1_vs_nbin2 / p_disp / p_gtd
+) +
+  plot_layout(heights = c(1, 1, 1, 1, 1), guides = "collect") &
+  theme(legend.position = "none") &
   plot_annotation(
     title = "Ebola,\nGuinea,\n2014-2015",
     theme = theme(
-      plot.title = element_text(size = 16, hjust = 0.5, face = "bold", lineheight = 0.9)
+      plot.title = element_text(
+        size = 16,
+        hjust = 0.5,
+        face = "bold",
+        lineheight = 0.9
+      )
     )
-  )) |> wrap_elements()
+  )) |>
+  wrap_elements()
+
 composite_plot <- (
   flu_plot | covid_plot | ebola_plot | wrap_elements(flu_results$plt_legend)
 ) +
