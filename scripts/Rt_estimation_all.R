@@ -58,27 +58,39 @@ params$covid$std_si <- 1.83
 
 # Read the ebola data --------------------------------------------------
 
-# Data are transcribed by eye from Figure 1 of:
-# https://www.thelancet.com/journals/langlo/article/PIIS2214-109X(24)00555-2/fulltext
-# date range is 8/8/22 - 11/19/22 
-incidence_ebola <- read_csv(here::here("data", "ebola", "ebola_2022_sudan.csv")) |>
-  rename("Cases" = "cases") |>
-  mutate(
-    Date = as.Date(date, format = "%m/%d/%Y")
-  )
+# Data are from:
+# https://github.com/fintzij/stemr/tree/master/data
+incidence_ebola_daily <-  read_csv(file = "data/ebola/green2022_data_frame.csv")
 
-# NOTES:
-# Window size used is 7 days
-# SI distribution is from the paper (mean 13.8 days, sd 7.6 days)
+# Rescale the parameters to the weekly incidence
+# Parameters of SI distribution taken from Green et al 2022
+mu <- 15.3
+sd <- 9.3
+# shape
+alpha <- (mu / sd)^2
+# rate
+beta <- (mu / sd^2)
+# divide by 7 means
+scaled_beta <- beta / (1 / 7)
+scaled_mean <- alpha / scaled_beta
+scaled_sd <- sqrt(alpha / (scaled_beta^2))
 
-# Parameters of SI distribution same as Nash et al 2023 paper
-params$ebola$incidence <- incidence_ebola
-params$ebola$start_date <- as.Date("2022-09-03")
-params$ebola$end_date <- as.Date("2022-09-19")
-params$ebola$window_width <- 7
+# Aggregate the data into weekly format
+incidence_ebola_weekly <- incidence_ebola_daily %>%
+  group_by(week = lubridate::floor_date(date, "week")) %>%
+  summarise(Cases = sum(count)) %>%
+  ungroup() %>%
+  mutate(week = as.Date(week)) %>%
+  filter(week > "2014-02-23") %>%
+  mutate(Date = week)
+
+params$ebola$incidence <- incidence_ebola_weekly
+params$ebola$start_date <- as.Date("2014-03-30")
+params$ebola$end_date <- max(incidence_ebola_weekly$Date)
+params$ebola$window_width <- 4
 # Parameters of SI distribution same as de Padua et al 2025 paper
-params$ebola$mean_si <- 13.8
-params$ebola$std_si <- 7.6
+params$ebola$mean_si <- scaled_mean
+params$ebola$std_si <- scaled_sd
 
 # Run the models --------------------------------------------------
 
@@ -113,7 +125,7 @@ covid_plot <- (covid_results$plt &
   )) |> wrap_elements()
 ebola_plot <- (ebola_results$plt &
   plot_annotation(
-    title = "Ebola,\nSudan,\n2022",
+    title = "Ebola,\nGuinea,\n2014-2015",
     theme = theme(
       plot.title = element_text(size = 16, hjust = 0.5, face = "bold", lineheight = 0.9)
     )
