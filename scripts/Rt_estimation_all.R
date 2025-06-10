@@ -8,7 +8,7 @@ source("scripts/analyse_Rt.R")
 # Running the analysis on 3 datasets:
 # - flu among USA military personnel
 # - COVID-19 in Austria
-# - ebola in Sudan
+# - ebola in Guinea
 
 # List for storing the parameters for the 3 datasets
 params <- replicate(3, list())
@@ -88,7 +88,6 @@ params$ebola$incidence <- incidence_ebola_weekly
 params$ebola$start_date <- as.Date("2014-03-30")
 params$ebola$end_date <- max(incidence_ebola_weekly$Date)
 params$ebola$window_width <- 4
-# Parameters of SI distribution same as de Padua et al 2025 paper
 params$ebola$mean_si <- scaled_mean
 params$ebola$std_si <- scaled_sd
 
@@ -137,7 +136,7 @@ ebola_results$plt$p_disp <- ebola_results$plt$p_disp +
   scale_x_date(date_labels = "%b %Y", date_breaks = "4 months")
   
 # Compose the plots
-p_legend <- ggpubr::get_legend(flu_results$plt$p_nbin1_vs_nbin2)
+p_legend <- wrap_elements(ggpubr::get_legend(flu_results$plt$p_nbin1_vs_nbin2))
 flu_plot <- (with(
   flu_results$plt,
   p_incidence / p_pois_vs_qpois / p_nbin1_vs_nbin2 / p_disp / p_gtd
@@ -194,7 +193,7 @@ ebola_plot <- (with(
   wrap_elements()
 
 composite_plot <- (
-  flu_plot | covid_plot | ebola_plot | wrap_elements(flu_results$plt_legend)
+  flu_plot | covid_plot | ebola_plot | p_legend
 ) +
   plot_layout(widths = c(3, 3, 3, 1))
 ggsave("figure/composite_plot.pdf", composite_plot, width = 14, height = 13)

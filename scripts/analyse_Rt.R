@@ -22,7 +22,6 @@ analyse_Rt <- function(incidence, start_date, end_date, window_width, mean_si, s
 
   models_pois <- models_qpois <- models_nbin2 <- models_nbin1 <-
     vector(mode = "list", length = length(t_starts))
-  models_nbin1_log <- models_nbin2_log <- models_qpois_log <- models_pois
   model_mats <- sapply(
     t_starts,
     function(x) {
@@ -128,7 +127,6 @@ analyse_Rt <- function(incidence, start_date, end_date, window_width, mean_si, s
   AIC_vals$nbin1 <- models_nbin1 %>%
     lapply(function(x) x$aic) %>%
     unlist()
-
 
   # Create plots ----------------------------------------------------
   df_R_hat <- tibble(
@@ -299,7 +297,7 @@ analyse_Rt <- function(incidence, start_date, end_date, window_width, mean_si, s
       values = model_colors
     ) +
     labs(
-      title = "NegBin1 vs. NegBin2",
+      title = "NegBin1 vs. Quasi-Poisson",
       y = expression(hat(R)[t])
     ) +
     theme_bw() +
