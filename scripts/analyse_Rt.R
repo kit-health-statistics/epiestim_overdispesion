@@ -152,9 +152,11 @@ analyse_Rt <- function(incidence, start_date, end_date, window_width, mean_si, s
   )
 
   # Create plots ----------------------------------------------------
+  # These colors are selected from the ggokabeito package designed for creating
+  # color-blindness friendly charts
   model_colors <- c(
-    "Poiss" = "forestgreen", "Q-Poiss" = "gray40",
-    "NegBin1" = "dodgerblue", "NegBin2" = "firebrick3"
+    "Poiss" = "#009E73", "Q-Poiss" = "#F0E442",
+    "NegBin1" = "#56B4E9", "NegBin2" = "#CC79A7"
   )
   
   # 1. Incidence
@@ -182,8 +184,8 @@ analyse_Rt <- function(incidence, start_date, end_date, window_width, mean_si, s
     geom_line(linewidth = 0.4) +
     geom_ribbon(color = NA) +
     scale_alpha_manual(
-      values = c("Poiss" = 0.4, "Q-Poiss" = 0.4, "NegBin1" = 0.0, "NegBin2" = 0),
-      guide = guide_legend(override.aes = list(alpha = 0.4))
+      values = c("Poiss" = 0.5, "Q-Poiss" = 0.5, "NegBin1" = 0.0, "NegBin2" = 0),
+      guide = guide_legend(override.aes = list(alpha = 0.5))
     ) +
     scale_color_manual(
       name = "Model",
@@ -211,8 +213,8 @@ analyse_Rt <- function(incidence, start_date, end_date, window_width, mean_si, s
     geom_line(linewidth = 0.4) +
     geom_ribbon(color = NA) +
     scale_alpha_manual(
-      values = c("Poiss" = 0, "Q-Poiss" = 0, "NegBin1" = 0.4, "NegBin2" = 0.4),
-      guide = guide_legend(override.aes = list(alpha = 0.4))
+      values = c("Poiss" = 0, "Q-Poiss" = 0, "NegBin1" = 0.5, "NegBin2" = 0.5),
+      guide = guide_legend(override.aes = list(alpha = 0.5))
     ) +
     scale_color_manual(
       name = "Model",
@@ -285,8 +287,8 @@ analyse_Rt <- function(incidence, start_date, end_date, window_width, mean_si, s
     geom_line(linewidth = 0.4) +
     geom_ribbon(color = NA) +
     scale_alpha_manual(
-      values = c("Poiss" = 0, "Q-Poiss" = 0.4, "NegBin1" = 0.4, "NegBin2" = 0),
-      guide = guide_legend(override.aes = list(alpha = 0.4))
+      values = c("Poiss" = 0, "Q-Poiss" = 0.5, "NegBin1" = 0.5, "NegBin2" = 0),
+      guide = guide_legend(override.aes = list(alpha = 0.5))
     ) +
     scale_color_manual(
       name = "Model",
