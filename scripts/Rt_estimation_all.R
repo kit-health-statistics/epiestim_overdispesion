@@ -108,6 +108,27 @@ ebola_results <- with(
 
 # Plot the results --------------------------------------------------
 
+# For Ebola, we have trouble fitting the NegBin1 model for 
+# 19. and 26. April 2015. In these 2 estimation windows, the counts are 
+# underdispersed. This can be seen also in the Poisson vs. quasi-poisson plot,
+# where the dispersion parameter is estimated as < 1 and the resulting 
+# confidence intervals are actually higher for Poisson.
+# As a result, NegBin1 is trying to estimate its dispersion parameter as very 
+# low and runs into the problem of numerical instabilities. For this reason we 
+# replace these 2 NegBin1 estimates by the Poisson estimates.
+# The changes are carried out in the plot only! If we want to report other 
+# quantities, we would have to change them too.
+dates_underdisp <- as.Date(c("2015-04-26", "2015-04-19"))
+df_replace <- ebola_results$plt$p_nbin1_vs_nbin2$data |> filter(
+  Date %in% dates_underdisp & Model == "Poiss"
+) |> mutate(Model = "NegBin1")
+df_updated <- rows_update(
+  new_plot$plot$data, 
+  df_replace, 
+  by = c("Date", "Model")
+)
+ebola_results$plt$p_nbin1_vs_nbin2 <- ebola_results$plt$p_nbin1_vs_nbin2 %+% df_updated
+
 # Adjust individual plots
 plots_to_adjust_date <- c("p_incidence", "p_nbin1_vs_nbin2", "p_pois_vs_qpois",
                           "p_disp")
