@@ -171,7 +171,8 @@ analyse_Rt <- function(incidence, start_date, end_date, window_width, mean_si, s
     theme(
       plot.title = element_text(hjust = 0.5),
       legend.position = "none"
-    )
+    ) +
+    coord_cartesian(ylim = c(0, max(incidence_subset$Cases)))
 
   # 2. Poisson vs. QP
   p_pois_vs_qpois <- ggplot(
@@ -198,6 +199,10 @@ analyse_Rt <- function(incidence, start_date, end_date, window_width, mean_si, s
     labs(
       title = "Poisson vs. Quasi-Poisson",
       y = expression(hat(R)[t])
+    ) +
+    coord_cartesian(
+      ylim = c(0, max(df_R_hat$upr)), 
+      xlim = range(incidence_subset$Date)
     ) +
     theme_bw() +
     theme(plot.title = element_text(hjust = 0.5))
@@ -228,6 +233,10 @@ analyse_Rt <- function(incidence, start_date, end_date, window_width, mean_si, s
       title = "NegBin1 vs. NegBin2",
       y = expression(hat(R)[t])
     ) +
+    coord_cartesian(
+      ylim = c(0, max(df_R_hat$upr)), 
+      xlim = range(incidence_subset$Date)
+    ) +
     theme_bw() +
     theme(plot.title = element_text(hjust = 0.5))
 
@@ -253,6 +262,10 @@ analyse_Rt <- function(incidence, start_date, end_date, window_width, mean_si, s
     labs(
       title = "Overdispersion Parameters",
       y = "Overdispersion"
+    ) +
+    coord_cartesian(
+      ylim = c(0, max(df_disp$Dispersion)), 
+      xlim = range(incidence_subset$Date)
     ) +
     theme_bw() +
     theme(
@@ -301,6 +314,10 @@ analyse_Rt <- function(incidence, start_date, end_date, window_width, mean_si, s
     labs(
       title = "NegBin1 vs. Quasi-Poisson",
       y = expression(hat(R)[t])
+    ) +
+    coord_cartesian(
+      ylim = c(0, max(df_R_hat$upr)), 
+      xlim = range(incidence_subset$Date)
     ) +
     theme_bw() +
     theme(plot.title = element_text(hjust = 0.5))

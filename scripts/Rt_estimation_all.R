@@ -109,12 +109,21 @@ ebola_results <- with(
 # Plot the results --------------------------------------------------
 
 # Adjust individual plots
-flu_results$plt$p_incidence <- flu_results$plt$p_incidence +
-  scale_x_date(date_breaks = "2 weeks", date_labels = "%b %d")
-covid_results$plt$p_incidence <- covid_results$plt$p_incidence +
-  scale_x_date(date_breaks = "3 months", date_labels = "%b %Y")
-ebola_results$plt$p_incidence <- ebola_results$plt$p_incidence +
-  scale_x_date(date_breaks = "4 months", date_labels = "%b %Y")
+plots_to_adjust_date <- c("p_incidence", "p_nbin1_vs_nbin2", "p_pois_vs_qpois",
+                          "p_disp")
+for (plt in plots_to_adjust_date) {
+  flu_results$plt[[plt]] <- flu_results$plt[[plt]] +
+    scale_x_date(date_breaks = "2 weeks", date_labels = "%b %d")
+}
+for (plt in plots_to_adjust_date) {
+  covid_results$plt[[plt]] <- covid_results$plt[[plt]] +
+    scale_x_date(date_breaks = "3 months", date_labels = "%b %Y")
+}
+for (plt in plots_to_adjust_date) {
+  ebola_results$plt[[plt]] <- ebola_results$plt[[plt]] +
+    scale_x_date(date_breaks = "4 months", date_labels = "%b %Y")
+}
+
 flu_results$plt$p_gtd <- flu_results$plt$p_gtd +
   scale_x_continuous(breaks = seq(0, 15, by = 3))
 covid_results$plt$p_gtd <- covid_results$plt$p_gtd +
@@ -122,18 +131,6 @@ covid_results$plt$p_gtd <- covid_results$plt$p_gtd +
 ebola_results$plt$p_gtd <- ebola_results$plt$p_gtd +
   labs(x = "Weeks") +
   scale_x_continuous(breaks = seq(0, 8, by = 2))
-covid_results$plt$p_pois_vs_qpois <- covid_results$plt$p_pois_vs_qpois +
-  scale_x_date(date_labels = "%b %Y", date_breaks = "2 months")
-covid_results$plt$p_nbin1_vs_nbin2 <- covid_results$plt$p_nbin1_vs_nbin2 +
-  scale_x_date(date_labels = "%b %Y", date_breaks = "2 months")
-covid_results$plt$p_disp <- covid_results$plt$p_disp +
-  scale_x_date(date_labels = "%b %Y", date_breaks = "2 months")
-ebola_results$plt$p_pois_vs_qpois <- ebola_results$plt$p_pois_vs_qpois +
-  scale_x_date(date_labels = "%b %Y", date_breaks = "4 months")
-ebola_results$plt$p_nbin1_vs_nbin2 <- ebola_results$plt$p_nbin1_vs_nbin2 +
-  scale_x_date(date_labels = "%b %Y", date_breaks = "4 months")
-ebola_results$plt$p_disp <- ebola_results$plt$p_disp +
-  scale_x_date(date_labels = "%b %Y", date_breaks = "4 months")
   
 # Compose the plots
 p_legend <- wrap_elements(ggpubr::get_legend(flu_results$plt$p_nbin1_vs_nbin2))
