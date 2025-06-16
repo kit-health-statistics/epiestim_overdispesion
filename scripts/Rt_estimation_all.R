@@ -124,6 +124,15 @@ df_updated <- rows_update(
   by = c("Date", "Model")
 )
 results$ebola$plt$p_nbin1_vs_nbin2 <- results$ebola$plt$p_nbin1_vs_nbin2 %+% df_updated
+df_replace <- results$ebola$plt$p_nbin1_vs_qpois$data |> filter(
+  Date %in% dates_underdisp & Model == "Poiss"
+) |> mutate(Model = "NegBin1")
+df_updated <- rows_update(
+  results$ebola$plt$p_nbin1_vs_qpois$data, 
+  df_replace, 
+  by = c("Date", "Model")
+)
+results$ebola$plt$p_nbin1_vs_qpois <- results$ebola$plt$p_nbin1_vs_qpois %+% df_updated
 
 # Adjust individual plots
 plots_to_adjust_date <- c("p_incidence", "p_nbin1_vs_nbin2", "p_pois_vs_qpois",
@@ -220,7 +229,7 @@ for (disease in names(nbin1_plot_elements)) {
       results[[disease]]$plt,
       p_incidence / p_nbin1_vs_qpois
     ) +
-      plot_layout(heights = c(1, 1, 1, 1, 1), guides = "collect") &
+      plot_layout(heights = c(1, 1), guides = "collect") &
       theme(legend.position = "none") & 
       annotations[[disease]]
   ) |>
@@ -234,3 +243,4 @@ nbin1_plot <- (
   )
 ) +
   plot_layout(widths = c(3, 3, 3, 1))
+ggsave("figure/nbin1_vs_qpis_plot.pdf", nbin1_plot, width = 14, height = 6.5)
