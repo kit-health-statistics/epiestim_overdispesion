@@ -93,18 +93,14 @@ params$ebola$std_si <- scaled_sd
 
 # Run the models --------------------------------------------------
 
-flu_results <- with(
-  params$flu, 
-  analyse_Rt(incidence, start_date, end_date, window_width, mean_si, std_si)
-)
-covid_results <- with(
-  params$covid, 
-  analyse_Rt(incidence, start_date, end_date, window_width, mean_si, std_si)
-)
-ebola_results <- with(
-  params$ebola, 
-  analyse_Rt(incidence, start_date, end_date, window_width, mean_si, std_si)
-)
+results <- vector("list", 3)
+names(results) <- names(params)
+for (disease in names(results)) {
+  results[[disease]] <- with(
+    params[[disease]], 
+    analyse_Rt(incidence, start_date, end_date, window_width, mean_si, std_si)
+  )
+}
 
 # Plot the results --------------------------------------------------
 
@@ -119,99 +115,122 @@ ebola_results <- with(
 # The changes are carried out in the plot only! If we want to report other 
 # quantities, we would have to change them too.
 dates_underdisp <- as.Date(c("2015-04-26", "2015-04-19"))
-df_replace <- ebola_results$plt$p_nbin1_vs_nbin2$data |> filter(
+df_replace <- results$ebola$plt$p_nbin1_vs_nbin2$data |> filter(
   Date %in% dates_underdisp & Model == "Poiss"
 ) |> mutate(Model = "NegBin1")
 df_updated <- rows_update(
-  ebola_results$plt$p_nbin1_vs_nbin2$data, 
+  results$ebola$plt$p_nbin1_vs_nbin2$data, 
   df_replace, 
   by = c("Date", "Model")
 )
-ebola_results$plt$p_nbin1_vs_nbin2 <- ebola_results$plt$p_nbin1_vs_nbin2 %+% df_updated
+results$ebola$plt$p_nbin1_vs_nbin2 <- results$ebola$plt$p_nbin1_vs_nbin2 %+% df_updated
 
 # Adjust individual plots
 plots_to_adjust_date <- c("p_incidence", "p_nbin1_vs_nbin2", "p_pois_vs_qpois",
                           "p_disp")
 for (plt in plots_to_adjust_date) {
-  flu_results$plt[[plt]] <- flu_results$plt[[plt]] +
+  results$flu$plt[[plt]] <- results$flu$plt[[plt]] +
     scale_x_date(date_breaks = "2 weeks", date_labels = "%b %d")
 }
 for (plt in plots_to_adjust_date) {
-  covid_results$plt[[plt]] <- covid_results$plt[[plt]] +
+  results$covid$plt[[plt]] <- results$covid$plt[[plt]] +
     scale_x_date(date_breaks = "3 months", date_labels = "%b %Y")
 }
 for (plt in plots_to_adjust_date) {
-  ebola_results$plt[[plt]] <- ebola_results$plt[[plt]] +
+  results$ebola$plt[[plt]] <- results$ebola$plt[[plt]] +
     scale_x_date(date_breaks = "4 months", date_labels = "%b %Y")
 }
-
-flu_results$plt$p_gtd <- flu_results$plt$p_gtd +
+results$flu$plt$p_gtd <- results$flu$plt$p_gtd +
   scale_x_continuous(breaks = seq(0, 15, by = 3))
-covid_results$plt$p_gtd <- covid_results$plt$p_gtd +
+results$covid$plt$p_gtd <- results$covid$plt$p_gtd +
   scale_x_continuous(breaks = seq(0, 15, by = 3))
-ebola_results$plt$p_gtd <- ebola_results$plt$p_gtd +
+results$ebola$plt$p_gtd <- results$ebola$plt$p_gtd +
   labs(x = "Weeks") +
   scale_x_continuous(breaks = seq(0, 8, by = 2))
   
+# Prepare the annotations
+annotations <- list()
+annotations$flu <- plot_annotation(
+  title = "Influenza,\nUSA Active Military Personnel,\n2009-2010",
+  theme = theme(
+    plot.title = element_text(
+      size = 16,
+      hjust = 0.5,
+      face = "bold",
+      lineheight = 0.9
+    )
+  )
+)
+annotations$covid <- plot_annotation(
+  title = "COVID-19,\nAustria,\n2021-2022",
+  theme = theme(
+    plot.title = element_text(
+      size = 16,
+      hjust = 0.5,
+      face = "bold",
+      lineheight = 0.9
+    )
+  )
+)
+annotations$ebola <- plot_annotation(
+  title = "Ebola,\nGuinea,\n2014-2015",
+  theme = theme(
+    plot.title = element_text(
+      size = 16,
+      hjust = 0.5,
+      face = "bold",
+      lineheight = 0.9
+    )
+  )
+)
+
 # Compose the plots
-p_legend <- wrap_elements(ggpubr::get_legend(flu_results$plt$p_nbin1_vs_nbin2))
-flu_plot <- (with(
-  flu_results$plt,
-  p_incidence / p_pois_vs_qpois / p_nbin1_vs_nbin2 / p_disp / p_gtd
-) +
-  plot_layout(heights = c(1, 1, 1, 1, 1), guides = "collect") &
-  theme(legend.position = "none") &
-  plot_annotation(
-    title = "Influenza,\nUSA Active Military Personnel,\n2009-2010",
-    theme = theme(
-      plot.title = element_text(
-        size = 16,
-        hjust = 0.5,
-        face = "bold",
-        lineheight = 0.9
-      )
-    )
-  )) |>
-  wrap_elements()
-covid_plot <- (with(
-  covid_results$plt,
-  p_incidence / p_pois_vs_qpois / p_nbin1_vs_nbin2 / p_disp / p_gtd
-) +
-  plot_layout(heights = c(1, 1, 1, 1, 1), guides = "collect") &
-  theme(legend.position = "none") &
-  plot_annotation(
-    title = "COVID-19,\nAustria,\n2021-2022",
-    theme = theme(
-      plot.title = element_text(
-        size = 16,
-        hjust = 0.5,
-        face = "bold",
-        lineheight = 0.9
-      )
-    )
-  )) |>
-  wrap_elements()
-ebola_plot <- (with(
-  ebola_results$plt,
-  p_incidence / p_pois_vs_qpois / p_nbin1_vs_nbin2 / p_disp / p_gtd
-) +
-  plot_layout(heights = c(1, 1, 1, 1, 1), guides = "collect") &
-  theme(legend.position = "none") &
-  plot_annotation(
-    title = "Ebola,\nGuinea,\n2014-2015",
-    theme = theme(
-      plot.title = element_text(
-        size = 16,
-        hjust = 0.5,
-        face = "bold",
-        lineheight = 0.9
-      )
-    )
-  )) |>
-  wrap_elements()
+p_legend <- wrap_elements(ggpubr::get_legend(results$flu$plt$p_nbin1_vs_nbin2))
+composite_plot_elements <- vector("list", 3)
+names(composite_plot_elements) <- names(params)
+for (disease in names(composite_plot_elements)) {
+  composite_plot_elements[[disease]] <- (
+    with(
+      results[[disease]]$plt,
+      p_incidence / p_pois_vs_qpois / p_nbin1_vs_nbin2 / p_disp / p_gtd
+    ) +
+      plot_layout(heights = c(1, 1, 1, 1, 1), guides = "collect") &
+      theme(legend.position = "none") & 
+      annotations[[disease]]
+  ) |>
+    wrap_elements()
+}
 
 composite_plot <- (
-  flu_plot | covid_plot | ebola_plot | p_legend
+  with(
+    composite_plot_elements, 
+    flu | covid | ebola | p_legend
+  )
 ) +
   plot_layout(widths = c(3, 3, 3, 1))
 ggsave("figure/composite_plot.pdf", composite_plot, width = 14, height = 13)
+
+# Supplementary plot NegBin1 vs. quasi-Poisson
+p_nbin1_legend <- wrap_elements(ggpubr::get_legend(results$flu$plt$p_nbin1_vs_qpois))
+nbin1_plot_elements <- vector("list", 3)
+names(nbin1_plot_elements) <- names(params)
+for (disease in names(nbin1_plot_elements)) {
+  nbin1_plot_elements[[disease]] <- (
+    with(
+      results[[disease]]$plt,
+      p_incidence / p_nbin1_vs_qpois
+    ) +
+      plot_layout(heights = c(1, 1, 1, 1, 1), guides = "collect") &
+      theme(legend.position = "none") & 
+      annotations[[disease]]
+  ) |>
+    wrap_elements()
+}
+
+nbin1_plot <- (
+  with(
+    nbin1_plot_elements, 
+    flu | covid | ebola | p_nbin1_legend
+  )
+) +
+  plot_layout(widths = c(3, 3, 3, 1))

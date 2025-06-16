@@ -301,15 +301,18 @@ analyse_Rt <- function(incidence, start_date, end_date, window_width, mean_si, s
     geom_ribbon(color = NA) +
     scale_alpha_manual(
       values = c("Poiss" = 0, "Q-Poiss" = 0.5, "NegBin1" = 0.5, "NegBin2" = 0),
+      breaks = c("Q-Poiss", "NegBin1"),
       guide = guide_legend(override.aes = list(alpha = 0.5))
     ) +
     scale_color_manual(
       name = "Model",
-      values = model_colors
+      values = model_colors,
+      breaks = c("Q-Poiss", "NegBin1")
     ) +
     scale_fill_manual(
       name = "Model",
-      values = model_colors
+      values = model_colors,
+      breaks = c("Q-Poiss", "NegBin1")
     ) +
     labs(
       title = "NegBin1 vs. Quasi-Poisson",
