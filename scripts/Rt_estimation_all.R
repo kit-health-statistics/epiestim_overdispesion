@@ -8,7 +8,7 @@ source("scripts/analyse_Rt.R")
 # Running the analysis on 3 datasets:
 # - flu among USA military personnel
 # - COVID-19 in Austria
-# - ebola in Guinea
+# - Ebola in Guinea
 
 # List for storing the parameters for the 3 datasets
 params <- replicate(3, list())
@@ -123,7 +123,7 @@ df_replace <- ebola_results$plt$p_nbin1_vs_nbin2$data |> filter(
   Date %in% dates_underdisp & Model == "Poiss"
 ) |> mutate(Model = "NegBin1")
 df_updated <- rows_update(
-  new_plot$plot$data, 
+  ebola_results$plt$p_nbin1_vs_nbin2$data, 
   df_replace, 
   by = c("Date", "Model")
 )
