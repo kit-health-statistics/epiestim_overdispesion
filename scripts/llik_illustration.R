@@ -189,8 +189,15 @@ df_R_hat <- data.frame(
   model = factor(
     c("Poisson", "NegBin2", "NegBin1"),
     levels = c("Poisson", "NegBin1", "NegBin2")
-  )
+  ),
+  vline = "R_ML"
 )
+df_R_1 <- df_R_hat |> mutate(
+  R_hat = 1,
+  vline = "R_1"
+)
+df_plot_vlines <- rbind(df_R_hat, df_R_1)
+
 df_llik <- rbind(
   df_pois_llik, df_nbin1_llik, df_nbin2_llik,
   df_pois_llik_total, df_nbin1_llik_total, df_nbin2_llik_total
@@ -237,14 +244,14 @@ p_loglik_individual_bw <- ggplot() +
     )
   ) +
   geom_vline(
-    data = df_R_hat, 
-    aes(xintercept = R_hat, linetype = "R_ML"),
+    data = df_plot_vlines, 
+    aes(xintercept = R_hat, linetype = vline),
     linewidth = 0.3
   ) +
   coord_cartesian(ylim = c(-15, 0)) +
   scale_linetype_manual(
-    values = "dashed", 
-    labels = expression(hat(R)[ML]),
+    values = c("R_ML" = "dotted", "R_1" = "dashed"),
+    labels = c("R_ML" = expression(hat(R)[ML]), "R_1" = "R = 1"),
     name = ""
   ) +
   scale_linewidth_manual(
@@ -261,7 +268,7 @@ p_loglik_individual_bw <- ggplot() +
     x = "R"
   ) +
   facet_wrap(~model, nrow = 3) +
-  theme(strip.background = element_blank())
+  theme(strip.background = element_blank(), legend.key.spacing.y = unit(0.3, "cm"))
 p_incidence_loglik_bw <- p_incidence_bw + p_loglik_individual_bw + 
   plot_layout(design = "A\nB\nB\nB\nB")
 
