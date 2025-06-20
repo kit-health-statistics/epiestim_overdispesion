@@ -77,25 +77,9 @@ analyse_Rt <- function(incidence, start_date, end_date, window_width, mean_si, s
   R_hat$nbin1 <- models_nbin1 %>%
     lapply(coefficients) %>%
     unlist()
-
-  # Extract the standard error
-  R_hat_sd <- list()
-  R_hat_sd$pois <- models_pois %>%
-    lapply(summary) %>%
-    lapply(function(x) x$coefficients[2]) %>%
-    unlist()
-  R_hat_sd$qpois <- models_qpois %>%
-    lapply(summary) %>%
-    lapply(function(x) x$coefficients[2]) %>%
-    unlist()
-  R_hat_sd$nbin2 <- models_nbin2 %>%
-    lapply(summary) %>%
-    lapply(function(x) x[3]) %>%
-    unlist()
-  R_hat_sd$nbin1 <- models_nbin1 %>%
-    lapply(summary) %>%
-    lapply(function(x) x[3]) %>%
-    unlist()
+  # NegBin2 model, estimates based on the approximate formulas
+  R_hat$nbin2_approx <- model_mats |> 
+    lapply(function (x) {sum(x$Cases / x$lambda) / window_width}) |> unlist()
 
   # Extract the dispersion parameter estimates
   disp <- list()
@@ -115,6 +99,36 @@ analyse_Rt <- function(incidence, start_date, end_date, window_width, mean_si, s
     }) %>%
     unlist() %>%
     unname()
+  # NegBin2 model, estimates based on the approximate formulas
+  disp$nbin2_approx <- vapply(
+    X = 1:length(t_starts),
+    FUN.VALUE = 0,
+    FUN = function (j) {
+      num <- (model_mats[[j]]$Cases - R_hat$nbin2_approx[j] * model_mats[[j]]$lambda)^2
+      denom <- (R_hat$nbin2_approx[j] * model_mats[[j]]$lambda)^2
+      sum(num / denom) / (window_width - 1)
+    }
+  )
+  
+  # Extract the standard error
+  R_hat_sd <- list()
+  R_hat_sd$pois <- models_pois %>%
+    lapply(summary) %>%
+    lapply(function(x) x$coefficients[2]) %>%
+    unlist()
+  R_hat_sd$qpois <- models_qpois %>%
+    lapply(summary) %>%
+    lapply(function(x) x$coefficients[2]) %>%
+    unlist()
+  R_hat_sd$nbin2 <- models_nbin2 %>%
+    lapply(summary) %>%
+    lapply(function(x) x[3]) %>%
+    unlist()
+  R_hat_sd$nbin1 <- models_nbin1 %>%
+    lapply(summary) %>%
+    lapply(function(x) x[3]) %>%
+    unlist()
+  R_hat_sd$nbin2_approx <- sqrt(R_hat$nbin2_approx^2 * disp$nbin2_approx / window_width)
 
   # Get the AIC values
   AIC_vals <- list()
@@ -311,12 +325,59 @@ analyse_Rt <- function(incidence, start_date, end_date, window_width, mean_si, s
     ) +
     theme_bw() +
     theme(plot.title = element_text(hjust = 0.5))
+  
+  # 6. NegBin2, "exact" vs. approximate estimates
+  df_nbin2_approx <- tibble(
+    Date = rep(incidence_subset$Date[t_ends], 2),
+    R = c(R_hat$nbin2, R_hat$nbin2_approx),
+    # Wald CI
+    lwr = c(
+      R_hat$nbin2 - qnorm(0.975) * R_hat_sd$nbin2,
+      R_hat$nbin2_approx - qnorm(0.975) * R_hat_sd$nbin2_approx
+    ),
+    upr = c(
+      R_hat$nbin2 + qnorm(0.975) * R_hat_sd$nbin2,
+      R_hat$nbin2_approx + qnorm(0.975) * R_hat_sd$nbin2_approx
+    ),
+    Model = factor(rep(
+      c("NegBin2", "NegBin2 approx."),
+      each = length(models_nbin2)
+    ))
+  )
+  p_nbin2_exact_vs_approx <- ggplot(
+    df_nbin2_approx,
+    aes(
+      x = Date, y = R, ymin = lwr, ymax = upr, color = Model, fill = Model
+    )
+  ) +
+    geom_line(linewidth = 0.4) +
+    geom_hline(yintercept = 1, linetype = "dashed") +
+    geom_ribbon(color = NA, alpha = 0.5) +
+    scale_color_manual(
+      name = "Model",
+      values = c(model_colors["NegBin2"], "NegBin2 approx." = "gray30")
+    ) +
+    scale_fill_manual(
+      name = "Model",
+      values = c(model_colors["NegBin2"], "NegBin2 approx." = "gray30")
+    ) +
+    labs(
+      title = "NegBin2 vs. NegBin2 approximation",
+      y = expression(hat(R))
+    ) +
+    coord_cartesian(
+      ylim = c(0, max(df_nbin2_approx$upr)), 
+      xlim = range(incidence_subset$Date)
+    ) +
+    theme_bw() +
+    theme(plot.title = element_text(hjust = 0.5))
 
   ret <- list(
     R_hat = R_hat, R_hat_sd = R_hat_sd, disp = disp, AIC = AIC_vals,
     plt = list(p_incidence = p_incidence, p_pois_vs_qpois = p_pois_vs_qpois, 
                p_nbin1_vs_nbin2 = p_nbin1_vs_nbin2, p_disp = p_disp,
-               p_nbin1_vs_qpois = p_nbin1_vs_qpois)
+               p_nbin1_vs_qpois = p_nbin1_vs_qpois,
+               p_nbin2_exact_vs_approx = p_nbin2_exact_vs_approx)
   )
   return(ret)
 }

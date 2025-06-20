@@ -215,7 +215,9 @@ composite_plot <- (
   plot_layout(widths = c(3, 3, 3, 1))
 ggsave("figure/composite_plot.pdf", composite_plot, width = 14, height = 11)
 
-# Supplementary plot NegBin1 vs. quasi-Poisson
+# Supplementary plots --------------------------------------------------
+
+# NegBin1 vs. quasi-Poisson
 p_nbin1_legend <- wrap_elements(ggpubr::get_legend(results$flu$plt$p_nbin1_vs_qpois))
 nbin1_plot_elements <- vector("list", 3)
 names(nbin1_plot_elements) <- names(params)
@@ -240,3 +242,29 @@ nbin1_plot <- (
 ) +
   plot_layout(widths = c(3, 3, 3, 1))
 ggsave("figure/nbin1_vs_qpis_plot.pdf", nbin1_plot, width = 14, height = 6.5)
+
+# NegBin2 "exact" vs. approximate
+p_nbin2_legend <- wrap_elements(ggpubr::get_legend(results$flu$plt$p_nbin2_exact_vs_approx))
+nbin2_plot_elements <- vector("list", 3)
+names(nbin2_plot_elements) <- names(params)
+for (disease in names(nbin2_plot_elements)) {
+  nbin2_plot_elements[[disease]] <- (
+    with(
+      results[[disease]]$plt,
+      p_incidence / p_nbin2_exact_vs_approx
+    ) +
+      plot_layout(heights = c(1, 1), guides = "collect") &
+      theme(legend.position = "none") & 
+      annotations[[disease]]
+  ) |>
+    wrap_elements()
+}
+
+nbin2_plot <- (
+  with(
+    nbin2_plot_elements, 
+    flu | covid | ebola | p_nbin2_legend
+  )
+) +
+  plot_layout(widths = c(3, 3, 3, 1))
+ggsave("figure/nbin2_approximation_plot.pdf", nbin2_plot, width = 14, height = 6.5)
