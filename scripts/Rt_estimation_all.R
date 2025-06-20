@@ -10,6 +10,9 @@ source("scripts/analyse_Rt.R")
 # - COVID-19 in Austria
 # - Ebola in Guinea
 
+# Set the locale to English
+Sys.setlocale("LC_ALL","English")
+
 # List for storing the parameters for the 3 datasets
 params <- replicate(3, list())
 names(params) <- c("flu", "covid", "ebola")
@@ -149,13 +152,6 @@ for (plt in plots_to_adjust_date) {
   results$ebola$plt[[plt]] <- results$ebola$plt[[plt]] +
     scale_x_date(date_breaks = "4 months", date_labels = "%b %Y")
 }
-results$flu$plt$p_gtd <- results$flu$plt$p_gtd +
-  scale_x_continuous(breaks = seq(0, 15, by = 3))
-results$covid$plt$p_gtd <- results$covid$plt$p_gtd +
-  scale_x_continuous(breaks = seq(0, 15, by = 3))
-results$ebola$plt$p_gtd <- results$ebola$plt$p_gtd +
-  labs(x = "Weeks") +
-  scale_x_continuous(breaks = seq(0, 8, by = 2))
   
 # Prepare the annotations
 annotations <- list()
@@ -201,9 +197,9 @@ for (disease in names(composite_plot_elements)) {
   composite_plot_elements[[disease]] <- (
     with(
       results[[disease]]$plt,
-      p_incidence / p_pois_vs_qpois / p_nbin1_vs_nbin2 / p_disp / p_gtd
+      p_incidence / p_pois_vs_qpois / p_nbin1_vs_nbin2 / p_disp
     ) +
-      plot_layout(heights = c(1, 1, 1, 1, 1), guides = "collect") &
+      plot_layout(heights = c(1, 1, 1, 1), guides = "collect") &
       theme(legend.position = "none") & 
       annotations[[disease]]
   ) |>
@@ -217,7 +213,7 @@ composite_plot <- (
   )
 ) +
   plot_layout(widths = c(3, 3, 3, 1))
-ggsave("figure/composite_plot.pdf", composite_plot, width = 14, height = 13)
+ggsave("figure/composite_plot.pdf", composite_plot, width = 14, height = 11)
 
 # Supplementary plot NegBin1 vs. quasi-Poisson
 p_nbin1_legend <- wrap_elements(ggpubr::get_legend(results$flu$plt$p_nbin1_vs_qpois))

@@ -273,23 +273,7 @@ analyse_Rt <- function(incidence, start_date, end_date, window_width, mean_si, s
     ) +
     guides(color = "none")
 
-  # 5. Generation Time Distribution (GTD)
-  gtd_data <- tibble(
-    x = seq(0, length(si_distr) - 1, by = 1),
-    y = si_distr
-  ) |> filter((x <= 30 & y > 0.004) | x == 0)
-
-  p_gtd <- ggplot(gtd_data, aes(x = x, y = y)) +
-    geom_histogram(stat = "identity", fill = "#f8e161b3", color = "black", binwidth = 0.1) +
-    labs(
-      title = "Generation Time Distribution",
-      x = "Days",
-      y = "Density"
-    ) +
-    theme_bw() +
-    theme(plot.title = element_text(hjust = 0.5))
-  
-  # 6. NegBin1 vs. QP (Extra plot, will probably go to the supplement)
+  # 5. NegBin1 vs. QP (Extra plot, will probably go to the supplement)
   p_nbin1_vs_qpois <- ggplot(
     df_R_hat,
     aes(
@@ -329,7 +313,7 @@ analyse_Rt <- function(incidence, start_date, end_date, window_width, mean_si, s
     R_hat = R_hat, R_hat_sd = R_hat_sd, disp = disp, AIC = AIC_vals,
     plt = list(p_incidence = p_incidence, p_pois_vs_qpois = p_pois_vs_qpois, 
                p_nbin1_vs_nbin2 = p_nbin1_vs_nbin2, p_disp = p_disp,
-               p_gtd = p_gtd, p_nbin1_vs_qpois = p_nbin1_vs_qpois)
+               p_nbin1_vs_qpois = p_nbin1_vs_qpois)
   )
   return(ret)
 }
