@@ -250,7 +250,7 @@ p_loglik_individual_bw <- ggplot() +
   ) +
   coord_cartesian(ylim = c(-15, 0)) +
   scale_linetype_manual(
-    values = c("R_ML" = "dotted", "R_1" = "dashed"),
+    values = c("R_ML" = "dashed", "R_1" = "dotted"),
     labels = c("R_ML" = expression(hat(R)[ML]), "R_1" = "R = 1"),
     name = ""
   ) +

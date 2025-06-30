@@ -197,7 +197,7 @@ analyse_Rt <- function(incidence, start_date, end_date, window_width, mean_si, s
     )
   ) +
     geom_line(linewidth = 0.4) +
-    geom_hline(yintercept = 1, linetype = "dashed") +
+    geom_hline(yintercept = 1, linetype = "dotted") +
     geom_ribbon(color = NA) +
     scale_alpha_manual(
       values = c("Poiss" = 0.5, "Q-Poiss" = 0.5, "NegBin-L" = 0.0, "NegBin-Q" = 0),
@@ -231,7 +231,7 @@ analyse_Rt <- function(incidence, start_date, end_date, window_width, mean_si, s
     )
   ) +
     geom_line(linewidth = 0.4) +
-    geom_hline(yintercept = 1, linetype = "dashed") +
+    geom_hline(yintercept = 1, linetype = "dotted") +
     geom_ribbon(color = NA) +
     scale_alpha_manual(
       values = c("Poiss" = 0, "Q-Poiss" = 0, "NegBin-L" = 0.5, "NegBin-Q" = 0.5),
@@ -298,7 +298,7 @@ analyse_Rt <- function(incidence, start_date, end_date, window_width, mean_si, s
     )
   ) +
     geom_line(linewidth = 0.4) +
-    geom_hline(yintercept = 1, linetype = "dashed") +
+    geom_hline(yintercept = 1, linetype = "dotted") +
     geom_ribbon(color = NA) +
     scale_alpha_manual(
       values = c("Poiss" = 0, "Q-Poiss" = 0.5, "NegBin-L" = 0.5, "NegBin-Q" = 0),
@@ -351,7 +351,7 @@ analyse_Rt <- function(incidence, start_date, end_date, window_width, mean_si, s
     )
   ) +
     geom_line(linewidth = 0.4) +
-    geom_hline(yintercept = 1, linetype = "dashed") +
+    geom_hline(yintercept = 1, linetype = "dotted") +
     geom_ribbon(color = NA, alpha = 0.5) +
     scale_color_manual(
       name = "Model",
