@@ -58,15 +58,15 @@ mod_pois <- glm(
   Cases ~ lambda - 1, 
   family = poisson(link = "identity")
 )
-# NegBin2 model
-mod_nbin2 <- gamlss(
+# NegBin-Q model
+mod_nbin_Q <- gamlss(
   data = model_mat,
   formula = Cases ~ lambda - 1,
   family = NBI(mu.link = "identity", sigma.link = "log"), 
   trace = FALSE
 )
-# NegBin1 model
-mod_nbin1 <- gamlss(
+# NegBin-L model
+mod_nbin_L <- gamlss(
   data = model_mat,
   formula = Cases ~ lambda - 1,
   family = NBII(mu.link = "identity", sigma.link = "log"), 
@@ -78,19 +78,19 @@ mod_nbin1 <- gamlss(
 # Extract the coefficients
 R_hat <- list(
   pois = mod_pois$coefficients,
-  nbin2 = mod_nbin2$mu.coefficients,
-  nbin1 = mod_nbin1$mu.coefficients
+  nbin_Q = mod_nbin_Q$mu.coefficients,
+  nbin_L = mod_nbin_L$mu.coefficients
 )
 # Extract the dispersion parameters
 disp_pars <- list(
-  nbin2 = exp(mod_nbin2$sigma.coefficients[1]),
-  nbin1 = exp(mod_nbin1$sigma.coefficients[1])
+  nbin_Q = exp(mod_nbin_Q$sigma.coefficients[1]),
+  nbin_L = exp(mod_nbin_L$sigma.coefficients[1])
 )
 # Extract the value of the loglikelihood from the AIC values
 ML <- list(
   pois = (2 - mod_pois$aic) / 2,
-  nbin2 = (4 - mod_nbin2$aic) / 2,
-  nbin1 = (4 - mod_nbin1$aic) / 2
+  nbin_Q = (4 - mod_nbin_Q$aic) / 2,
+  nbin_L = (4 - mod_nbin_L$aic) / 2
 )
 
 # Prepare data frames for plotting =============================================
@@ -126,18 +126,18 @@ df_pois_llik_total <- df_pois_llik %>% group_by(R) %>%
     Day = "Total",
     model = "Poisson"
   )
-# NegBin2
-df_nbin2_llik <- tibble(
+# NegBin-Q
+df_nbin_Q_llik <- tibble(
   R = rep(R_seq, times = window_width),
   llik = dnbinom(
     obs_long_vec, 
     mu = means, 
-    size = 1 / disp_pars$nbin2,  # Same for all curves
+    size = 1 / disp_pars$nbin_Q,  # Same for all curves
     log = TRUE
   ),
   Day = factor(rep(1:window_width, each = R_seq_lgt)),
   log_likelihood_of = "Individual obs.",
-  model = "NegBin2"
+  model = "NegBin-Q"
 ) %>% group_by(Day) %>% 
   mutate(
     # Find the maximum value of the log-likelihood for each curve to shift its
@@ -145,27 +145,27 @@ df_nbin2_llik <- tibble(
     max_llik = max(llik),
     rel_llik = llik - max_llik
   ) %>% ungroup()
-df_nbin2_llik_total <- df_nbin2_llik %>% group_by(R) %>% 
+df_nbin_Q_llik_total <- df_nbin_Q_llik %>% group_by(R) %>% 
   summarise(
     llik = sum(llik),
-    max_llik = ML$nbin2,
+    max_llik = ML$nbin_Q,
     rel_llik = llik - max_llik,
     log_likelihood_of = "Total",
     Day = "Total",
-    model = "NegBin2"
+    model = "NegBin-Q"
   )
-# NegBin1
-df_nbin1_llik <- tibble(
+# NegBin-L
+df_nbin_L_llik <- tibble(
   R = rep(R_seq, times = window_width),
   llik = dnbinom(
     obs_long_vec, 
     mu = means, 
-    size = means / disp_pars$nbin1,  # Dispersion parameter same for all curves
+    size = means / disp_pars$nbin_L,  # Dispersion parameter same for all curves
     log = TRUE
   ),
   Day = factor(rep(1:window_width, each = R_seq_lgt)),
   log_likelihood_of = "Individual obs.",
-  model = "NegBin1"
+  model = "NegBin-L"
 ) %>% group_by(Day) %>% 
   mutate(
     # Find the maximum value of the log-likelihood for each curve to shift its
@@ -173,22 +173,22 @@ df_nbin1_llik <- tibble(
     max_llik = max(llik),
     rel_llik = llik - max_llik
   ) %>% ungroup()
-df_nbin1_llik_total <- df_nbin1_llik %>% group_by(R) %>% 
+df_nbin_L_llik_total <- df_nbin_L_llik %>% group_by(R) %>% 
   summarise(
     llik = sum(llik),
-    max_llik = ML$nbin1,
+    max_llik = ML$nbin_L,
     rel_llik = llik - max_llik,
     log_likelihood_of = "Total",
     Day = "Total",
-    model = "NegBin1"
+    model = "NegBin-L"
   )
 
 # Prepare the data frame with the point estimates
 df_R_hat <- data.frame(
   R_hat = unlist(R_hat),
   model = factor(
-    c("Poisson", "NegBin2", "NegBin1"),
-    levels = c("Poisson", "NegBin1", "NegBin2")
+    c("Poisson", "NegBin-Q", "NegBin-L"),
+    levels = c("Poisson", "NegBin-L", "NegBin-Q")
   ),
   vline = "R_ML"
 )
@@ -199,10 +199,10 @@ df_R_1 <- df_R_hat |> mutate(
 df_plot_vlines <- rbind(df_R_hat, df_R_1)
 
 df_llik <- rbind(
-  df_pois_llik, df_nbin1_llik, df_nbin2_llik,
-  df_pois_llik_total, df_nbin1_llik_total, df_nbin2_llik_total
+  df_pois_llik, df_nbin_L_llik, df_nbin_Q_llik,
+  df_pois_llik_total, df_nbin_L_llik_total, df_nbin_Q_llik_total
 ) %>% 
-  mutate(model = factor(model, levels = c("Poisson", "NegBin1", "NegBin2")))
+  mutate(model = factor(model, levels = c("Poisson", "NegBin-L", "NegBin-Q")))
 
 # Generate the black-and-white illustrative plot ===============================
 

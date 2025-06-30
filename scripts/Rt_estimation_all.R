@@ -107,38 +107,38 @@ for (disease in names(results)) {
 
 # Plot the results --------------------------------------------------
 
-# For Ebola, we have trouble fitting the NegBin1 model for 
+# For Ebola, we have trouble fitting the NegBin-L model for 
 # 19. and 26. April 2015. In these 2 estimation windows, the counts are 
 # underdispersed. This can be seen also in the Poisson vs. quasi-poisson plot,
 # where the dispersion parameter is estimated as < 1 and the resulting 
 # confidence intervals are actually higher for Poisson.
-# As a result, NegBin1 is trying to estimate its dispersion parameter as very 
+# As a result, NegBin-L is trying to estimate its dispersion parameter as very 
 # low and runs into the problem of numerical instabilities. For this reason we 
-# replace these 2 NegBin1 estimates by the Poisson estimates.
+# replace these 2 NegBin-L estimates by the Poisson estimates.
 # The changes are carried out in the plot only! If we want to report other 
 # quantities, we would have to change them too.
 dates_underdisp <- as.Date(c("2015-04-26", "2015-04-19"))
-df_replace <- results$ebola$plt$p_nbin1_vs_nbin2$data |> filter(
+df_replace <- results$ebola$plt$p_nbin_L_vs_nbin_Q$data |> filter(
   Date %in% dates_underdisp & Model == "Poiss"
-) |> mutate(Model = "NegBin1")
+) |> mutate(Model = "NegBin-L")
 df_updated <- rows_update(
-  results$ebola$plt$p_nbin1_vs_nbin2$data, 
+  results$ebola$plt$p_nbin_L_vs_nbin_Q$data, 
   df_replace, 
   by = c("Date", "Model")
 )
-results$ebola$plt$p_nbin1_vs_nbin2 <- results$ebola$plt$p_nbin1_vs_nbin2 %+% df_updated
-df_replace <- results$ebola$plt$p_nbin1_vs_qpois$data |> filter(
+results$ebola$plt$p_nbin_L_vs_nbin_Q <- results$ebola$plt$p_nbin_L_vs_nbin_Q %+% df_updated
+df_replace <- results$ebola$plt$p_nbin_L_vs_qpois$data |> filter(
   Date %in% dates_underdisp & Model == "Poiss"
-) |> mutate(Model = "NegBin1")
+) |> mutate(Model = "NegBin-L")
 df_updated <- rows_update(
-  results$ebola$plt$p_nbin1_vs_qpois$data, 
+  results$ebola$plt$p_nbin_L_vs_qpois$data, 
   df_replace, 
   by = c("Date", "Model")
 )
-results$ebola$plt$p_nbin1_vs_qpois <- results$ebola$plt$p_nbin1_vs_qpois %+% df_updated
+results$ebola$plt$p_nbin_L_vs_qpois <- results$ebola$plt$p_nbin_L_vs_qpois %+% df_updated
 
 # Adjust individual plots
-plots_to_adjust_date <- c("p_incidence", "p_nbin1_vs_nbin2", "p_pois_vs_qpois",
+plots_to_adjust_date <- c("p_incidence", "p_nbin_L_vs_nbin_Q", "p_pois_vs_qpois",
                           "p_disp")
 for (plt in plots_to_adjust_date) {
   results$flu$plt[[plt]] <- results$flu$plt[[plt]] +
@@ -190,14 +190,14 @@ annotations$ebola <- plot_annotation(
 )
 
 # Compose the plots
-p_legend <- wrap_elements(ggpubr::get_legend(results$flu$plt$p_nbin1_vs_nbin2))
+p_legend <- wrap_elements(ggpubr::get_legend(results$flu$plt$p_nbin_L_vs_nbin_Q))
 composite_plot_elements <- vector("list", 3)
 names(composite_plot_elements) <- names(params)
 for (disease in names(composite_plot_elements)) {
   composite_plot_elements[[disease]] <- (
     with(
       results[[disease]]$plt,
-      p_incidence / p_pois_vs_qpois / p_nbin1_vs_nbin2
+      p_incidence / p_pois_vs_qpois / p_nbin_L_vs_nbin_Q
     ) +
       plot_layout(heights = c(1, 1, 1), guides = "collect") &
       theme(legend.position = "none") & 
@@ -217,15 +217,15 @@ ggsave("figure/composite_plot.pdf", composite_plot, width = 14, height = 11)
 
 # Supplementary plots --------------------------------------------------
 
-# NegBin1 vs. quasi-Poisson
-p_nbin1_legend <- wrap_elements(ggpubr::get_legend(results$flu$plt$p_nbin1_vs_qpois))
-nbin1_plot_elements <- vector("list", 3)
-names(nbin1_plot_elements) <- names(params)
-for (disease in names(nbin1_plot_elements)) {
-  nbin1_plot_elements[[disease]] <- (
+# NegBin-L vs. quasi-Poisson
+p_nbin_L_legend <- wrap_elements(ggpubr::get_legend(results$flu$plt$p_nbin_L_vs_qpois))
+nbin_L_plot_elements <- vector("list", 3)
+names(nbin_L_plot_elements) <- names(params)
+for (disease in names(nbin_L_plot_elements)) {
+  nbin_L_plot_elements[[disease]] <- (
     with(
       results[[disease]]$plt,
-      p_incidence / p_nbin1_vs_qpois
+      p_incidence / p_nbin_L_vs_qpois
     ) +
       plot_layout(heights = c(1, 1), guides = "collect") &
       theme(legend.position = "none") & 
@@ -234,24 +234,24 @@ for (disease in names(nbin1_plot_elements)) {
     wrap_elements()
 }
 
-nbin1_plot <- (
+nbin_L_plot <- (
   with(
-    nbin1_plot_elements, 
-    flu | covid | ebola | p_nbin1_legend
+    nbin_L_plot_elements, 
+    flu | covid | ebola | p_nbin_L_legend
   )
 ) +
   plot_layout(widths = c(3, 3, 3, 1))
-ggsave("figure/nbin1_vs_qpis_plot.pdf", nbin1_plot, width = 14, height = 6.5)
+ggsave("figure/nbin_L_vs_qpis_plot.pdf", nbin_L_plot, width = 14, height = 6.5)
 
-# NegBin2 "exact" vs. approximate
-p_nbin2_legend <- wrap_elements(ggpubr::get_legend(results$flu$plt$p_nbin2_exact_vs_approx))
-nbin2_plot_elements <- vector("list", 3)
-names(nbin2_plot_elements) <- names(params)
-for (disease in names(nbin2_plot_elements)) {
-  nbin2_plot_elements[[disease]] <- (
+# NegBin-Q "exact" vs. approximate
+p_nbin_Q_legend <- wrap_elements(ggpubr::get_legend(results$flu$plt$p_nbin_Q_exact_vs_approx))
+nbin_Q_plot_elements <- vector("list", 3)
+names(nbin_Q_plot_elements) <- names(params)
+for (disease in names(nbin_Q_plot_elements)) {
+  nbin_Q_plot_elements[[disease]] <- (
     with(
       results[[disease]]$plt,
-      p_incidence / p_nbin2_exact_vs_approx
+      p_incidence / p_nbin_Q_exact_vs_approx
     ) +
       plot_layout(heights = c(1, 1), guides = "collect") &
       theme(legend.position = "none") & 
@@ -260,11 +260,11 @@ for (disease in names(nbin2_plot_elements)) {
     wrap_elements()
 }
 
-nbin2_plot <- (
+nbin_Q_plot <- (
   with(
-    nbin2_plot_elements, 
-    flu | covid | ebola | p_nbin2_legend
+    nbin_Q_plot_elements, 
+    flu | covid | ebola | p_nbin_Q_legend
   )
 ) +
   plot_layout(widths = c(3, 3, 3, 1))
-ggsave("figure/nbin2_approximation_plot.pdf", nbin2_plot, width = 14, height = 6.5)
+ggsave("figure/nbin_Q_approximation_plot.pdf", nbin_Q_plot, width = 14, height = 6.5)
