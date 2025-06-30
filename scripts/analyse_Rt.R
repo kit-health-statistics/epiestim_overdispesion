@@ -216,7 +216,7 @@ analyse_Rt <- function(incidence, start_date, end_date, window_width, mean_si, s
       y = expression(hat(R))
     ) +
     coord_cartesian(
-      ylim = c(0, max(df_R_hat$upr)), 
+      ylim = c(0, 3), 
       xlim = range(incidence_subset$Date)
     ) +
     theme_bw() +
@@ -250,7 +250,7 @@ analyse_Rt <- function(incidence, start_date, end_date, window_width, mean_si, s
       y = expression(hat(R))
     ) +
     coord_cartesian(
-      ylim = c(0, max(df_R_hat$upr)), 
+      ylim = c(0, 3), 
       xlim = range(incidence_subset$Date)
     ) +
     theme_bw() +
@@ -320,7 +320,7 @@ analyse_Rt <- function(incidence, start_date, end_date, window_width, mean_si, s
       y = expression(hat(R))
     ) +
     coord_cartesian(
-      ylim = c(0, max(df_R_hat$upr)), 
+      ylim = c(0, 3), 
       xlim = range(incidence_subset$Date)
     ) +
     theme_bw() +
@@ -366,7 +366,7 @@ analyse_Rt <- function(incidence, start_date, end_date, window_width, mean_si, s
       y = expression(hat(R))
     ) +
     coord_cartesian(
-      ylim = c(0, max(df_nbin2_approx$upr)), 
+      ylim = c(0, 3), 
       xlim = range(incidence_subset$Date)
     ) +
     theme_bw() +

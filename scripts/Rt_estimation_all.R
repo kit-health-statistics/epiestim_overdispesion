@@ -197,9 +197,9 @@ for (disease in names(composite_plot_elements)) {
   composite_plot_elements[[disease]] <- (
     with(
       results[[disease]]$plt,
-      p_incidence / p_pois_vs_qpois / p_nbin1_vs_nbin2 / p_disp
+      p_incidence / p_pois_vs_qpois / p_nbin1_vs_nbin2
     ) +
-      plot_layout(heights = c(1, 1, 1, 1), guides = "collect") &
+      plot_layout(heights = c(1, 1, 1), guides = "collect") &
       theme(legend.position = "none") & 
       annotations[[disease]]
   ) |>
