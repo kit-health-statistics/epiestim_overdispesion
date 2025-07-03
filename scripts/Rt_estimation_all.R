@@ -217,6 +217,32 @@ ggsave("figure/composite_plot.pdf", composite_plot, width = 14, height = 11)
 
 # Supplementary plots --------------------------------------------------
 
+# Overdispersion parameter estimates over time
+p_disp_legend <- wrap_elements(ggpubr::get_legend(results$flu$plt$p_disp))
+disp_plot_elements <- vector("list", 3)
+names(disp_plot_elements) <- names(params)
+for (disease in names(disp_plot_elements)) {
+  disp_plot_elements[[disease]] <- (
+    with(
+      results[[disease]]$plt,
+      p_incidence / p_disp
+    ) +
+      plot_layout(heights = c(1, 1), guides = "collect") &
+      theme(legend.position = "none") & 
+      annotations[[disease]]
+  ) |>
+    wrap_elements()
+}
+
+disp_plot <- (
+  with(
+    disp_plot_elements, 
+    flu | covid | ebola | p_disp_legend
+  )
+) +
+  plot_layout(widths = c(3, 3, 3, 1))
+ggsave("figure/overdispersion_parameters.pdf", disp_plot, width = 14, height = 6.5)
+
 # NegBin-L vs. quasi-Poisson
 p_nbin_L_legend <- wrap_elements(ggpubr::get_legend(results$flu$plt$p_nbin_L_vs_qpois))
 nbin_L_plot_elements <- vector("list", 3)

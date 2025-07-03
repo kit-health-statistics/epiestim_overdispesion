@@ -286,8 +286,7 @@ analyse_Rt <- function(incidence, start_date, end_date, window_width, mean_si, s
     theme_bw() +
     theme(
       plot.title = element_text(hjust = 0.5)
-    ) +
-    guides(color = "none")
+    )
 
   # 5. NegBin-L vs. QP (Extra plot, will probably go to the supplement)
   p_nbin_L_vs_qpois <- ggplot(
