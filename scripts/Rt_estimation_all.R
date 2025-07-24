@@ -139,7 +139,7 @@ results$ebola$plt$p_nbin_L_vs_qpois <- results$ebola$plt$p_nbin_L_vs_qpois %+% d
 
 # Adjust individual plots
 plots_to_adjust_date <- c("p_incidence", "p_nbin_L_vs_nbin_Q", "p_pois_vs_qpois",
-                          "p_disp")
+                          "p_disp", "p_nbin_L_vs_qpois", "p_nbin_Q_exact_vs_approx")
 for (plt in plots_to_adjust_date) {
   results$flu$plt[[plt]] <- results$flu$plt[[plt]] +
     scale_x_date(date_breaks = "2 weeks", date_labels = "%b %d")
@@ -150,7 +150,7 @@ for (plt in plots_to_adjust_date) {
 }
 for (plt in plots_to_adjust_date) {
   results$ebola$plt[[plt]] <- results$ebola$plt[[plt]] +
-    scale_x_date(date_breaks = "4 months", date_labels = "%b %Y")
+    scale_x_date(date_breaks = "6 months", date_labels = "%b %Y")
 }
   
 # Prepare the annotations
@@ -162,7 +162,8 @@ annotations$flu <- plot_annotation(
       size = 16,
       hjust = 0.5,
       face = "bold",
-      lineheight = 0.9
+      lineheight = 0.9,
+      margin = margin(l = 60)  # Hardcoded value for centering the plot title
     )
   )
 )
@@ -173,18 +174,20 @@ annotations$covid <- plot_annotation(
       size = 16,
       hjust = 0.5,
       face = "bold",
-      lineheight = 0.9
+      lineheight = 0.9,
+      margin = margin(l = 65)  # Hardcoded value for centering the plot title
     )
   )
 )
 annotations$ebola <- plot_annotation(
-  title = "Ebola,\nGuinea,\n2014-2015",
+  title = "Ebola,\nGuinea\n2014-2015",
   theme = theme(
     plot.title = element_text(
       size = 16,
       hjust = 0.5,
       face = "bold",
-      lineheight = 0.9
+      lineheight = 0.9,
+      margin = margin(l = 51)  # Hardcoded value for centering the plot title
     )
   )
 )
@@ -216,32 +219,6 @@ composite_plot <- (
 ggsave("figure/composite_plot.pdf", composite_plot, width = 14, height = 11)
 
 # Supplementary plots --------------------------------------------------
-
-# Overdispersion parameter estimates over time
-p_disp_legend <- wrap_elements(ggpubr::get_legend(results$flu$plt$p_disp))
-disp_plot_elements <- vector("list", 3)
-names(disp_plot_elements) <- names(params)
-for (disease in names(disp_plot_elements)) {
-  disp_plot_elements[[disease]] <- (
-    with(
-      results[[disease]]$plt,
-      p_incidence / p_disp
-    ) +
-      plot_layout(heights = c(1, 1), guides = "collect") &
-      theme(legend.position = "none") & 
-      annotations[[disease]]
-  ) |>
-    wrap_elements()
-}
-
-disp_plot <- (
-  with(
-    disp_plot_elements, 
-    flu | covid | ebola | p_disp_legend
-  )
-) +
-  plot_layout(widths = c(3, 3, 3, 1))
-ggsave("figure/overdispersion_parameters.pdf", disp_plot, width = 14, height = 6.5)
 
 # NegBin-L vs. quasi-Poisson
 p_nbin_L_legend <- wrap_elements(ggpubr::get_legend(results$flu$plt$p_nbin_L_vs_qpois))
@@ -294,3 +271,37 @@ nbin_Q_plot <- (
 ) +
   plot_layout(widths = c(3, 3, 3, 1))
 ggsave("figure/nbin_Q_approximation_plot.pdf", nbin_Q_plot, width = 14, height = 6.5)
+
+# Overdispersion parameter estimates over time
+p_disp_legend <- wrap_elements(ggpubr::get_legend(results$flu$plt$p_disp))
+disp_plot_elements <- vector("list", 3)
+names(disp_plot_elements) <- names(params)
+for (disease in names(disp_plot_elements)) {
+  # Change the hardcoded margin back to another value to center the plot title. 
+  # It is necessary here, because we have the second y-axis
+  annotations[[disease]]$theme$plot.title$margin <- switch(
+    disease, 
+    flu = margin(l = 9),
+    covid = margin(l = 16),
+    ebola = margin(l = 3)
+  )
+  disp_plot_elements[[disease]] <- (
+    with(
+      results[[disease]]$plt,
+      p_incidence / p_disp
+    ) +
+      plot_layout(heights = c(1, 1), guides = "collect") &
+      theme(legend.position = "none") & 
+      annotations[[disease]]
+  ) |>
+    wrap_elements()
+}
+
+disp_plot <- (
+  with(
+    disp_plot_elements, 
+    flu | covid | ebola | p_disp_legend
+  )
+) +
+  plot_layout(widths = c(3, 3, 3, 1))
+ggsave("figure/overdispersion_parameters.pdf", disp_plot, width = 14, height = 6.5)

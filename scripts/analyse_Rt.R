@@ -1,4 +1,15 @@
 analyse_Rt <- function(incidence, start_date, end_date, window_width, mean_si, std_si) {
+  
+  # Set the ggplot theme
+  plot_theme <- theme_bw() +
+    theme(
+      plot.title = element_text(hjust = 0.5, size = 18),
+      axis.title = element_text(size = 15),
+      axis.text = element_text(size = 13),
+      legend.text = element_text(size = 14),
+      legend.title = element_text(size = 15)
+    )
+  
   incidence_subset <- incidence |> filter(Date >= start_date & Date <= end_date)
   n_obs <- nrow(incidence_subset) # How many observations
 
@@ -178,14 +189,11 @@ analyse_Rt <- function(incidence, start_date, end_date, window_width, mean_si, s
     incidence_subset,
     aes(x = Date, y = Cases)
   ) +
-    geom_line(key_glyph = "timeseries", linewidth = 0.3) +
+    geom_line(key_glyph = "timeseries", linewidth = 0.8) +
     scale_color_manual(values = "black", name = "") +
     labs(title = "Incidence") +
-    theme_bw() +
-    theme(
-      plot.title = element_text(hjust = 0.5),
-      legend.position = "none"
-    ) +
+    plot_theme +
+    theme(legend.position = "none") +
     coord_cartesian(ylim = c(0, max(incidence_subset$Cases)))
 
   # 2. Poisson vs. QP
@@ -196,7 +204,7 @@ analyse_Rt <- function(incidence, start_date, end_date, window_width, mean_si, s
       alpha = Model
     )
   ) +
-    geom_line(linewidth = 0.4) +
+    geom_line(linewidth = 0.8) +
     geom_hline(yintercept = 1, linetype = "dotted") +
     geom_ribbon(color = NA) +
     scale_alpha_manual(
@@ -219,8 +227,7 @@ analyse_Rt <- function(incidence, start_date, end_date, window_width, mean_si, s
       ylim = c(0, 3), 
       xlim = range(incidence_subset$Date)
     ) +
-    theme_bw() +
-    theme(plot.title = element_text(hjust = 0.5))
+    plot_theme
 
   # 3. NegBin-L vs. NegBin-Q
   p_nbin_L_vs_nbin_Q <- ggplot(
@@ -230,7 +237,7 @@ analyse_Rt <- function(incidence, start_date, end_date, window_width, mean_si, s
       alpha = Model
     )
   ) +
-    geom_line(linewidth = 0.4) +
+    geom_line(linewidth = 0.8) +
     geom_hline(yintercept = 1, linetype = "dotted") +
     geom_ribbon(color = NA) +
     scale_alpha_manual(
@@ -253,8 +260,7 @@ analyse_Rt <- function(incidence, start_date, end_date, window_width, mean_si, s
       ylim = c(0, 3), 
       xlim = range(incidence_subset$Date)
     ) +
-    theme_bw() +
-    theme(plot.title = element_text(hjust = 0.5))
+    plot_theme
 
   # 4. Overdisp Params. NegBin-Q plotted on using a second plot axis
   sec_axis_scale <- median(disp$nbin_Q / disp$nbin_L)
@@ -269,7 +275,7 @@ analyse_Rt <- function(incidence, start_date, end_date, window_width, mean_si, s
     df_disp,
     aes(x = Date, y = Dispersion, color = Model, group = Model)
   ) +
-    geom_line(linewidth = 0.4) +
+    geom_line(linewidth = 0.8) +
     scale_y_continuous(sec.axis = sec_axis(~ . * sec_axis_scale, name = "NegBin-Q")) +
     scale_color_manual(
       name = "Model",
@@ -283,10 +289,7 @@ analyse_Rt <- function(incidence, start_date, end_date, window_width, mean_si, s
       ylim = c(0, max(df_disp$Dispersion)), 
       xlim = range(incidence_subset$Date)
     ) +
-    theme_bw() +
-    theme(
-      plot.title = element_text(hjust = 0.5)
-    )
+    plot_theme
 
   # 5. NegBin-L vs. QP (Extra plot, will probably go to the supplement)
   p_nbin_L_vs_qpois <- ggplot(
@@ -296,7 +299,7 @@ analyse_Rt <- function(incidence, start_date, end_date, window_width, mean_si, s
       alpha = Model
     )
   ) +
-    geom_line(linewidth = 0.4) +
+    geom_line(linewidth = 0.8) +
     geom_hline(yintercept = 1, linetype = "dotted") +
     geom_ribbon(color = NA) +
     scale_alpha_manual(
@@ -322,8 +325,7 @@ analyse_Rt <- function(incidence, start_date, end_date, window_width, mean_si, s
       ylim = c(0, 3), 
       xlim = range(incidence_subset$Date)
     ) +
-    theme_bw() +
-    theme(plot.title = element_text(hjust = 0.5))
+    plot_theme
   
   # 6. NegBin-Q, "exact" vs. approximate estimates
   df_nbin_Q_approx <- tibble(
@@ -349,27 +351,28 @@ analyse_Rt <- function(incidence, start_date, end_date, window_width, mean_si, s
       x = Date, y = R, ymin = lwr, ymax = upr, color = Model, fill = Model
     )
   ) +
-    geom_line(linewidth = 0.4) +
+    geom_line(linewidth = 0.8) +
     geom_hline(yintercept = 1, linetype = "dotted") +
     geom_ribbon(color = NA, alpha = 0.5) +
     scale_color_manual(
       name = "Model",
-      values = c(model_colors["NegBin-Q"], "NegBin-Q approx." = "gray30")
+      values = c(model_colors["NegBin-Q"], "NegBin-Q approx." = "gray30"),
+      labels = c("NegBin-Q" = "NegBin-Q\n", "NegBin-Q approx." = "NegBin-Q\napprox.")
     ) +
     scale_fill_manual(
       name = "Model",
-      values = c(model_colors["NegBin-Q"], "NegBin-Q approx." = "gray30")
+      values = c(model_colors["NegBin-Q"], "NegBin-Q approx." = "gray30"),
+      labels = c("NegBin-Q" = "NegBin-Q\n", "NegBin-Q approx." = "NegBin-Q\napprox.")
     ) +
     labs(
-      title = "NegBin-Q vs. NegBin-Q approximation",
+      title = "NegBin-Q vs. its approximation",
       y = expression(hat(R))
     ) +
     coord_cartesian(
       ylim = c(0, 3), 
       xlim = range(incidence_subset$Date)
     ) +
-    theme_bw() +
-    theme(plot.title = element_text(hjust = 0.5))
+    plot_theme
 
   ret <- list(
     R_hat = R_hat, R_hat_sd = R_hat_sd, disp = disp, AIC = AIC_vals,
