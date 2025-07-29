@@ -19,5 +19,5 @@ File [`analyse_Rt.R`](https://github.com/barbora-sobolova/epiestim_overdispesion
 
 File [`llik_illustration`](https://github.com/barbora-sobolova/epiestim_overdispesion/blob/main/scripts/llik_illustration.R) uses one selected estimation window of the Influenza data to illustrate log-likelihood contributions under different count data models. It produces the [`Incidence_and_llik_bw_identity.pdf`](https://github.com/barbora-sobolova/epiestim_overdispesion/blob/main/figure/Incidence_and_llik_bw_identity.pdf) figure.
 
-Folder [`archived_scripts`](https://github.com/barbora-sobolova/epiestim_overdispesion/tree/main/scripts), [`archived_figures`](https://github.com/barbora-sobolova/epiestim_overdispesion/tree/main/figure/archived_figures) and [`archived_data`](https://github.com/barbora-sobolova/epiestim_overdispesion/tree/main/data/archived_data) contains old files from the initial phase of the project.
+Folder [`archived_scripts`](https://github.com/barbora-sobolova/epiestim_overdispesion/tree/main/archived_scripts) and [`archived_data`](https://github.com/barbora-sobolova/epiestim_overdispesion/tree/main/data/archived_data) contains old files from the initial phase of the project.
 
