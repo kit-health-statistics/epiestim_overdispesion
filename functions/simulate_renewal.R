@@ -13,7 +13,7 @@ generate_from_obs_mod <- function(
   model <- match.arg(model)
   switch(
     model,
-    Poiss = rpois(1, R * mu),
+    Poiss = rpois(1, mu),
     `NegBin-L` = rnbinom(1, mu = mu, size = nb_size * mu),
     `NegBin-Q` = rnbinom(1, mu = mu, size = nb_size)
   )
