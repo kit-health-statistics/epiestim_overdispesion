@@ -24,7 +24,6 @@ jobs:
             any::gh
             any::lintr
             any::purrr
-          needs: check
 
       - name: Add lintr options
         run: |
