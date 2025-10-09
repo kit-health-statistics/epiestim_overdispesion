@@ -65,7 +65,7 @@ bind_ests_to_df <- function(results) {
 remove_divergent <- function(df_R_hat) {
   df_R_hat |> mutate(
     R = ifelse(converged, R, NA),
-    se = ifelse(converged, se, NA),
+    se = ifelse(converged, se, NA)
   )
 }
 
