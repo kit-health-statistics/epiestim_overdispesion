@@ -124,6 +124,8 @@ list(
 
   # Save plots
   tar_target(saved_figures, {
+    # Ensure directory exists
+    dir.create("figure", showWarnings = FALSE, recursive = TRUE)
     ggsave(
       "figure/R_hat_histogram_test.pdf",
       p_hists$R_hat,
