@@ -24,7 +24,7 @@ generate_from_obs_mod <- function(
 #' @description This function simulates an incidence trajectory based on the
 #' renewal equation:
 #'
-#' \deqn{\mu_t = R\times \Lambda_t, \quad \Lambda = \sum_{d = 1}^{D} \omega_d X_{t - d}}  # nolint
+#' \deqn{\mu_t = R\times \Lambda_t, \quad \Lambda_t = \sum_{d = 1}^{D} \omega_d X_{t - d}}  # nolint
 #'
 #' $X_t$ has mean value $\mu_t$ and follows, Poisson, NegBin-L, or NegBin-Q
 #' distribution.
