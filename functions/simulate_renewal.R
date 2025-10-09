@@ -49,7 +49,7 @@ simulate_renewal <- function(
   R,
   si,
   lgt,
-  model = c("Poiss", "Q-Poiss", "NegBin-Q", "NegBin-L"),
+  model = c("Poiss", "NegBin-Q", "NegBin-L"),
   nb_size = NULL
 ) {
   model <- match.arg(model)
