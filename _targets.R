@@ -6,6 +6,7 @@ library(qs2)
 tar_option_set(
   packages = c(
     "ggplot2",
+    "patchwork",
     "purrr",
     "here",
     "dplyr",
@@ -42,8 +43,9 @@ list(
       nb_size = 0.3,
       var_infl_factor_true = 1 + 1 / 0.3,
       R_eff = 1.1,
-      window = 14,
-      lgt = 2 * 14,
+      n_init = 14,
+      short_window = 7,
+      long_window = 14,
       n_sim = 1e4,
       mean_si = 3,
       std_si = 1
@@ -53,29 +55,32 @@ list(
   # Serial interval
   tar_target(
     si,
-    discr_si(seq_len(params$window), params$mean_si, params$std_si)
+    discr_si(seq_len(params$n_init), params$mean_si, params$std_si)
   ),
 
   # Initial values
   tar_target(init, {
     set.seed(1999)
-    round(params$init_magnitude * runif(params$window))
+    round(params$init_magnitude * runif(params$n_init))
   }),
 
   # Simulations
   tar_target(
     trajectories,
-    replicate(
-      params$n_sim,
-      simulate_renewal(
-        init,
-        params$R_eff,
-        si,
-        params$lgt,
-        model = "NegBin-L",
-        nb_size = params$nb_size
-      ),
-      simplify = FALSE
+    with(
+      params,
+      replicate(
+        n_sim,
+        simulate_renewal(
+          init,
+          R_eff,
+          si,
+          n_init + long_window,
+          model = "NegBin-L",
+          nb_size = nb_size
+        ),
+        simplify = FALSE
+      )
     )
   ),
 
@@ -84,7 +89,10 @@ list(
   tar_target(Lambda, do.call(cbind, map(trajectories, "Lambda"))),
 
   # Estimation
-  tar_target(df_R_hat_raw, create_results_df(X, Lambda, params$window)),
+  tar_target(
+    df_R_hat_raw,
+    create_results_df(X, Lambda, params$short_window, params$long_window)
+  ),
 
   # Remove unstable estimates
   tar_target(df_R_hat, remove_divergent(df_R_hat_raw)),
@@ -103,24 +111,23 @@ list(
     )
   ),
 
-  # Plot the coverage
-  tar_target(nominal_covr, seq(0, 1, by = 0.05)),
+  # Plot the trajectories and coverage
   tar_target(
-    df_coverage,
-    create_coverage_df(
-      params$R_eff,
-      params$nb_size,
-      df_R_hat,
-      X,
-      Lambda,
-      params$window,
-      nominal_covr
-    )
+    p_coverage,
+    (
+      plot_trajectories(X, params$short_window, params$n_init) +
+        plot_coverage(
+          params$R_eff,
+          params$nb_size,
+          df_R_hat,
+          X,
+          Lambda,
+          seq(0, 1, by = 0.05),
+          model_colors
+        )
+    ) +
+      plot_layout(widths = c(1, 1))
   ),
-  tar_target(p_coverage, plot_coverage(df_coverage)),
-
-  # Plot the trajectories
-  tar_target(p_trajectory, plot_trajectories(X)),
 
   # Save plots
   tar_target(saved_figures, {
@@ -138,7 +145,6 @@ list(
       width = 8,
       height = 6
     )
-    ggsave("figure/coverage_test.pdf", p_coverage, width = 8, height = 8)
-    ggsave("figure/trajectory_test.pdf", p_trajectory, width = 8, height = 6)
+    ggsave("figure/coverage_traj_test.pdf", p_coverage, width = 16, height = 4)
   })
 )

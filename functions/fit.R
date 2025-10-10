@@ -41,3 +41,51 @@ fit_reg_model <- function(
   }
   try(eval(model_call), silent = TRUE)
 }
+
+#' Fit all models and extract results
+#'
+#' @description This function fits all 4 renewal equation models and extracts
+#'   the results into a data frame.
+#' @param X a matrix of the simulated counts, one column per simulation run
+#' @param Lambda a matrix of the single covariate, one column per simulation run
+#' @param window the length of the estimation window
+#' @return a data frame with three columns:
+#'   \begin{itemize}
+#'     \item \code{R_hat}, estimates of the effective reproduction number
+#'     \item \code{se_hat}, estimates of the standard errors
+#'     \item \code{converged}, an indicator, whether the fitting algorithm
+#'     converged
+#'     \item \code{window_len}, length of the estimation window
+#'   \end{itemize}
+fit_all_models <- function(X, Lambda, window) {
+  pre_vectorized_fitting <- function(ind, model) {
+    fit_reg_model(
+      X = tail(X[, ind], window),
+      Lambda = tail(Lambda[, ind], window),
+      model = model
+    )
+  }
+  # Retrieve the number of simulation runs
+  n_sim <- ncol(X)
+
+  # Fit all models
+  fits <- vector("list", 4)
+  names(fits) <- c("Poiss", "Q-Poiss", "NegBin-L", "NegBin-Q")
+  for (k in seq_along(fits)) {
+    fits[[names(fits)[k]]] <- sapply(
+      seq_len(n_sim),
+      pre_vectorized_fitting,
+      model = names(fits)[k],
+      simplify = FALSE
+    )
+  }
+
+  # Extract results
+  results <- lapply(
+    fits,
+    function(x) lapply(x, extract_ests)
+  )
+  df_R_hat_raw <- bind_ests_to_df(results) |>
+    mutate(window_len = window)
+  df_R_hat_raw
+}
