@@ -14,7 +14,7 @@
 #' @return a list containing the two histograms named as \code{R_hat} and
 #'   \code{se_hat}
 plot_hists <- function(df_R_hat, R_true, model_colors, limits_x) {
-  # Plot the standard errors of the R_eff estimates
+  # Plot the point estimates of R_eff (R_hat)
   R_hat_hist <- ggplot(df_R_hat, aes(x = R, fill = model)) +
     geom_histogram(color = "black") +
     geom_vline(xintercept = R_true, color = "red") +
@@ -35,8 +35,8 @@ plot_hists <- function(df_R_hat, R_true, model_colors, limits_x) {
 
 #' Plots nominal vs empirical coverage
 #'
-#' @description This function plots histograms of the R estimates, highlighting
-#'   the true value, and histograms of the standard error estimates
+#' @description This function plots nominal vs. empirical coverage levels with
+#'   a 45-degree reference line, faceted by model.
 #' @param df_coverage the data frame containing the nominal and the empirical
 #'   coverage levels, returned by \code{create_coverage_df()}
 #' @return a ggplot object, 4 facets displaying the nominal vs. empirical
@@ -63,8 +63,7 @@ plot_coverage <- function(df_coverage) {
 #'   estimation windows and making the part corresponding to the shorter window
 #'   lighter/darker.
 #' @param X a matrix of the simulated counts, one column per simulation run
-#' @return a list containing the two histograms named as \code{R_hat} and
-#'   \code{se_hat}
+#' @return a ggplot object
 plot_trajectories <- function(X) {
   df_trajectories <- reshape2::melt(
     X,

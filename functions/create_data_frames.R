@@ -10,8 +10,8 @@
 #'     \item \code{R}, estimates of the effective reproduction number
 #'     \item \code{se}, estimates of the standard errors
 #'     \item \code{converged}, an indicator, whether the fitting algorithm
-#'     \item \code{model}, count distribution label
 #'     converged
+#'     \item \code{model}, count distribution label
 #'   \end{itemize}
 create_results_df <- function(X, Lambda, window) {
   pre_vectorized_fitting <- function(ind, model) {
@@ -68,8 +68,8 @@ create_results_df <- function(X, Lambda, window) {
 #' @param nb_size positive real value, the size parameter of the negative
 #'   binomial distribution for "NegBin-Q" and "NegBin-L"
 #' @param df_R_hat a data frame with R estimates, after replacing the divergent
-#'   runs by NAs, containing columns
-#'   \code{R_hat}, \code{se_hat} and \code{converged}
+#'   runs by NAs, containing columns \code{R}, \code{se}, \code{converged} and
+#'   \code{model}
 #' @param X a matrix of incidences, can be dropped when we get rid of the normal
 #'   approximation part
 #' @param Lambda matrix of the single covariate, can be dropped when we get rid

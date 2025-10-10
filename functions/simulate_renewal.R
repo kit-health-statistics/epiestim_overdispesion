@@ -42,8 +42,9 @@ generate_from_obs_mod <- function(
 #' @return a named list with two elements
 #'   \describe{
 #'     \item{\code{X}}{integer vector, the simulated incidence}
-#'     \item{\code{Lambda}}{numeric vector, value of the sole covariate in the renewal equation}
-#'  } 
+#'     \item{\code{Lambda}}{numeric vector, value of the sole covariate in the
+#'     renewal equation}
+#'  }
 simulate_renewal <- function(
   init,
   R,
