@@ -45,7 +45,7 @@ plot_coverage <- function(df_coverage) {
   ggplot(df_coverage, aes(x = covr_nominal, y = covr_empirical, color = type)) +
     geom_point(alpha = 0.5) +
     geom_abline(intercept = 0, slope = 1) +
-    scale_color_manual(
+    scale_color_discrete(
       labels = c(
         "'real'" = "'real'",
         "GLM" = "GLM",

@@ -23,8 +23,8 @@ fit_reg_model <- function(
   if (model %in% c("Poiss", "Q-Poiss")) {
     # Use standard `glm()` function for Poisson and Quasi-Poisson
     model_call <- substitute(
-      glm(X ~ Lambda - 1, family = fam, data = df),
-      list(fam = family, df = data.frame(X = X, Lambda = Lambda))
+      glm(X ~ Lambda - 1, family = fam),
+      list(fam = family)
     )
   } else {
     # Use standard `gamlss()` function for the negative binomial distributions
@@ -33,10 +33,9 @@ fit_reg_model <- function(
         gamlss(
           formula = X ~ Lambda - 1,
           family = fam,
-          data = df,
           control = gamlss.control(trace = FALSE)
         ),
-        list(fam = family, df = data.frame(X = X, Lambda = Lambda))
+        list(fam = family)
       )
   }
   try(eval(model_call), silent = TRUE)
