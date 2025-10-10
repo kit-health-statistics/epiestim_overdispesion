@@ -5,7 +5,8 @@
 #' @param model the count distribution, one of "Poiss", "Q-Poiss", "NegBin-Q"
 #'   and "NegBin-L"
 #' @return a fitted GLM of class \code{glm} for "Poiss" and "Q-Poiss", or
-#'   \code{gamlss} for "NegBin-L" and "NegBin-Q"
+#'   \code{gamlss} for "NegBin-L" and "NegBin-Q". Returns an object of class
+#'   \code{try-error} if fitting fails.
 fit_reg_model <- function(
   X,
   Lambda,
