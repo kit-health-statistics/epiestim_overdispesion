@@ -126,7 +126,7 @@ plot_coverage <- function(
 #'   estimation windows and making the part corresponding to the shorter window
 #'   lighter/darker.
 #' @param X a matrix of the simulated counts, one column per simulation run
-#' @return  a ggplot object
+#' @return a ggplot object
 plot_trajectories <- function(X, short_window, n_init) {
   df_trajectories <- reshape2::melt(
     # Display only the first 1000 simulation runs to make the plot readable
