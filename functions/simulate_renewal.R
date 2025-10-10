@@ -59,7 +59,7 @@ simulate_renewal <- function(
   Lambda[seq_along(init)] <- NA
 
   for (t in (length(init) + 1):lgt) {
-    Lambda[t] <- R * sum(si * X[t - (1:n_si)])
+    Lambda[t] <- sum(si * X[t - (1:n_si)])
     X[t] <- generate_from_obs_mod(
       R * Lambda[t],
       model = model,
