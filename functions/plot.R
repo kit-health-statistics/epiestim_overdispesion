@@ -33,14 +33,14 @@ plot_hists <- function(df_R_hat, R_true, model_colors, limits_x) {
   list(R_hat = R_hat_hist, se_hat = se_hat_hist)
 }
 
-#' Plots histograms of the estimates
+#' Plots nominal vs empirical coverage
 #'
 #' @description This function plots histograms of the R estimates, highlighting
 #'   the true value, and histograms of the standard error estimates
 #' @param df_coverage the data frame containing the nominal and the empirical
 #'   coverage levels, returned by \code{create_coverage_df()}
-#' @return a plot with 4 panels - 1 for each model - comparing the nominal and
-#'   the empirical coverage
+#' @return a ggplot object, 4 facets displaying the nominal vs. empirical
+#'   coverage
 plot_coverage <- function(df_coverage) {
   ggplot(df_coverage, aes(x = covr_nominal, y = covr_empirical, color = type)) +
     geom_point(alpha = 0.5) +

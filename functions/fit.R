@@ -2,7 +2,7 @@
 #'
 #' @param X vector, the incidence
 #' @param Lambda vector, the single covariate
-#' @param model the count distribution, one of "Poiss", "Q-Poiss, "NegBin-Q" and
+#' @param model the count distribution, one of "Poiss", "Q-Poiss", "NegBin-Q" and
 #'   "NegBin-L"
 #' @return a fitted GLM of class \code{glm} for "Poiss" and "Q-Poiss", or
 #'   \code{gamlss} for "NegBin-L" and "NegBin-Q"
@@ -23,7 +23,8 @@ fit_reg_model <- function(
   if (model %in% c("Poiss", "Q-Poiss")) {
     # Use standard `glm()` function for Poisson and Quasi-Poisson
     model_call <- substitute(
-      glm(X ~ Lambda - 1, family = fam), list(fam = family)
+      glm(X ~ Lambda - 1, family = fam, data = df),
+      list(fam = family, df = data.frame(X = X, Lambda = Lambda))
     )
   } else {
     # Use standard `gamlss()` function for the negative binomial distributions
@@ -32,10 +33,11 @@ fit_reg_model <- function(
         gamlss(
           formula = X ~ Lambda - 1,
           family = fam,
+          data = df,
           control = gamlss.control(trace = FALSE)
         ),
-        list(fam = family)
+        list(fam = family, df = data.frame(X = X, Lambda = Lambda))
       )
   }
-  try(eval(model_call))
+  try(eval(model_call), silent = TRUE)
 }

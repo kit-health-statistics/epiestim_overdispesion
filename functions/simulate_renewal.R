@@ -40,10 +40,10 @@ generate_from_obs_mod <- function(
 #' @param nb_size positive real value, the size parameter of the negative
 #'   binomial distribution for "NegBin-Q" and "NegBin-L"
 #' @return a named list with two elements
-#'  \begin{itemize}
-#'     \item \code{X}, the simulated incidence,
-#'     \item \code{Lambda} value of the sole covariate in the renewal equation.
-#'  \end{itemize}
+#'   \describe{
+#'     \item{\code{X}}{integer vector, the simulated incidence}
+#'     \item{\code{Lambda}}{numeric vector, value of the sole covariate in the renewal equation}
+#'  } 
 simulate_renewal <- function(
   init,
   R,

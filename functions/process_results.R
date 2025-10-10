@@ -5,15 +5,13 @@
 #'
 #' @param fitted_model a fitted \code{gamlss}, or \code{glm} model with one
 #'   covariate and no intercept
-#' @param model the distributional assumption, one of "Poiss", "Q-Poiss",
-#'   "NegBin-Q" and "NegBin-L"
 #' @return a named list with three elements
-#'   \begin{itemize}
-#'      \item \code{R_hat} point estimate of $R_t$
-#'      \item \code{se_hat} standard error of the estimate
-#'      \item \code{converged} logical flag indicating the convergence of the
-#'      fitting algorithm
-#'   \end{itemize}
+#'   \describe{
+#'      \item{\code{R_hat}}{point estimate of $R_t$}
+#'      \item{\code{se_hat}}{standard error of the estimate}
+#'      \item{\code{converged}}{logical flag indicating the convergence of the
+#'      fitting algorithm}
+#'   }
 extract_ests <- function(fitted_model) {
   # Initialize the return list
   res <- list(R_hat = NA, se_hat = NA, converged = FALSE)
@@ -36,7 +34,7 @@ extract_ests <- function(fitted_model) {
 }
 
 bind_ests_to_df <- function(results) {
-  R_hat <- R_hat <- lapply(results, map, "R_hat") |>
+  R_hat <- lapply(results, map, "R_hat") |>
     lapply(unlist) |>
     lapply(unname)
   se_hat <- lapply(results, map, "se_hat") |> lapply(unlist) |> lapply(unname)
@@ -59,7 +57,7 @@ bind_ests_to_df <- function(results) {
 #'   and replaces the divergent fits by NAs.
 #'
 #' @param df_R_hat a data frame with raw R estimates containing columns
-#'   \code{R_hat}, \code{se_hat} and \code{converged}
+#'   \code{R}, \code{se}, \code{converged} and \code{model}
 #' @return a data frame with the same columns as \code{df_R_hat}, but with some
 #'   values replaced by NAs.
 remove_divergent <- function(df_R_hat) {

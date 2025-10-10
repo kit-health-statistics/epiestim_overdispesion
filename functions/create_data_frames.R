@@ -7,9 +7,10 @@
 #' @param window the length of the estimation window
 #' @return a data frame with three columns:
 #'   \begin{itemize}
-#'     \item \code{R_hat}, estimates of the effective reproduction number
-#'     \item \code{se_hat}, estimates of the standard errors
+#'     \item \code{R}, estimates of the effective reproduction number
+#'     \item \code{se}, estimates of the standard errors
 #'     \item \code{converged}, an indicator, whether the fitting algorithm
+#'     \item \code{model}, count distribution label
 #'     converged
 #'   \end{itemize}
 create_results_df <- function(X, Lambda, window) {
@@ -59,8 +60,9 @@ create_results_df <- function(X, Lambda, window) {
 
 #' Calculate the coverage
 #'
-#' @description This function fits all 4 renewal equation models and extracts
-#'   the results into a data frame.
+#' @description This function calculates empirical coverage at given nominal
+#'   levels for each model including the normal approximation coverage and the
+#'   "true" coverage of the Poisson model under dispersion misspecification.
 #' @param R_eff the true value of the effective reproduction number used to
 #'   generate the trajectory
 #' @param nb_size positive real value, the size parameter of the negative
@@ -68,23 +70,23 @@ create_results_df <- function(X, Lambda, window) {
 #' @param df_R_hat a data frame with R estimates, after replacing the divergent
 #'   runs by NAs, containing columns
 #'   \code{R_hat}, \code{se_hat} and \code{converged}
-#' @param X a vector, the incidence, can be dropped when we get rid
-#'   of the normal approximation part
-#' @param Lambda vector, the single covariate, can be dropped when we get rid
+#' @param X a matrix of incidences, can be dropped when we get rid of the normal
+#'   approximation part
+#' @param Lambda matrix of the single covariate, can be dropped when we get rid
 #'   of the normal approximation part
 #' @param window the length of the estimation window, can be dropped when we get
 #'   rid of the normal approximation part
 #' @param nominal_covr a vector of the nominal coverage levels
 #' @return a data frame with four columns:
-#'   \begin{itemize}
-#'     \item \code{covr_nominal}, the nominal coverage level
-#'     \item \code{covr_empirical}, the empirical coverage level from the
-#'       simulation
-#'     \item \code{model}, the corresponding fitted model
-#'     \item \code{type}, string indicating using which quantities the coverage
+#'   \describe{
+#'     \item{\code{covr_nominal}}{the nominal coverage level}
+#'     \item{\code{covr_empirical}}{the empirical coverage level from the
+#'       simulation}
+#'     \item{\code{model}}{the corresponding fitted model}
+#'     \item{\code{type}}{string indicating using which quantities the coverage
 #'       was calculated. Currently, this serves as an aesthetic for the ggplot
-#'       colors in the coverage plot
-#'   \end{itemize}
+#'       colors in the coverage plot.}
+#'   }
 create_coverage_df <- function(
   R_eff,
   nb_size,

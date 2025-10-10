@@ -1,5 +1,5 @@
 #' Create the scenario grid for the simulation
-#' 
+#'
 #' @description Creates the scenario grid of the simulation with
 #'  \begin{itemize}
 #'    \item 2 orders of magnitude (10 and 500)
@@ -15,7 +15,7 @@ create_scenario_grid <- function() {
     distribution = "NegBin-L",
     init_magnitude = c(10, 500),
     dispersion = c("low_disp", "high_disp"),
-    window = c("week", "fortnite"),
+    window = c("week", "fortnight"),
     R_eff = c(1.5, 2.5),
     mean_si = 6,
     sd_si = 1,
@@ -24,7 +24,7 @@ create_scenario_grid <- function() {
 
   # Pair the window length name and value
   window <- data.frame(
-    window = c("week", "fortnite"),
+    window = c("week", "fortnight"),
     window_len = c(7, 14)
   )
   # Pair the dispersion degree name and value
@@ -36,9 +36,10 @@ create_scenario_grid <- function() {
   # Join the parameter names and its values
   scenarios <- dplyr::left_join(scenario_grid, window, by = "window") |>
     dplyr::left_join(dispersion, by = "dispersion") |>
-    mutate(
+    dplyr::mutate(
       scenario_id = paste(
         distribution,
+        window,
         init_magnitude,
         dispersion,
         paste0("R", R_eff),
