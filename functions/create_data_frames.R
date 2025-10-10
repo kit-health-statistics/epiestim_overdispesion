@@ -1,61 +1,35 @@
-#' Fit all models and extract results
+#' Fit the models and return the results in a data frame
 #'
-#' @description This function fits all 4 renewal equation models and extracts
-#'   the results into a data frame.
+#' @description This function is the outermost wrapper of the model fitting
+#'   procedure. It fits all the models for both window lengths
+#'   (can be generalized to more windows) and binds the results together in a
+#'   data frame. The short estimation window is a subset of the long one.
 #' @param X a matrix of the simulated counts, one column per simulation run
 #' @param Lambda a matrix of the single covariate, one column per simulation run
-#' @param window the length of the estimation window
-#' @return a data frame with three columns:
+#' @param short_window the length of the shorter estimation window
+#' @param long_window the length of the longer estimation window
+#' @return a data frame with six columns:
 #'   \begin{itemize}
 #'     \item \code{R}, estimates of the effective reproduction number
 #'     \item \code{se}, estimates of the standard errors
 #'     \item \code{converged}, an indicator, whether the fitting algorithm
 #'     converged
 #'     \item \code{model}, count distribution label
+#'     \item \code{window_len}, length of the estimation window
+#'     \item \code{window_len_fct}, length of the estimation window as a string,
+#'     either "short", or "long"
 #'   \end{itemize}
-create_results_df <- function(X, Lambda, window) {
-  pre_vectorized_fitting <- function(ind, model) {
-    fit_reg_model(
-      X = tail(X[, ind], window),
-      Lambda = tail(Lambda[, ind], window),
-      model = model
-    )
-  }
-  # Retrieve the number of simulation runs
-  n_sim <- ncol(X)
+create_results_df <- function(X, Lambda, short_window, long_window) {
+  # Fitting for the short window
+  df_R_hat_raw_short <- fit_all_models(X, Lambda, short_window) |>
+    mutate(window_len_fct = "short")
+  # Fitting for the long window
+  df_R_hat_raw_long <- fit_all_models(X, Lambda, long_window) |>
+    mutate(window_len_fct = "long")
 
-  # Fit all models
-  fits <- list(
-    Poiss = sapply(
-      seq_len(n_sim),
-      pre_vectorized_fitting,
-      model = "Poiss",
-      simplify = FALSE
-    ),
-    `Q-Poiss` = sapply(
-      seq_len(n_sim),
-      pre_vectorized_fitting,
-      model = "Q-Poiss",
-      simplify = FALSE
-    ),
-    `NegBin-L` = sapply(
-      seq_len(n_sim),
-      pre_vectorized_fitting,
-      model = "NegBin-L",
-      simplify = FALSE
-    ),
-    `NegBin-Q` = sapply(
-      seq_len(n_sim),
-      pre_vectorized_fitting,
-      model = "NegBin-Q",
-      simplify = FALSE
-    )
-  )
-
-  # Extract results
-  results <- lapply(fits, function(x) lapply(x, extract_ests))
-  df_R_hat_raw <- bind_ests_to_df(results)
-  df_R_hat_raw
+  # Bind together and make the window length into a factor
+  rbind(df_R_hat_raw_short, df_R_hat_raw_long) |>
+    mutate(window_len_fct = factor(window_len_fct))
 }
 
 #' Calculate the coverage
@@ -77,15 +51,23 @@ create_results_df <- function(X, Lambda, window) {
 #' @param window the length of the estimation window, can be dropped when we get
 #'   rid of the normal approximation part
 #' @param nominal_covr a vector of the nominal coverage levels
-#' @return a data frame with four columns:
+#' @return a list containing two data frames with common columns
 #'   \describe{
 #'     \item{\code{covr_nominal}}{the nominal coverage level}
 #'     \item{\code{covr_empirical}}{the empirical coverage level from the
 #'       simulation}
-#'     \item{\code{model}}{the corresponding fitted model}
-#'     \item{\code{type}}{string indicating using which quantities the coverage
-#'       was calculated. Currently, this serves as an aesthetic for the ggplot
-#'       colors in the coverage plot.}
+#'     \item \cofe{window_len}{the length of the estimation window}
+#'     \item \cofe{window_len_fct}{the name of the length of the estimation
+#'       window as a factor}
+#'   }
+#'   The data frame \code{lines} is intended for plotting the coverage as lines
+#'   and it contains additionally columns
+#'   \describe{
+#'     \item \code{model}{the corresponding distributional model}
+#'     \item \code{type}{string indicating ancillary types of coverage, namely
+#'       the theoretical Poisson coverage under model misspecification and the
+#'       coverage using the OLS estimates (normal approximation). The normal
+#'       approximation will be dropped for the final version of the paper.}
 #'   }
 create_coverage_df <- function(
   R_eff,
@@ -93,15 +75,13 @@ create_coverage_df <- function(
   df_R_hat,
   X,
   Lambda,
-  window,
   nominal_covr
 ) {
   # Calculate the coverage of true value of R. We take the point estimates and
   # the SEs from the fitted model.
   df_coverage_model <- df_R_hat |>
-    group_by(model) |>
+    group_by(model, window_len_fct, window_len) |>
     reframe(
-      type = "GLM",
       covr_nominal = nominal_covr,
       covr_empirical = sapply(
         nominal_covr,
@@ -120,41 +100,49 @@ create_coverage_df <- function(
   # whether the counts already converge to a Gaussian, or not.
   # Will be removed for the final plot.
   df_coverage_norm_approx <- df_coverage_model |>
+    filter(model == "Poiss") |>
+    select(-model) |>
+    group_by(window_len_fct, window_len) |>
     mutate(
       type = "normal approx.",
       covr_empirical = sapply(
         covr_nominal,
         calc_coverage,
-        est = apply(X / Lambda, 2, mean, na.rm = TRUE),
-        se = apply(X / Lambda, 2, sd, na.rm = TRUE) *
-          (window - 1) /
-          (window * sqrt(window)), # From the unbiased estimator to the MLE
+        est = apply(
+          X[seq_len(window_len[1]), ] / Lambda[seq_len(window_len[1]), ],
+          2,
+          mean,
+          na.rm = TRUE
+        ),
+        se = apply(
+          X[seq_len(window_len[1]), ] / Lambda[seq_len(window_len[1]), ],
+          2,
+          sd,
+          na.rm = TRUE
+        ) *
+          (window_len[1] - 1) /
+          # From the unbiased estimator to the MLE
+          (window_len[1] * sqrt(window_len[1])),
         true_par = R_eff
       )
     )
-
   # What is the actual coverage when the Poisson model is misspecified?
   # If it is, the true variance of the R estimate will be the Poisson variance
   # inflated by a factor depending on the dispersion parameter of the NB
   # distribution.
   var_infl_factor_true <- (1 + 1 / nb_size)  # For NegBin-L
-  df_coverage_poiss <- data.frame(
-    covr_nominal = nominal_covr,
-    model = "Poiss",
-    type = "'real'"
-  ) |>
+  df_coverage_poiss <- df_coverage_norm_approx |>
     mutate(
       covr_empirical = pnorm(
         qnorm(1 - (1 - covr_nominal) / 2) / sqrt(var_infl_factor_true)
       ) -
-        pnorm(-qnorm(1 - (1 - covr_nominal) / 2) / sqrt(var_infl_factor_true))
+        pnorm(-qnorm(1 - (1 - covr_nominal) / 2) / sqrt(var_infl_factor_true)),
+      type = "theoretical Poisson coverage"
     )
 
-  # Bind together
-  df_coverage <- rbind(
-    df_coverage_model,
-    df_coverage_norm_approx,
-    df_coverage_poiss
+  # Return data frames in a list
+  list(
+    lines = df_coverage_model,
+    points = rbind(df_coverage_norm_approx, df_coverage_poiss)
   )
-  df_coverage
 }
