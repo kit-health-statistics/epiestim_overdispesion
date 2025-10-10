@@ -3,7 +3,6 @@ library("tidyverse")
 library("patchwork")
 library("EpiEstim")
 library("gamlss")  # For the gamlss() function
-library("ggmagnify")  # For the geom_magnify() function
 theme_set(theme_bw())
 
 # Script estimating Rt for COVID-19 in Austria using GLMs with the identity link
@@ -187,7 +186,7 @@ p_AIC_box <- ggplot(df_AIC, aes(x = model, y = AIC, fill = model)) +
                "Poisson" = "forestgreen")
   ) +
   labs(x = "Model") +
-  geom_magnify(from = from, to = to, axes = "y")
+  ggmagnify::geom_magnify(from = from, to = to, axes = "y")
 
 # Boxplot of AIC differences between NegBin1 and NegBin2
 p_AIC_box_diff_nbin <- ggplot(
