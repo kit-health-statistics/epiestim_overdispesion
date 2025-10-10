@@ -120,8 +120,8 @@ list(
           params$R_eff,
           params$nb_size,
           df_R_hat,
-          X,
-          Lambda,
+          X[-seq_len(params$n_init), ],
+          Lambda[-seq_len(params$n_init), ],
           seq(0, 1, by = 0.05),
           model_colors
         )
