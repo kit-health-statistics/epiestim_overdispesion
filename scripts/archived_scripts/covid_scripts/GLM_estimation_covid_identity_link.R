@@ -185,8 +185,9 @@ p_AIC_box <- ggplot(df_AIC, aes(x = model, y = AIC, fill = model)) +
     values = c("NegBin1" = "dodgerblue", "NegBin2" = "firebrick3", 
                "Poisson" = "forestgreen")
   ) +
-  labs(x = "Model") +
-  ggmagnify::geom_magnify(from = from, to = to, axes = "y")
+  labs(x = "Model") # +
+# Remove this to avoid installing the ggmagnify dependency
+ # ggmagnify::geom_magnify(from = from, to = to, axes = "y")
 
 # Boxplot of AIC differences between NegBin1 and NegBin2
 p_AIC_box_diff_nbin <- ggplot(
