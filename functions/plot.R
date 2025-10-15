@@ -246,7 +246,6 @@ plot_trajectories <- function(X, short_window, n_init) {
 #' @param magnitude string values, either "high", or "low"
 #' @return a ggplot object
 plot_metadata <- function(R_eff, nb_size, magnitude) {
-  browser()
   df_text <- data.frame(
     x = rep(1, 3),
     y = c(1, 0, -1),
