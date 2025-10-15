@@ -51,26 +51,26 @@ create_results_df <- function(X, Lambda, short_window, long_window) {
 #'   approximation part
 #' @param Lambda matrix of the single covariate, can be dropped when we get rid
 #'   of the normal approximation part
-#' @param window the length of the estimation window, can be dropped when we get
-#'   rid of the normal approximation part
 #' @param nominal_covr a vector of the nominal coverage levels
 #' @return a list containing two data frames with common columns
 #'   \describe{
 #'     \item{\code{covr_nominal}}{the nominal coverage level}
 #'     \item{\code{covr_empirical}}{the empirical coverage level from the
 #'       simulation}
-#'     \item \cofe{window_len}{the length of the estimation window}
-#'     \item \cofe{window_len_fct}{the name of the length of the estimation
+#'     \item \code{window_len}{the length of the estimation window}
+#'     \item \code{window_len_fct}{the name of the length of the estimation
 #'       window as a factor}
+#'     \item \code{type}{string indicating types of coverage, namely
+#'       "Empirical coverage", “theoretical Poisson coverage” under model
+#'       misspecification and the coverage using the OLS estimates
+#'       ("normal approx."). The normal approximation is only in the
+#'       \code{points} data frame and will be dropped for the final version of
+#'       the paper.}
 #'   }
 #'   The data frame \code{lines} is intended for plotting the coverage as lines
-#'   and it contains additionally columns
+#'   and it contains additionally one column
 #'   \describe{
 #'     \item \code{model}{the corresponding distributional model}
-#'     \item \code{type}{string indicating ancillary types of coverage, namely
-#'       the theoretical Poisson coverage under model misspecification and the
-#'       coverage using the OLS estimates (normal approximation). The normal
-#'       approximation will be dropped for the final version of the paper.}
 #'   }
 create_coverage_df <- function(
   R_eff,
@@ -93,6 +93,9 @@ create_coverage_df <- function(
         se = se,
         true_par = R_eff
       )
+    ) |>
+    mutate(
+      type = "Empirical coverage"
     )
 
   # What would be the coverage, if we assume the data to be normally distributed
@@ -140,12 +143,13 @@ create_coverage_df <- function(
         qnorm(1 - (1 - covr_nominal) / 2) / sqrt(var_infl_factor_true)
       ) -
         pnorm(-qnorm(1 - (1 - covr_nominal) / 2) / sqrt(var_infl_factor_true)),
-      type = "theoretical Poisson coverage"
+      type = "theoretical Poisson coverage",
+      model = "theoretical Poisson"
     )
 
   # Return data frames in a list
   list(
-    lines = df_coverage_model,
-    points = rbind(df_coverage_norm_approx, df_coverage_poiss)
+    lines = rbind(df_coverage_model, df_coverage_poiss),
+    points = df_coverage_norm_approx
   )
 }

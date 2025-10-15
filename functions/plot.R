@@ -102,30 +102,58 @@ plot_coverage <- function(
   names(p_coverage) <- names(df_split_lines)
   for (k in 1:2) {
     p_coverage[[k]] <- ggplot() +
+      geom_abline(intercept = 0, slope = 1, color = "grey40") +
       geom_line(
         data = df_split_lines[[k]],
-        mapping = aes(x = covr_nominal, y = covr_empirical, color = model),
-        linewidth = 1.5,
-        alpha = 0.6
+        mapping = aes(
+          x = covr_nominal,
+          y = covr_empirical,
+          color = model,
+          linetype = type,
+          linewidth = type,
+          alpha = type
+        )
       ) +
       geom_point(
         data = df_split_points[[k]],
         mapping = aes(x = covr_nominal, y = covr_empirical, shape = type)
       ) +
-      geom_abline(intercept = 0, slope = 1) +
-      scale_color_manual(values = model_colors) +
-      scale_shape_manual(
-        values = c("normal approx." = 3, "theoretical Poisson coverage" = 4),
+      scale_color_manual(
+        values = c(model_colors, "theoretical Poisson" = "black"),
+        breaks = names(model_colors),
+        labels = names(model_colors)
+      ) +
+      scale_linetype_manual(
+        values = c(
+          "Empirical coverage" = "solid",
+          "theoretical Poisson coverage" = "dashed"
+        ),
+        breaks = "theoretical Poisson coverage",
         labels = c(
-          "normal approx." = "normal approx.",
           "theoretical Poisson coverage" = "theoretical\nPoisson coverage"
         )
       ) +
+      scale_linewidth_manual(
+        values = c(
+          "Empirical coverage" = 1.5,
+          "theoretical Poisson coverage" = 0.5
+        ),
+        guide = "none"
+      ) +
+      scale_alpha_manual(
+        values = c(
+          "Empirical coverage" = 0.6,
+          "theoretical Poisson coverage" = 1
+        ),
+        guide = "none"
+      ) +
+      scale_shape_manual(values = 3) +
       labs(
         x = "Nominal coverage",
         y = "Empirical coverage",
         color = "Model",
-        shape = NULL
+        shape = NULL,
+        linetype = NULL
       )
   }
   p_coverage
@@ -160,6 +188,9 @@ plot_trajectories <- function(X, short_window, n_init) {
   max_cases <- max(df_trajectories$cases)
   bracket_offset <- max_cases * 0.08  # 8% of the max value
 
+  # The long window is the length of the trajectory minus the initialization
+  long_window <- nrow(X) - n_init
+
   ggplot() +
     geom_line(
       data = df_trajectories,
@@ -175,14 +206,14 @@ plot_trajectories <- function(X, short_window, n_init) {
       xmin = n_init + 1,
       xmax = nrow(X),
       y.position = max_cases + 2 * bracket_offset,
-      label = "Long window",
+      label = paste0(long_window, "-day window"),
       label.size = 3
     ) +
     ggpubr::geom_bracket(
       xmin = n_init + 1,
       xmax = n_init + short_window,
-      y.position = max_cases + bracket_offset,
-      label = "Short window",
+      y.position = max_cases + 0.5 * bracket_offset,
+      label = paste0(short_window, "-day window"),
       label.size = 3
     ) +
     scale_color_manual(
@@ -211,21 +242,21 @@ plot_trajectories <- function(X, short_window, n_init) {
 #'   values used in the simulation scenario.
 #' @param R_eff a positive real, the true value of the effective reproduction
 #'   number
-#' @param dispersion string values, either "high", or "low"
+#' @param nb_size a positive real, the true value of the dispersion parameter
 #' @param magnitude string values, either "high", or "low"
 #' @return a ggplot object
-plot_metadata <- function(R_eff, dispersion, magnitude) {
+plot_metadata <- function(R_eff, nb_size, magnitude) {
   df_text <- data.frame(
     x = rep(1, 3),
-    y = c(-1, 0, 1),
+    y = c(1, 0, -1),
     label = c(
-      paste0("R = ", R_eff),
-      paste0("Dispersion: ", gsub("_.*", "", dispersion)),
+      paste0("R[t] == ", R_eff),
+      paste0("xi == ", (1 + 1 / nb_size)),
       paste0("Magnitude: ", gsub("_.*", "", magnitude))
     )
   )
   ggplot(df_text, aes(x = x, y = y, label = label)) +
-    geom_text(hjust = 0) +
+    geom_text(hjust = 0, parse = TRUE) +
     coord_cartesian(ylim = c(-3, 3), xlim = c(0.995, 1.02)) +
     theme_void()
 }
@@ -255,7 +286,7 @@ compose_patches <- function(plot_panels, short_window, long_window) {
       aes(
         x = 1,
         y = 1,
-        label = paste0("Window width: ", short_window)
+        label = paste0(short_window, "-day window"),
       ),
       size = 5
     ) +
@@ -265,7 +296,7 @@ compose_patches <- function(plot_panels, short_window, long_window) {
       aes(
         x = 1,
         y = 1,
-        label = paste0("Window width: ", long_window)
+        label = paste0(long_window, "-day window"),
       ),
       size = 5
     ) +
@@ -291,6 +322,9 @@ compose_patches <- function(plot_panels, short_window, long_window) {
       heights = c(1, rep(6, n_rows)),
       guides = "collect",
       axes = "collect"
+    ) &
+    theme(
+      legend.text = element_text(size = 11)
     )
 
   # Create the final plot
