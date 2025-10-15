@@ -67,10 +67,11 @@ create_results_df <- function(X, Lambda, short_window, long_window) {
 #'   and it contains additionally columns
 #'   \describe{
 #'     \item \code{model}{the corresponding distributional model}
-#'     \item \code{type}{string indicating ancillary types of coverage, namely
-#'       the theoretical Poisson coverage under model misspecification and the
-#'       coverage using the OLS estimates (normal approximation). The normal
-#'       approximation will be dropped for the final version of the paper.}
+#'     \item \code{type}{string indicating types of coverage, namely the
+#'       empirical coverage, the theoretical Poisson coverage under model
+#'       misspecification and the coverage using the OLS estimates
+#'       (normal approximation). The normal approximation will be dropped for
+#'       the final version of the paper.}
 #'   }
 create_coverage_df <- function(
   R_eff,
@@ -93,6 +94,9 @@ create_coverage_df <- function(
         se = se,
         true_par = R_eff
       )
+    ) |>
+    mutate(
+      type = "Empirical coverage"
     )
 
   # What would be the coverage, if we assume the data to be normally distributed
@@ -140,12 +144,13 @@ create_coverage_df <- function(
         qnorm(1 - (1 - covr_nominal) / 2) / sqrt(var_infl_factor_true)
       ) -
         pnorm(-qnorm(1 - (1 - covr_nominal) / 2) / sqrt(var_infl_factor_true)),
-      type = "theoretical Poisson coverage"
+      type = "theoretical Poisson coverage",
+      model = "theoretical Poisson"
     )
 
   # Return data frames in a list
   list(
-    lines = df_coverage_model,
-    points = rbind(df_coverage_norm_approx, df_coverage_poiss)
+    lines = rbind(df_coverage_model, df_coverage_poiss),
+    points = df_coverage_norm_approx
   )
 }
