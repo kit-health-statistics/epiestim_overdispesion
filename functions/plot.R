@@ -242,21 +242,22 @@ plot_trajectories <- function(X, short_window, n_init) {
 #'   values used in the simulation scenario.
 #' @param R_eff a positive real, the true value of the effective reproduction
 #'   number
-#' @param dispersion string values, either "high", or "low"
+#' @param nb_size a positive real, the true value of the dispersion parameter
 #' @param magnitude string values, either "high", or "low"
 #' @return a ggplot object
-plot_metadata <- function(R_eff, dispersion, magnitude) {
+plot_metadata <- function(R_eff, nb_size, magnitude) {
+  browser()
   df_text <- data.frame(
     x = rep(1, 3),
     y = c(1, 0, -1),
     label = c(
-      paste0("R = ", R_eff),
-      paste0("Dispersion: ", gsub("_.*", "", dispersion)),
+      paste0("R[t] == ", R_eff),
+      paste0("xi == ", (1 + 1 / nb_size)),
       paste0("Magnitude: ", gsub("_.*", "", magnitude))
     )
   )
   ggplot(df_text, aes(x = x, y = y, label = label)) +
-    geom_text(hjust = 0) +
+    geom_text(hjust = 0, parse = TRUE) +
     coord_cartesian(ylim = c(-3, 3), xlim = c(0.995, 1.02)) +
     theme_void()
 }

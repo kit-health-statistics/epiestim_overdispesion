@@ -126,7 +126,7 @@ list(
       ),
       meta = plot_metadata(
         scenarios$R_eff,
-        scenarios$dispersion,
+        scenarios$nb_size,
         scenarios$magnitude
       )
     ),
