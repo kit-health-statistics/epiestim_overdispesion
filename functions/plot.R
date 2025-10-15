@@ -69,9 +69,7 @@ plot_hists <- function(df_R_hat, R_true, model_colors, limits_x) {
 #' @param window the length of the estimation window, can be dropped when we get
 #'   rid of the normal approximation part
 #' @param nominal_covr a vector of the nominal coverage levels
-#' @return a patchwork plot with 3 panels - first 1000 generated trajectories,
-#'   nominal vs. empirical coverage for the short estimation window and
-#'   nominal vs. empirical coverage for the long estimation window
+#' @return a list containing 2 ggplots of coverage
 plot_coverage <- function(
   R_eff,
   nb_size,
@@ -145,7 +143,7 @@ plot_coverage <- function(
 #' @return a ggplot object
 plot_trajectories <- function(X, short_window, n_init) {
   df_trajectories <- reshape2::melt(
-    # Display only the first 1000 simulation runs to make the plot readable
+    # Display only the first 100 simulation runs to make the plot readable
     X[, seq_len(min(100, ncol(X)))],
     varnames = c("day", "trajectory"),
     value.name = "cases"
