@@ -60,10 +60,10 @@ create_results_df <- function(X, Lambda, short_window, long_window) {
 #'     \item \code{window_len}{the length of the estimation window}
 #'     \item \code{window_len_fct}{the name of the length of the estimation
 #'       window as a factor}
-#'     \item \code{type}{string indicating types of coverage, namely 
+#'     \item \code{type}{string indicating types of coverage, namely
 #'       "Empirical coverage", “theoretical Poisson coverage” under model
 #'       misspecification and the coverage using the OLS estimates
-#'       ("normal approx."). The normal approximation is only in the 
+#'       ("normal approx."). The normal approximation is only in the
 #'       \code{points} data frame and will be dropped for the final version of
 #'       the paper.}
 #'   }
