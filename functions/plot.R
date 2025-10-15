@@ -271,16 +271,19 @@ compose_patches <- function(plot_panels, short_window, long_window) {
     ) +
     theme_void()
 
+  # Glue the plots under each other into vertical strips. `p_coverage` is
+  # composed of two columns containing the coverage plots for both estimation
+  # windows in order to allow or collecting the guides and axes.
   for (k in seq_len(n_rows)) {
     p_trajectories <- p_trajectories / plot_panels[[k]]$trajectories
     p_coverage <- p_coverage + plot_panels[[k]]$short + plot_panels[[k]]$long
     p_meta <- p_meta / plot_panels[[k]]$meta
   }
 
+  # Adjust the layout of the vertical strips
   p_trajectories <- p_trajectories +
     plot_layout(heights = c(1, rep(6, n_rows)), axes = "collect")
   p_meta <- p_meta + plot_layout(heights = c(1, rep(6, n_rows)))
-
   p_coverage <- p_coverage +
     plot_layout(
       nrow = n_rows + 1,
@@ -289,6 +292,8 @@ compose_patches <- function(plot_panels, short_window, long_window) {
       guides = "collect",
       axes = "collect"
     )
+
+  # Create the final plot
   p_final <- (p_meta | p_trajectories | p_coverage) +
     plot_layout(guides = "collect", widths = c(1, 3, 2))
   p_final

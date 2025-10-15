@@ -2,7 +2,7 @@
 #'
 #' @description Creates the scenario grid of the simulation with
 #'  \begin{itemize}
-#'    \item 2 orders of magnitude (10 and 500)
+#'    \item 2 orders of magnitude (5 and 100)
 #'    \item 2 degrees of dispersion (low and high)
 #'    \item 2 estimation window sizes to assess the small sample biases
 #'    \item 2 true values of the effective reproduction number R
