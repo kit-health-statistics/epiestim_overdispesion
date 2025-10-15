@@ -28,8 +28,11 @@ create_results_df <- function(X, Lambda, short_window, long_window) {
     mutate(window_len_fct = "long")
 
   # Bind together and make the window length into a factor
-  rbind(df_R_hat_raw_short, df_R_hat_raw_long) |>
+  df_R_hat_raw <- rbind(df_R_hat_raw_short, df_R_hat_raw_long) |>
     mutate(window_len_fct = factor(window_len_fct))
+
+  # Remove unstable estimates
+  remove_divergent(df_R_hat_raw)
 }
 
 #' Calculate the coverage
