@@ -93,7 +93,7 @@ simulate_renewal <- function(
 #'   \describe{
 #'     \item{\code{X}}{integer matrix, the simulated incidence, each column
 #'     represents a single trajectory}
-#'     \item{\code{Lambda}}{numeric vector, value of the sole covariate in the
+#'     \item{\code{Lambda}}{numeric matrix, value of the sole covariate in the
 #'     renewal equation, each column represents a single trajectory}
 #'  }
 generate_trajectories <- function(
@@ -106,9 +106,10 @@ generate_trajectories <- function(
   nb_size = NULL,
   seed = 432
 ) {
+  set.seed(seed)
   trajectories <- replicate(
     n_sim,
-    simulate_renewal(init, R_eff, si, lgt, "NegBin-L", nb_size),
+    simulate_renewal(init, R_eff, si, lgt, model, nb_size),
     simplify = FALSE
   )
   X <- do.call(cbind, map(trajectories, "X"))

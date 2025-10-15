@@ -84,9 +84,9 @@ list(
         R_eff = scenarios$R_eff,
         si = si,
         lgt = n_init + long_window,
-        model = "NegBin-L",
+        model = scenarios$distribution,
         nb_size = scenarios$nb_size,
-        seed = set.seed(global_params$base_seed + scenarios$scenario_number)
+        seed = global_params$base_seed + scenarios$scenario_number
       )
     ),
     pattern = map(init, scenarios),
