@@ -110,12 +110,10 @@ list(
   tar_target(
     plot_panels,
     c(
-      trajectories = list(
-        plot_trajectories(
-          trajectories$X,
-          global_params$short_window,
-          global_params$n_init
-        )
+      trajectories = plot_trajectories(
+        trajectories$X,
+        global_params$short_window,
+        global_params$n_init
       ),
       plot_coverage(
         scenarios$R_eff,
