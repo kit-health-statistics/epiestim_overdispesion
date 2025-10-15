@@ -16,7 +16,8 @@ create_scenario_grid <- function() {
     magnitude = c("low", "high"),
     dispersion = c("low_disp", "high_disp"),
     R_eff = c(1.5, 2.5),
-    KEEP.OUT.ATTRS = FALSE
+    KEEP.OUT.ATTRS = FALSE,
+    stringsAsFactors = FALSE
   )
 
   # Pair the dispersion degree name and value

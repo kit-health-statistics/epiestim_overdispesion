@@ -42,7 +42,7 @@ global_params <- list(
   short_window = 7,
   long_window = 14,
   n_sim = 1000L,
-  base_seed = 9786
+  base_seed = 9786L
 )
 
 # Define pipeline
