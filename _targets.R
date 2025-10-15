@@ -41,7 +41,7 @@ global_params <- list(
   n_init = 14,
   short_window = 7,
   long_window = 14,
-  n_sim = 1e3,
+  n_sim = 1000L,
   base_seed = 9786
 )
 
