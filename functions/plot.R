@@ -69,9 +69,7 @@ plot_hists <- function(df_R_hat, R_true, model_colors, limits_x) {
 #' @param window the length of the estimation window, can be dropped when we get
 #'   rid of the normal approximation part
 #' @param nominal_covr a vector of the nominal coverage levels
-#' @return a patchwork plot with 3 panels - first 1000 generated trajectories,
-#'   nominal vs. empirical coverage for the short estimation window and
-#'   nominal vs. empirical coverage for the long estimation window
+#' @return a list containing 2 ggplots of coverage
 plot_coverage <- function(
   R_eff,
   nb_size,
@@ -90,33 +88,47 @@ plot_coverage <- function(
     nominal_covr
   )
 
-  ggplot() +
-    geom_line(
-      data = df_coverage$lines,
-      mapping = aes(x = covr_nominal, y = covr_empirical, color = model),
-      linewidth = 1.5,
-      alpha = 0.6
-    ) +
-    geom_point(
-      data = df_coverage$points,
-      mapping = aes(x = covr_nominal, y = covr_empirical, shape = type)
-    ) +
-    geom_abline(intercept = 0, slope = 1) +
-    scale_color_manual(values = model_colors) +
-    scale_shape_manual(
-      values = c("normal approx." = 3, "theoretical Poisson coverage" = 4),
-      labels = c(
-        "normal approx." = "normal approx.",
-        "theoretical Poisson coverage" = "theoretical\nPoisson coverage"
+  # Split the data frames to create 2 separate plots instead of facets. This
+  # way, it's easier to put the final plot together from multiple blocks
+  df_split_lines <- split.data.frame(
+    df_coverage$lines,
+    df_coverage$lines$window_len_fct
+  )
+  df_split_points <- split.data.frame(
+    df_coverage$points,
+    df_coverage$points$window_len_fct
+  )
+  p_coverage <- vector("list", 2)
+  names(p_coverage) <- names(df_split_lines)
+  for (k in 1:2) {
+    p_coverage[[k]] <- ggplot() +
+      geom_line(
+        data = df_split_lines[[k]],
+        mapping = aes(x = covr_nominal, y = covr_empirical, color = model),
+        linewidth = 1.5,
+        alpha = 0.6
+      ) +
+      geom_point(
+        data = df_split_points[[k]],
+        mapping = aes(x = covr_nominal, y = covr_empirical, shape = type)
+      ) +
+      geom_abline(intercept = 0, slope = 1) +
+      scale_color_manual(values = model_colors) +
+      scale_shape_manual(
+        values = c("normal approx." = 3, "theoretical Poisson coverage" = 4),
+        labels = c(
+          "normal approx." = "normal approx.",
+          "theoretical Poisson coverage" = "theoretical\nPoisson coverage"
+        )
+      ) +
+      labs(
+        x = "Nominal coverage",
+        y = "Empirical coverage",
+        color = "Model",
+        shape = NULL
       )
-    ) +
-    labs(
-      x = "Nominal coverage",
-      y = "Empirical coverage",
-      color = "Model",
-      shape = NULL
-    ) +
-    facet_wrap(~window_len_fct)
+  }
+  p_coverage
 }
 
 #' Plots the fan-out trajectories
@@ -126,11 +138,13 @@ plot_coverage <- function(
 #'   estimation windows and making the part corresponding to the shorter window
 #'   lighter/darker.
 #' @param X a matrix of the simulated counts, one column per simulation run
+#' @param short_window an integer, the length of the short estimation window
+#' @param n_init an integer, the number of initial values of the trajectory
 #' @return a ggplot object
 plot_trajectories <- function(X, short_window, n_init) {
   df_trajectories <- reshape2::melt(
-    # Display only the first 1000 simulation runs to make the plot readable
-    X[, seq_len(min(1000, ncol(X)))],
+    # Display only the first 100 simulation runs to make the plot readable
+    X[, seq_len(min(100, ncol(X)))],
     varnames = c("day", "trajectory"),
     value.name = "cases"
   ) |>
@@ -141,6 +155,11 @@ plot_trajectories <- function(X, short_window, n_init) {
         day >= short_window + n_init ~ "Long window"
       )
     )
+
+  # Set the offset for the brackets
+  max_cases <- max(df_trajectories$cases)
+  bracket_offset <- max_cases * 0.08  # 8% of the max value
+
   ggplot() +
     geom_line(
       data = df_trajectories,
@@ -155,14 +174,16 @@ plot_trajectories <- function(X, short_window, n_init) {
     ggpubr::geom_bracket(
       xmin = n_init + 1,
       xmax = nrow(X),
-      y.position = max(df_trajectories$cases) + 10,
-      label = "Long estimation window"
+      y.position = max_cases + 2 * bracket_offset,
+      label = "Long window",
+      label.size = 3
     ) +
     ggpubr::geom_bracket(
       xmin = n_init + 1,
       xmax = n_init + short_window,
-      y.position = max(df_trajectories$cases),
-      label = "Short estimation window"
+      y.position = max_cases + bracket_offset,
+      label = "Short window",
+      label.size = 3
     ) +
     scale_color_manual(
       values = c(
@@ -180,5 +201,100 @@ plot_trajectories <- function(X, short_window, n_init) {
       ),
       guide = "none"
     ) +
+    coord_cartesian(ylim = c(0, max_cases + 3 * bracket_offset)) +
     labs(x = "Day", y = "Cases")
+}
+
+#' Plots the metadata of the simulation scenario
+#'
+#' @description This function plots the information about the true parameter
+#'   values used in the simulation scenario.
+#' @param R_eff a positive real, the true value of the effective reproduction
+#'   number
+#' @param dispersion string values, either "high", or "low"
+#' @param magnitude string values, either "high", or "low"
+#' @return a ggplot object
+plot_metadata <- function(R_eff, dispersion, magnitude) {
+  df_text <- data.frame(
+    x = rep(1, 3),
+    y = c(-1, 0, 1),
+    label = c(
+      paste0("R = ", R_eff),
+      paste0("Dispersion: ", gsub("_.*", "", dispersion)),
+      paste0("Magnitude: ", gsub("_.*", "", magnitude))
+    )
+  )
+  ggplot(df_text, aes(x = x, y = y, label = label)) +
+    geom_text(hjust = 0) +
+    coord_cartesian(ylim = c(-3, 3), xlim = c(0.995, 1.02)) +
+    theme_void()
+}
+
+#' Compose the patches into the final plot
+#'
+#' @description This function composes plots from all the scenario runs
+#' together, including titles and labels, using the patchwork approach.
+#' @param plot_panels a list of lists of patchwork patches. The number of
+#'   simulation scenarios is the length of the outer list. Each inner list
+#'   contains 4 plots - simulation trajectories, coverage for the short and
+#'   long estimation window and a plot with parameter values.
+#' @param short_window an integer, the length of the short estimation window
+#' @param long_window an integer, the length of the long estimation window
+#' @return a patchwork plot
+compose_patches <- function(plot_panels, short_window, long_window) {
+  # We will have as many rows as the simulation scenarios
+  n_rows <- length(plot_panels)
+
+  # Set the first row as a ggplot with text only
+  p_trajectories <- ggplot() +
+    geom_text(aes(x = 1, y = 1, label = "Simulation trajectories"), size = 5) +
+    theme_void()
+  p_meta <- plot_spacer()
+  p_coverage <- ggplot() +
+    geom_text(
+      aes(
+        x = 1,
+        y = 1,
+        label = paste0("Window width: ", short_window)
+      ),
+      size = 5
+    ) +
+    theme_void() +
+    ggplot() +
+    geom_text(
+      aes(
+        x = 1,
+        y = 1,
+        label = paste0("Window width: ", long_window)
+      ),
+      size = 5
+    ) +
+    theme_void()
+
+  # Glue the plots under each other into vertical strips. `p_coverage` is
+  # composed of two columns containing the coverage plots for both estimation
+  # windows in order to allow or collecting the guides and axes.
+  for (k in seq_len(n_rows)) {
+    p_trajectories <- p_trajectories / plot_panels[[k]]$trajectories
+    p_coverage <- p_coverage + plot_panels[[k]]$short + plot_panels[[k]]$long
+    p_meta <- p_meta / plot_panels[[k]]$meta
+  }
+
+  # Adjust the layout of the vertical strips
+  p_trajectories <- p_trajectories +
+    plot_layout(heights = c(1, rep(6, n_rows)), axes = "collect")
+  p_meta <- p_meta + plot_layout(heights = c(1, rep(6, n_rows)))
+  p_coverage <- p_coverage +
+    plot_layout(
+      nrow = n_rows + 1,
+      ncol = 2,
+      heights = c(1, rep(6, n_rows)),
+      guides = "collect",
+      axes = "collect"
+    )
+
+  # Create the final plot
+  p_final <- (p_meta | p_trajectories | p_coverage) +
+    plot_layout(guides = "collect", widths = c(1, 3, 2))
+  p_final
 }

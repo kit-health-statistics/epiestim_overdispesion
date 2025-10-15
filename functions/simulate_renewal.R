@@ -67,5 +67,52 @@ simulate_renewal <- function(
       nb_size = nb_size
     )
   }
-  return(list(X = X, Lambda = Lambda))
+  list(X = X, Lambda = Lambda)
+}
+
+#' Generate multiple incidence trajectories
+#'
+#' @description This function simulates multiple incidence trajectories based on
+#'  the renewal equation.
+#'
+#' @param n_sim an integer, number of trajectories to generate
+#' @param init a vector, incidence at the beginning of the incidence trajectory
+#' @param R_eff positive real value, the value of the effective reproduction
+#'   number, same across the whole trajectory
+#' @param si a non-negative vector, the distribution of the serial interval,
+#'   must not be longer than the \code{init} vector
+#' @param lgt positive integer, total length of one trajectory. All trajectories
+#'   are of equal length
+#' @param model the count distribution, one of "Poiss", "NegBin-Q" and
+#'   "NegBin-L"
+#' @param nb_size positive real value, the size parameter of the negative
+#'   binomial distribution for "NegBin-Q" and "NegBin-L"
+#' @param seed an integer, seed to be set before the `n_sim` replications of the
+#'   trajectory simulation
+#' @return a named list with two elements
+#'   \describe{
+#'     \item{\code{X}}{integer matrix, the simulated incidence, each column
+#'     represents a single trajectory}
+#'     \item{\code{Lambda}}{numeric matrix, value of the sole covariate in the
+#'     renewal equation, each column represents a single trajectory}
+#'  }
+generate_trajectories <- function(
+  n_sim,
+  init,
+  R_eff,
+  si,
+  lgt,
+  model,
+  nb_size = NULL,
+  seed = 432
+) {
+  set.seed(seed)
+  trajectories <- replicate(
+    n_sim,
+    simulate_renewal(init, R_eff, si, lgt, model, nb_size),
+    simplify = FALSE
+  )
+  X <- do.call(cbind, map(trajectories, "X"))
+  Lambda <- do.call(cbind, map(trajectories, "Lambda"))
+  list(X = X, Lambda = Lambda)
 }
