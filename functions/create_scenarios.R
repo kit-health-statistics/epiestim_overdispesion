@@ -28,7 +28,8 @@ create_scenario_grid <- function() {
 
   magnitude <- data.frame(
     magnitude = c("low", "high"),
-    init_magnitude = c(5, 100)
+    init_magnitude = c(5, 100),
+    init_seed = c(10L, 100L)
   )
 
   # Join the parameter names and its values

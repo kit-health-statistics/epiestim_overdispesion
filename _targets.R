@@ -55,19 +55,18 @@ list(
     with(global_params, discr_si(seq_len(n_init), mean_si, std_si))
   ),
 
-  # Initial values
+  # Initial values. Sample iid counts using a reasonable data generating
+  # mechanism. The hard-coded standard error 4 is arbitrary and can be changed.
   tar_target(
     init,
     {
-      set.seed(global_params$base_seed + scenarios$scenario_number)
-      replicate(
-        global_params$n_init,
-        generate_from_obs_mod(
-          scenarios$init_magnitude,
-          model = as.character(scenarios$distribution),
-          nb_size = scenarios$nb_size
-        )
-      )
+      # Set seed ensuring that the initialization is the same for the same
+      # magnitude. This is a bit redundant, since we need only 2 different
+      # initialization paths, but we store nrow(scenarios) of them. However,
+      # it's not time, nor memory heavy task and it makes the pipeline structure
+      # simpler.
+      set.seed(global_params$base_seed + scenarios$init_seed)
+      pmax(0, round(rnorm(global_params$n_init, scenarios$init_magnitude, 4)))
     },
     pattern = map(scenarios),
     iteration = "list"
