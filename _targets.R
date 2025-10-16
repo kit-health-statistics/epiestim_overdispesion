@@ -60,11 +60,9 @@ list(
   tar_target(
     init,
     {
-      # Set seed ensuring that the initialization is the same for the same
-      # magnitude. This is a bit redundant, since we need only 2 different
-      # initialization paths, but we store nrow(scenarios) of them. However,
-      # it's not time, nor memory heavy task and it makes the pipeline structure
-      # simpler.
+      # Set seed ensuring identical initialization for scenarios with the same
+      # magnitude. Creates redundant copies (nrow(scenarios) instead of 2) but
+      # simplifies pipeline structure with negligible computational cost.
       set.seed(global_params$base_seed + scenarios$init_seed)
       pmax(0, round(rnorm(global_params$n_init, scenarios$init_magnitude, 4)))
     },
