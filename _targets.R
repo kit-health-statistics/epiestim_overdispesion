@@ -56,7 +56,7 @@ list(
   ),
 
   # Initial values. Sample iid counts using a reasonable data generating
-  # mechanism. The hard-coded standard error 4 is arbitrary and can be changed.
+  # mechanism.
   tar_target(
     init,
     {
@@ -64,7 +64,16 @@ list(
       # magnitude. Creates redundant copies (nrow(scenarios) instead of 2) but
       # simplifies pipeline structure with negligible computational cost.
       set.seed(global_params$base_seed + scenarios$init_seed)
-      pmax(0, round(rnorm(global_params$n_init, scenarios$init_magnitude, 4)))
+      pmax(
+        0,
+        round(
+          rnorm(
+            global_params$n_init,
+            scenarios$init_magnitude,
+            scenarios$init_sd
+          )
+        )
+      )
     },
     pattern = map(scenarios),
     iteration = "list"
