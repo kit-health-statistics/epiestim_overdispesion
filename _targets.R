@@ -55,17 +55,23 @@ list(
     with(global_params, discr_si(seq_len(n_init), mean_si, std_si))
   ),
 
-  # Initial values
+  # Initial values. Sample iid counts using a reasonable data generating
+  # mechanism.
   tar_target(
     init,
     {
-      set.seed(global_params$base_seed + scenarios$scenario_number)
-      replicate(
-        global_params$n_init,
-        generate_from_obs_mod(
-          scenarios$init_magnitude,
-          model = as.character(scenarios$distribution),
-          nb_size = scenarios$nb_size
+      # Set seed ensuring identical initialization for scenarios with the same
+      # magnitude. Creates redundant copies (nrow(scenarios) instead of 2) but
+      # simplifies pipeline structure with negligible computational cost.
+      set.seed(global_params$base_seed + scenarios$init_seed)
+      pmax(
+        0,
+        round(
+          rnorm(
+            global_params$n_init,
+            scenarios$init_magnitude,
+            scenarios$init_sd
+          )
         )
       )
     },
