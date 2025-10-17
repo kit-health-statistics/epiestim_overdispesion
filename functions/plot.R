@@ -246,14 +246,20 @@ plot_trajectories <- function(X, short_window, n_init) {
 #'   number
 #' @param nb_size a positive real, the true value of the dispersion parameter
 #' @param magnitude string values, either "high", or "low"
+#' @param distribution string value indicating the count distribution, either
+#'   "NegBin-L", or "NegBin-Q"
 #' @return a ggplot object
-plot_metadata <- function(R_eff, nb_size, magnitude) {
+plot_metadata <- function(R_eff, nb_size, magnitude, distribution) {
   df_text <- data.frame(
     x = rep(1, 3),
     y = c(1, 0, -1),
     label = c(
       paste0("R[t] == ", R_eff),
-      paste0("xi == ", (1 + 1 / nb_size)),
+      if (distribution == "NegBin-L") {
+        paste0("xi == ", (1 + 1 / nb_size))
+        } else if (distribution == "NegBin-Q") {
+          paste0("psi == ", 1 / nb_size)
+        },
       paste0("Magnitude: ", gsub("_.*", "", magnitude))
     )
   )

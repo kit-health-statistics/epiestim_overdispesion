@@ -142,7 +142,8 @@ list(
       meta = plot_metadata(
         scenarios$R_eff,
         scenarios$nb_size,
-        scenarios$magnitude
+        scenarios$magnitude,
+        scenarios$distribution
       )
     ),
     pattern = map(trajectories, df_R_hat, scenarios),
