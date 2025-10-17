@@ -12,7 +12,7 @@
 #' @return a data frame with scenario names and parameter values
 create_scenario_grid <- function() {
   scenario_grid <- expand.grid(
-    weekday_effects = c("weekday_no", "weekday_yes"),
+    weekday_effect = c("weekday_no", "weekday_yes"),
     distribution = "NegBin-L",  # Will likely expand later
     magnitude = c("low", "high"),
     dispersion = c("low_disp", "high_disp"),

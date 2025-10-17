@@ -60,7 +60,7 @@ simulate_renewal <- function(
   lgt,
   model = c("Poiss", "NegBin-Q", "NegBin-L"),
   nb_size = NULL,
-  weekday_effect = NULL
+  weekday_effect = c(1, 1)
 ) {
   model <- match.arg(model)
   X <- Lambda <- numeric(lgt)
@@ -73,7 +73,7 @@ simulate_renewal <- function(
     Lambda[t] <- sum(si * X[t - (1:n_si)]) *
       # Multiply by the weekday effect, `weekday_effect` is all ones, when none
       # is present.
-      weekday_effect[t %% len_weekday_eff + 1]
+      weekday_effect[(t - 1) %% len_weekday_eff + 1]
     X[t] <- generate_from_obs_mod(
       R * Lambda[t],
       model = model,
@@ -121,7 +121,7 @@ generate_trajectories <- function(
   model,
   nb_size = NULL,
   seed = 432,
-  weekday_effect = NULL
+  weekday_effect = c(1, 1)
 ) {
   set.seed(seed)
   trajectories <- replicate(
