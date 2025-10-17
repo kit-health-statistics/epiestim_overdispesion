@@ -42,7 +42,7 @@ global_params <- list(
   short_window = 7,
   long_window = 14,
   n_sim = 1000L,
-  weekday_effect = c(1.05, 1.4, 1.69, 1.4, 1.05, 0.24, 0.17),
+  weekday_effect = c(1.05, 0.24, 1.4, 1.69, 0.17, 1.4, 1.05),
   base_seed = 9786L
 )
 
@@ -156,7 +156,7 @@ list(
       global_params$short_window,
       global_params$long_window
     )
-    save_plot(p_simulation, "simulation_coverage", width = 14, height = 13)
+    save_plot(p_simulation, "simulation_coverage", width = 14, height = 14)
 
     # Save the supplementary simulation with the weekday effects
     p_simulation_weekday <- compose_patches(
@@ -168,7 +168,7 @@ list(
       p_simulation_weekday,
       "simulation_coverage_weekday_effect",
       width = 14,
-      height = 13
+      height = 14
     )
   })
 )
