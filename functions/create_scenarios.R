@@ -25,7 +25,9 @@ create_scenario_grid <- function() {
   ) |>
     # Remove the scenarios, where the counts are NegBin-Q distributed, with the
     # weekday effect. We don't focus on this scenario in the paper.
-    filter(!(distribution == "NegBin-Q" & weekday_effect == "weekday_yes"))
+    dplyr::filter(
+      !(distribution == "NegBin-Q" & weekday_effect == "weekday_yes")
+    )
 
   # Pair the dispersion degree name and value
   dispersion <- data.frame(
@@ -48,8 +50,9 @@ create_scenario_grid <- function() {
     dplyr::mutate(
       scenario_number = seq_len(dplyr::n()),
       scenario_id = paste(
+        "sc",
         distribution,
-        init_magnitude,
+        stringr::str_pad(init_magnitude, 3, pad = "0"),
         dispersion,
         paste0("R", R_eff),
         weekday_effect,

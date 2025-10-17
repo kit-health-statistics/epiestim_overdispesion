@@ -46,7 +46,10 @@ global_params <- list(
   base_seed = 9786L
 )
 
-# Define pipeline
+# Size of the final plot
+plot_size <- list(width = 14, height = 14.5)
+
+# Define pipeline ==============================================================
 list(
   tar_target(scenarios, create_scenario_grid()),
 
@@ -161,9 +164,14 @@ list(
       global_params$short_window,
       global_params$long_window
     )
-    save_plot(p_simulation, "simulation_coverage", width = 14, height = 14.5)
-
-    # Save the supplementary simulation with the weekday effects
+    save_plot(
+      p_simulation,
+      "simulation_coverage",
+      width = plot_size$width,
+      height = plot_size$height
+    )
+    # Save the supplementary simulation with the weekday effects. The analysis
+    # with the weekday effects was run only for the NegBin-L distribution.
     p_simulation_weekday <- compose_patches(
       plot_panels[scenarios$weekday_effect == "weekday_yes"],
       global_params$short_window,
@@ -172,8 +180,8 @@ list(
     save_plot(
       p_simulation_weekday,
       "simulation_coverage_weekday_effect",
-      width = 14,
-      height = 14.5
+      width = plot_size$width,
+      height = plot_size$height
     )
 
     # Save the supplementary simulation with NegBin-Q counts
@@ -188,8 +196,8 @@ list(
     save_plot(
       p_simulation_nbq,
       "simulation_coverage_nbq",
-      width = 14,
-      height = 14.5
+      width = plot_size$width,
+      height = plot_size$height
     )
   })
 )
