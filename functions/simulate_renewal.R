@@ -41,12 +41,13 @@ generate_from_obs_mod <- function(
 #'   binomial distribution for "NegBin-Q" and "NegBin-L"
 #' @param weekday_effect a vector, the potential weekday effects. For scenarios
 #'   with a weekday effect, the mean of the vector must be 1. For scenarios
-#'   without the effect, all its elements shall equal to 1. If the length of the
-#'   initialization is not a multiple of the number of weekday effects, we
-#'   align the beginnings of both vectors and recycle the weekday effects. For
-#'   example, if the initialization has length 8 and the weekday effect 7,
-#'   the first incidence value after the initialization will be sampled with
-#'   the 2nd element of the weekday effect.
+#'   without the effect, all its elements shall equal to 1.  The choice of the
+#'   default to be of length 2 is arbitrary and has no effect compared to other
+#'   vector lengths. If the length of the initialization is not a multiple of
+#'   the number of weekday effects, we align the beginnings of both vectors and
+#'   recycle the weekday effects. For example, if the initialization has length
+#'   8 and the weekday effect 7, the first incidence value after the
+#'   initialization will be sampled with the 2nd element of the weekday effect.
 #' @return a named list with two elements
 #'   \describe{
 #'     \item{\code{X}}{integer vector, the simulated incidence}
@@ -104,7 +105,9 @@ simulate_renewal <- function(
 #'   trajectory simulation
 #' @param weekday_effect a vector, the potential weekday effects. For scenarios
 #'   with a weekday effect, the mean of the vector must be 1. For scenarios
-#'   without the effect, all its elements shall equal to 1.
+#'   without the effect, all its elements shall equal to 1. The choice of the
+#'   default to be of length 2 is arbitrary and has no effect compared to other
+#'   vector lengths.
 #' @return a named list with two elements
 #'   \describe{
 #'     \item{\code{X}}{integer matrix, the simulated incidence, each column
