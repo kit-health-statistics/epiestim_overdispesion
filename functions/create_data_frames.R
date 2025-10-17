@@ -78,7 +78,8 @@ create_coverage_df <- function(
   df_R_hat,
   X,
   Lambda,
-  nominal_covr
+  nominal_covr,
+  distribution
 ) {
   # Calculate the coverage of true value of R. We take the point estimates and
   # the SEs from the fitted model.
@@ -135,8 +136,13 @@ create_coverage_df <- function(
   # What is the actual coverage when the Poisson model is misspecified?
   # If it is, the true variance of the R estimate will be the Poisson variance
   # inflated by a factor depending on the dispersion parameter of the NB
-  # distribution.
-  var_infl_factor_true <- (1 + 1 / nb_size)  # For NegBin-L
+  # distribution. For NegBin-L, we have an explicit formula, how much the
+  # variance is underestimated, for NegBin-Q, there is no explicit formula.
+  if (distribution == "NegBin-L") {
+    var_infl_factor_true <- (1 + 1 / nb_size)
+  } else if (distribution == "NegBin-Q") {
+    var_infl_factor_true <- NA
+  }
   df_coverage_poiss <- df_coverage_norm_approx |>
     mutate(
       covr_empirical = pnorm(

@@ -77,6 +77,7 @@ plot_coverage <- function(
   X,
   Lambda,
   nominal_covr,
+  distribution,
   model_colors
 ) {
   df_coverage <- create_coverage_df(
@@ -85,7 +86,8 @@ plot_coverage <- function(
     df_R_hat,
     X,
     Lambda,
-    nominal_covr
+    nominal_covr,
+    distribution
   )
 
   # Split the data frames to create 2 separate plots instead of facets. This

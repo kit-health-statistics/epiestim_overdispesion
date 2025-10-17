@@ -136,6 +136,7 @@ list(
         trajectories$X[-seq_len(global_params$n_init), ],
         trajectories$Lambda[-seq_len(global_params$n_init), ],
         seq(0, 1, by = 0.05),
+        scenarios$distribution,
         model_colors
       ),
       meta = plot_metadata(
@@ -152,11 +153,14 @@ list(
   tar_target(saved_figures, {
     # Save only the main simulation without the weekday effects
     p_simulation <- compose_patches(
-      plot_panels[scenarios$weekday_effect == "weekday_no"],
+      plot_panels[
+        scenarios$weekday_effect == "weekday_no" & 
+          scenarios$distribution == "NegBin-L"
+      ],
       global_params$short_window,
       global_params$long_window
     )
-    save_plot(p_simulation, "simulation_coverage", width = 14, height = 14)
+    save_plot(p_simulation, "simulation_coverage", width = 14, height = 14.5)
 
     # Save the supplementary simulation with the weekday effects
     p_simulation_weekday <- compose_patches(
@@ -168,7 +172,23 @@ list(
       p_simulation_weekday,
       "simulation_coverage_weekday_effect",
       width = 14,
-      height = 14
+      height = 14.5
+    )
+    
+    # Save the supplementary simulation with NegBin-Q counts
+    p_simulation_nbq <- compose_patches(
+      plot_panels[
+        scenarios$weekday_effect == "weekday_no" & 
+          scenarios$distribution == "NegBin-Q"
+      ],
+      global_params$short_window,
+      global_params$long_window
+    )
+    save_plot(
+      p_simulation_nbq,
+      "simulation_coverage_nbq",
+      width = 14,
+      height = 14.5
     )
   })
 )
