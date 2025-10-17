@@ -2,9 +2,9 @@
 #'
 #' @description Creates the scenario grid of the simulation with
 #'  \begin{itemize}
+#'    \item 2 weekday effect settings (no effect and with effect)
 #'    \item 2 orders of magnitude (5 and 100)
 #'    \item 2 degrees of dispersion (low and high)
-#'    \item 2 estimation window sizes to assess the small sample biases
 #'    \item 2 true values of the effective reproduction number R
 #'    \item 1 distribution (NegBin-L)
 #'    \item 1 serial interval distribution
@@ -12,6 +12,7 @@
 #' @return a data frame with scenario names and parameter values
 create_scenario_grid <- function() {
   scenario_grid <- expand.grid(
+    weekday_effect = c("weekday_no", "weekday_yes"),
     distribution = "NegBin-L",  # Will likely expand later
     magnitude = c("low", "high"),
     dispersion = c("low_disp", "high_disp"),
@@ -44,6 +45,7 @@ create_scenario_grid <- function() {
         init_magnitude,
         dispersion,
         paste0("R", R_eff),
+        weekday_effect,
         sep = "_"
       )
     )
