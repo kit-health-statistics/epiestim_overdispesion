@@ -1,14 +1,17 @@
 #' Create the scenario grid for the simulation
 #'
 #' @description Creates the scenario grid of the simulation with
-#'  \begin{itemize}
-#'    \item 2 weekday effect settings (no effect and with effect)
-#'    \item 2 orders of magnitude (5 and 100)
-#'    \item 2 degrees of dispersion (low and high)
-#'    \item 2 true values of the effective reproduction number R
-#'    \item 2 distributions (NegBin-L and NegBin-Q)
-#'    \item 1 serial interval distribution
+#'   \begin{itemize}
+#'     \item 2 weekday effect settings (no effect and with effect)
+#'     \item 2 orders of magnitude (5 and 100)
+#'     \item 2 degrees of dispersion (low and high)
+#'     \item 2 true values of the effective reproduction number R
+#'     \item 2 distributions (NegBin-L and NegBin-Q)
+#'     \item 1 serial interval distribution
 #'  \end{itemize}
+#'  The final number of simulation scenarios is 24, instead of expected 32,
+#'  because we don't consider scenarios for the NegBin-Q counts together with
+#'  the weekday effects.
 #' @return a data frame with scenario names and parameter values
 create_scenario_grid <- function() {
   scenario_grid <- expand.grid(
