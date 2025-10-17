@@ -1,7 +1,7 @@
 #' Save a plot to the figures directory
 #'
 #' @param plot the plot object to save
-#' @param filename string, the filename (without path and file extention)
+#' @param filename string, the filename (without path and file extension)
 #' @param width a positive real, the width in inches
 #' @param height a positive real, the height in inches
 #' @param dpi integer, resolution in dots per inch
