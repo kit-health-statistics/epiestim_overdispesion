@@ -42,6 +42,7 @@ global_params <- list(
   short_window = 7,
   long_window = 14,
   n_sim = 1000L,
+  weekday_effect = c(1.05, 1.4, 1.54, 1.4, 1.05, 0.14, 0.07),
   base_seed = 9786L
 )
 
@@ -92,7 +93,14 @@ list(
         lgt = n_init + long_window,
         model = scenarios$distribution,
         nb_size = scenarios$nb_size,
-        seed = global_params$base_seed + scenarios$scenario_number
+        seed = global_params$base_seed + scenarios$scenario_number,
+        # If the weekday effect is not present, we multiply the simulated mean
+        # value by 1 under the hood, so there is indeed no effect
+        weekday_effect = if (scenarios$weekday_effect == "weekday_yes") {
+          global_params$weekday_effect
+        } else {
+          rep(1, global_params$n_init + global_params$long_window)
+        }
       )
     ),
     pattern = map(init, scenarios),
@@ -142,28 +150,25 @@ list(
 
   # Save plots
   tar_target(saved_figures, {
-    # Ensure directory exists
-    dir.create("figure", showWarnings = FALSE, recursive = TRUE)
+    # Save only the main simulation without the weekday effects
     p_simulation <- compose_patches(
-      plot_panels,
+      plot_panels[scenarios$weekday_effects == "weekday_no"],
       global_params$short_window,
       global_params$long_window
     )
-    # Save as a PDF
-    ggsave(
-      here("figure", "simulation_coverage.pdf"),
-      p_simulation,
-      width = 12.5,
-      height = 14
+    save_plot(p_simulation, "simulation_coverage", width = 14, height = 12.5)
+
+    # Save the supplementary simulation with the weekday effects
+    p_simulation_weekday <- compose_patches(
+      plot_panels[scenarios$weekday_effects == "weekday_yes"],
+      global_params$short_window,
+      global_params$long_window
     )
-    # Save as a PNG to make the comparison in a PR on GitHub easier.
-    # Can be deleted later.
-    ggsave(
-      here("figure", "simulation_coverage.png"),
-      p_simulation,
-      width = 12.5,
-      height = 14,
-      dpi = 400
+    save_plot(
+      p_simulation_weekday,
+      "simulation_coverage_weekday_effect",
+      width = 14,
+      height = 12.5
     )
   })
 )

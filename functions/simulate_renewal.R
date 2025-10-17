@@ -39,6 +39,14 @@ generate_from_obs_mod <- function(
 #'   "NegBin-L"
 #' @param nb_size positive real value, the size parameter of the negative
 #'   binomial distribution for "NegBin-Q" and "NegBin-L"
+#' @param weekday_effect a vector, the potential weekday effects. For scenarios
+#'   with a weekday effect, the mean of the vector must be 1. For scenarios
+#'   without the effect, all its elements shall equal to 1. If the length of the
+#'   initialization is not a multiple of the number of weekday effects, we
+#'   align the beginnings of both vectors and recycle the weekday effects. For
+#'   example, if the initialization has length 8 and the weekday effect 7,
+#'   the first incidence value after the initialization will be sampled with
+#'   the 2nd element of the weekday effect.
 #' @return a named list with two elements
 #'   \describe{
 #'     \item{\code{X}}{integer vector, the simulated incidence}
@@ -51,16 +59,21 @@ simulate_renewal <- function(
   si,
   lgt,
   model = c("Poiss", "NegBin-Q", "NegBin-L"),
-  nb_size = NULL
+  nb_size = NULL,
+  weekday_effect = NULL
 ) {
   model <- match.arg(model)
   X <- Lambda <- numeric(lgt)
   n_si <- length(si)
   X[seq_along(init)] <- init
   Lambda[seq_along(init)] <- NA
+  len_weekday_eff <- length(weekday_effect)
 
   for (t in (length(init) + 1):lgt) {
-    Lambda[t] <- sum(si * X[t - (1:n_si)])
+    Lambda[t] <- sum(si * X[t - (1:n_si)]) *
+      # Multiply by the weekday effect, `weekday_effect` is all ones, when none
+      # is present.
+      weekday_effect[t %% len_weekday_eff + 1]
     X[t] <- generate_from_obs_mod(
       R * Lambda[t],
       model = model,
@@ -89,6 +102,9 @@ simulate_renewal <- function(
 #'   binomial distribution for "NegBin-Q" and "NegBin-L"
 #' @param seed an integer, seed to be set before the `n_sim` replications of the
 #'   trajectory simulation
+#' @param weekday_effect a vector, the potential weekday effects. For scenarios
+#'   with a weekday effect, the mean of the vector must be 1. For scenarios
+#'   without the effect, all its elements shall equal to 1.
 #' @return a named list with two elements
 #'   \describe{
 #'     \item{\code{X}}{integer matrix, the simulated incidence, each column
@@ -104,12 +120,13 @@ generate_trajectories <- function(
   lgt,
   model,
   nb_size = NULL,
-  seed = 432
+  seed = 432,
+  weekday_effect = NULL
 ) {
   set.seed(seed)
   trajectories <- replicate(
     n_sim,
-    simulate_renewal(init, R_eff, si, lgt, model, nb_size),
+    simulate_renewal(init, R_eff, si, lgt, model, nb_size, weekday_effect),
     simplify = FALSE
   )
   X <- do.call(cbind, map(trajectories, "X"))
