@@ -155,7 +155,7 @@ list(
     # Save only the main simulation without the weekday effects
     p_simulation <- compose_patches(
       plot_panels[
-        scenarios$weekday_effect == "weekday_no" & 
+        scenarios$weekday_effect == "weekday_no" &
           scenarios$distribution == "NegBin-L"
       ],
       global_params$short_window,
@@ -175,11 +175,11 @@ list(
       width = 14,
       height = 14.5
     )
-    
+
     # Save the supplementary simulation with NegBin-Q counts
     p_simulation_nbq <- compose_patches(
       plot_panels[
-        scenarios$weekday_effect == "weekday_no" & 
+        scenarios$weekday_effect == "weekday_no" &
           scenarios$distribution == "NegBin-Q"
       ],
       global_params$short_window,
