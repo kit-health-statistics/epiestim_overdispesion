@@ -6,10 +6,12 @@
 #'     \item 2 degrees of dispersion (low and high)
 #'     \item 2 true values of the effective reproduction number R
 #'     \item 1 serial interval distribution
-#'  \end{itemize}
+#'   \end{itemize}
 #'  The final number of simulation scenarios is 8.
+#' @param distribution the count distribution used in the 8 scenarios. Either
+#'   "NegBin-L", or "NegBin-Q"
 #' @return a data frame with scenario names and parameter values
-create_scenario_grid <- function(distribution) {
+create_scenario_grid <- function(distribution = c("NegBin-L", "NegBin-Q")) {
   scenario_grid <- expand.grid(
     magnitude = c("low", "high"),
     dispersion = c("low_disp", "high_disp"),
@@ -17,6 +19,7 @@ create_scenario_grid <- function(distribution) {
     KEEP.OUT.ATTRS = FALSE,
     stringsAsFactors = FALSE
   )
+  distribution <- match.arg(distribution)
 
   # Pair the dispersion degree name and value
   dispersion <- data.frame(
