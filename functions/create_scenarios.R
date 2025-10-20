@@ -1,12 +1,12 @@
 #' Create the scenario grid for the simulation
 #'
 #' @description Creates the scenario grid of the simulation with
-#'   \begin{itemize}
+#'   \itemize{
 #'     \item 2 orders of magnitude (5 and 100)
 #'     \item 2 degrees of dispersion (low and high)
 #'     \item 2 true values of the effective reproduction number R
 #'     \item 1 serial interval distribution
-#'   \end{itemize}
+#'   }
 #'  The final number of simulation scenarios is 8.
 #' @param distribution the count distribution used in the 8 scenarios. Either
 #'   "NegBin-L", or "NegBin-Q"
