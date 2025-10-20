@@ -27,7 +27,7 @@ create_scenario_grid <- function(distribution = c("NegBin-L", "NegBin-Q")) {
     nb_size = if (distribution == "NegBin-L") {
       c(2, 0.2)
     } else if (distribution == "NegBin-Q") {
-      c(8, 0.8)
+      c(5, 0.5)
     }
   )
 
