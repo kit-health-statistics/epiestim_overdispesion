@@ -139,13 +139,13 @@ list(
     # Plot the trajectories and the coverage
     tar_target(
       plot_panels,
-      c(
+      list(
         trajectories = plot_trajectories(
           trajectories$X,
           global_params$short_window,
           global_params$n_init
         ),
-        plot_coverage(
+        coverage = plot_coverage(
           scenarios$R_eff,
           scenarios$nb_size,
           df_R_hat,
@@ -165,10 +165,22 @@ list(
       pattern = map(trajectories, df_R_hat, scenarios),
       iteration = "list"
     ),
+    # Plot the density of R estimates and its SEs
+    tar_target(
+      plot_density_panels,
+      plot_dens(
+        df_R_hat,
+        scenarios$R_eff,
+        model_colors,
+        get_xlim(scenarios$R_eff)
+      ),
+      pattern = map(df_R_hat, scenarios),
+      iteration = "list"
+    ),
     # Save plots
     tar_target(saved_figures, {
       # Save the coverage plot
-      p_simulation <- compose_patches(
+      p_simulation <- compose_coverage_patches(
         plot_panels,
         global_params$short_window,
         global_params$long_window
@@ -176,6 +188,19 @@ list(
       save_plot(
         p_simulation,
         paste(scenario_id, "simulation_coverage", sep = "_"),
+        width = plot_size$width,
+        height = plot_size$height
+      )
+      # Save the distribution of the estimates
+      p_densities <- compose_dens_patches(
+        plot_density_panels,
+        map(plot_panels, "meta"),
+        global_params$short_window,
+        global_params$long_window
+      )
+      save_plot(
+        p_densities,
+        paste(scenario_id, "Rhat_density", sep = "_"),
         width = plot_size$width,
         height = plot_size$height
       )

@@ -30,7 +30,7 @@ create_scenario_grid <- function(distribution = c("NegBin-L", "NegBin-Q")) {
       c(5, 0.5)
     }
   )
-
+  # Pair the magnitude degree name, value and initialization parameters
   magnitude <- data.frame(
     magnitude = c("low", "high"),
     # Parameters for generating the initial values

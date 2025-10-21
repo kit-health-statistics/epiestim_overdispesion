@@ -1,3 +1,16 @@
+#' Returns the x-axis limits for the R estimate distribution plot
+#'
+#' @description This function returns the x-axis limits for the plot of R
+#'   estimate distribution and the plot of its standard errors. The limits are
+#'   returned as a list
+#' @param R_eff positive real, the true value of the effective reproductive
+#'   number. The x-axis is centered around this value.
+#' @return a list of 2 vectors of 2 elements - the limits for R estimate and
+#'   the limits for its standard errors.
+get_xlim <- function(R_eff) {
+  list(R_hat = R_eff + c(-0.8, 0.8), se_hat = c(0, 2))
+}
+
 #' Plots histograms of the estimates
 #'
 #' @description This function plots histograms of the R estimates, highlighting
@@ -13,42 +26,52 @@
 #'   with 2 elements - the axis range.
 #' @return a list containing the two histograms named as \code{R_hat} and
 #'   \code{se_hat}
-plot_hists <- function(df_R_hat, R_true, model_colors, limits_x) {
-  # Plot the point estimates of R_eff (R_hat)
-  R_hat_hist <- ggplot(
+plot_dens <- function(df_R_hat, R_true, model_colors, limits_x) {
+  # Split the data frames to create 2 separate plots for each window width. This
+  # way, it's easier to put the final plot together from multiple blocks
+  df_R_hat_split <- split.data.frame(
     df_R_hat,
-    aes(x = R, fill = model, alpha = window_len_fct)
-  ) +
-    geom_histogram(color = "black") +
-    geom_vline(xintercept = R_true, color = "red") +
-    scale_fill_manual(values = model_colors) +
-    scale_alpha_manual(values = c("short" = 0.6, "long" = 0.3)) +
-    facet_wrap(~model) +
-    labs(
-      x = expression(hat(R)),
-      fill = "Model",
-      y = NULL,
-      alpha = "Estimation\nwindow length"
-    ) +
-    xlim(limits_x$R_hat) # A couple of values might get clipped
+    df_R_hat$window_len_fct
+  )
 
-  # Plot the standard errors of the R_eff estimates
-  se_hat_hist <- ggplot(
-    df_R_hat,
-    aes(x = se, fill = model, alpha = window_len_fct)
-  ) +
-    geom_histogram(color = "black") +
-    scale_fill_manual(values = model_colors) +
-    scale_alpha_manual(values = c("short" = 0.6, "long" = 0.3)) +
-    facet_wrap(~model) +
-    labs(
-      x = expression(se(hat(R))),
-      fill = "Model",
-      y = NULL,
-      alpha = "Estimation\nwindow length"
-    ) +
-    xlim(limits_x$se_hat) # A couple of values might get clipped
-  list(R_hat = R_hat_hist, se_hat = se_hat_hist)
+  p_R_hat <- p_se_hat <- vector("list", 2)
+  names(p_R_hat) <- names(p_se_hat) <- names(df_R_hat_split)
+  for (k in 1:2) {
+    # Plot the point estimates of R_eff (R_hat)
+    p_R_hat[[k]] <- ggplot(df_R_hat_split[[k]], aes(x = R, color = model)) +
+      geom_line(stat = "density", linewidth = 1, alpha = 0.6) +
+      geom_vline(aes(xintercept = R_true, linetype = "R_true"), color = "red") +
+      scale_color_manual(values = model_colors) +
+      scale_linetype_manual(
+        values = c("R_true" = "dashed"),
+        labels = c("R_true" = expression(R[t]))
+      ) +
+      labs(
+        x = expression(hat(R)),
+        color = "Model",
+        linetype = NULL,
+        y = "density"
+      ) +
+      # A couple of values might get clipped
+      xlim(limits_x$R_hat) +
+      theme(legend.text = element_text(size = 10))
+
+    # Plot the standard errors of the R_eff estimates
+    p_se_hat[[k]] <- ggplot(df_R_hat_split[[k]], aes(x = se, color = model)) +
+      geom_line(stat = "density", linewidth = 1, alpha = 0.6) +
+      scale_color_manual(values = model_colors) +
+      scale_linetype_manual(values = c("short" = "dashed", "long" = "solid")) +
+      labs(
+        x = expression(se(hat(R))),
+        color = "Model",
+        y = "density"
+      ) +
+      # A couple of values might get clipped
+      xlim(limits_x$se_hat) +
+      theme(legend.text = element_text(size = 10))
+  }
+  # Return the list
+  list(R_hat = p_R_hat, se_hat = p_se_hat)
 }
 
 #' Plots nominal vs empirical coverage
@@ -265,14 +288,15 @@ plot_metadata <- function(R_eff, nb_size, magnitude, distribution) {
   )
   ggplot(df_text, aes(x = x, y = y, label = label)) +
     geom_text(hjust = 0, parse = TRUE) +
-    coord_cartesian(ylim = c(-3, 3), xlim = c(0.995, 1.02)) +
+    coord_cartesian(ylim = c(-3, 3), xlim = c(0.997, 1.02)) +
     theme_void()
 }
 
-#' Compose the patches into the final plot
+#' Compose coverage plot patches into the final plot
 #'
-#' @description This function composes plots from all the scenario runs
-#' together, including titles and labels, using the patchwork approach.
+#' @description This function composes coverage and trajectory plots from all
+#'  the scenario runs together, including titles and labels, using the patchwork
+#'  approach.
 #' @param plot_panels a list of lists of patchwork patches. The number of
 #'   simulation scenarios is the length of the outer list. Each inner list
 #'   contains 4 plots - simulation trajectories, coverage for the short and
@@ -280,7 +304,7 @@ plot_metadata <- function(R_eff, nb_size, magnitude, distribution) {
 #' @param short_window an integer, the length of the short estimation window
 #' @param long_window an integer, the length of the long estimation window
 #' @return a patchwork plot
-compose_patches <- function(plot_panels, short_window, long_window) {
+compose_coverage_patches <- function(plot_panels, short_window, long_window) {
   # We will have as many rows as the simulation scenarios
   n_rows <- length(plot_panels)
 
@@ -289,33 +313,19 @@ compose_patches <- function(plot_panels, short_window, long_window) {
     geom_text(aes(x = 1, y = 1, label = "Simulation trajectories"), size = 5) +
     theme_void()
   p_meta <- plot_spacer()
-  p_coverage <- ggplot() +
-    geom_text(
-      aes(
-        x = 1,
-        y = 1,
-        label = paste0(short_window, "-day window"),
-      ),
-      size = 5
-    ) +
-    theme_void() +
-    ggplot() +
-    geom_text(
-      aes(
-        x = 1,
-        y = 1,
-        label = paste0(long_window, "-day window"),
-      ),
-      size = 5
-    ) +
-    theme_void()
+
+  # Compose the right panel corresponding to the empirical vs. nominal coverage
+  p_coverage <- compose_subplot_by_windows(
+    map(plot_panels, "coverage"),
+    short_window,
+    long_window
+  )
 
   # Glue the plots under each other into vertical strips. `p_coverage` is
   # composed of two columns containing the coverage plots for both estimation
   # windows in order to allow or collecting the guides and axes.
   for (k in seq_len(n_rows)) {
     p_trajectories <- p_trajectories / plot_panels[[k]]$trajectories
-    p_coverage <- p_coverage + plot_panels[[k]]$short + plot_panels[[k]]$long
     p_meta <- p_meta / plot_panels[[k]]$meta
   }
 
@@ -323,6 +333,7 @@ compose_patches <- function(plot_panels, short_window, long_window) {
   p_trajectories <- p_trajectories +
     plot_layout(heights = c(1, rep(6, n_rows)), axes = "collect")
   p_meta <- p_meta + plot_layout(heights = c(1, rep(6, n_rows)))
+  # Collect the guides
   p_coverage <- p_coverage +
     plot_layout(
       nrow = n_rows + 1,
@@ -339,4 +350,147 @@ compose_patches <- function(plot_panels, short_window, long_window) {
   p_final <- (p_meta | p_trajectories | p_coverage) +
     plot_layout(guides = "collect", widths = c(1, 3, 2))
   p_final
+}
+
+#' Compose plot patches into two columns by the window length
+#'
+#' @description This function composes those plot patches, that have 2 versions
+#'   based on the window length. Short window is on the left, long window on the
+#'   right.
+#' @param subplot_panels a list of lists of patchwork patches. The number of
+#'   simulation scenarios is the length of the outer list. Each inner list
+#'   contains 2 plots - versions of the same plot, once with the short and once
+#'   with the long estimation window. The inner list elements must be
+#'   accordingly named as "short" and "long".
+#' @param short_window an integer, the length of the short estimation window
+#' @param long_window an integer, the length of the long estimation window
+#' @return a patchwork plot
+compose_subplot_by_windows <- function(
+  subplot_panels,
+  short_window,
+  long_window
+) {
+  n_rows <- length(subplot_panels)
+  p <- ggplot() +
+    geom_text(
+      aes(x = 1, y = 1, label = paste0(short_window, "-day window")),
+      size = 5
+    ) +
+    theme_void() +
+    ggplot() +
+    geom_text(
+      aes(x = 1, y = 1, label = paste0(long_window, "-day window")),
+      size = 5
+    ) +
+    theme_void()
+
+  # Glue the plots under each other into vertical strips. The patchwork plot is
+  # composed of two columns containing the plots of desired quantities for both
+  # estimation windows in order to allow or collecting the guides and axes.
+  for (k in seq_len(n_rows)) {
+    p <- p + subplot_panels[[k]]$short + subplot_panels[[k]]$long
+  }
+  p <- p +
+    # Collect the guides
+    plot_layout(
+      nrow = n_rows + 1,
+      ncol = 2,
+      heights = c(1, rep(6, n_rows)),
+      guides = "collect",
+      axes = "collect"
+    ) &
+    theme(
+      legend.text = element_text(size = 11)
+    )
+  p
+}
+
+#' Compose density plot patches into the final plot
+#'
+#' @description This function composes density plots from all the scenario runs
+#' together, including titles and labels, using the patchwork approach.
+#' @param plot_panels a list of lists of patchwork patches. The number of
+#'   simulation scenarios is the length of the outer list. Each inner list
+#'   contains 2 lists - the density plot of R estimate and the density plot of
+#'   its SE. Each list than contains one plot for the short and one plot for the
+#'   long estimation window.
+#' @param plot_meta_panels a list containing plots of the parameter values used
+#'   in the simulation scenario.
+#' @param short_window an integer, the length of the short estimation window
+#' @param long_window an integer, the length of the long estimation window
+#' @return a patchwork plot
+compose_dens_patches <- function(
+  plot_panels,
+  plot_meta_panels,
+  short_window,
+  long_window
+) {
+  # We will have as many rows as the simulation scenarios
+  n_rows <- length(plot_panels)
+
+  # Compose the density plots of R estimates
+  p_R_hat <- compose_subplot_by_windows(
+    map(plot_panels, "R_hat"),
+    short_window,
+    long_window
+  )
+  # Compose the density plots of SEs of R estimates
+  p_se_hat <- compose_subplot_by_windows(
+    map(plot_panels, "se_hat"),
+    short_window,
+    long_window
+  )
+
+  # Compose the panel of the metadata about the parameter values
+  p_meta <- plot_spacer()
+  for (k in seq_len(n_rows)) {
+    p_meta <- p_meta / plot_meta_panels[[k]]
+  }
+  p_meta <- p_meta + plot_layout(heights = c(1, rep(6, n_rows)))
+
+  # Extract the legend and remove it from the plots
+  p_legend <- wrap_elements(ggpubr::get_legend(p_R_hat))
+  p_R_hat <- wrap_elements(
+    (p_meta | p_R_hat) +
+      plot_layout(widths = c(2, 6)) &
+      theme(legend.position = "none")
+  )
+  p_se_hat <- wrap_elements(
+    (plot_spacer() | p_se_hat) +
+      plot_layout(widths = c(0.25, 6)) & theme(legend.position = "none")
+  )
+
+  # Create the upper titles
+  p_headline_R_hat <- plot_spacer() +
+    ggplot() +
+    geom_text(
+      aes(x = 1, y = 1, label = "Distribution~of~hat(R)"),
+      size = 5.5,
+      parse = TRUE
+    ) +
+    theme_void() +
+    plot_layout(widths = c(2, 6))
+  p_headline_se_hat <- plot_spacer() +
+    ggplot() +
+    geom_text(
+      aes(x = 1, y = 1, label = "Distribution~of~se(hat(R))"),
+      size = 5.5,
+      parse = TRUE
+    ) +
+    theme_void() +
+    plot_layout(widths = c(0.25, 6))
+
+  # Combine into 2 big panels
+  p_headline <- (p_headline_R_hat | p_headline_se_hat) +
+    plot_layout(widths = c(6, 5))
+  p_plot <- (p_R_hat | p_se_hat) +
+    plot_layout(widths = c(6, 5))
+
+  # Combine everything
+  p_main <- wrap_elements(
+    (p_headline / p_plot) + plot_layout(heights = c(1, 22))
+  ) +
+    p_legend +
+    plot_layout(widths = c(10, 1))
+  p_main
 }
