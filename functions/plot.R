@@ -13,8 +13,8 @@ get_xlim <- function(R_eff) {
 
 #' Plots density distributions of the estimates
 #'
-#' @description This function plots density distributions of the R estimates, 
-#'   highlighting the true value, and density distributions of the standard 
+#' @description This function plots density distributions of the R estimates,
+#'   highlighting the true value, and density distributions of the standard
 #'   error estimates
 #' @param df_R_hat a data frame with R estimates, after replacing the divergent
 #'   runs by NAs, containing columns
@@ -25,8 +25,8 @@ get_xlim <- function(R_eff) {
 #' @param limits_x a list of the limits for the x-axis, must have 2 elements
 #'   called \code{R_hat} and \code{se_hat}. Both elements must contain a vector
 #'   with 2 elements - the axis range.
-#' @return a nested list containing density plots: outer list has elements 
-#'   \code{R_hat} and \code{se_hat}, each containing a list of two plots 
+#' @return a nested list containing density plots: outer list has elements
+#'   \code{R_hat} and \code{se_hat}, each containing a list of two plots
 #'   (one per window length)
 plot_dens <- function(df_R_hat, R_true, model_colors, limits_x) {
   # Split the data frames to create 2 separate plots for each window width. This
