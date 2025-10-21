@@ -463,7 +463,7 @@ compose_dens_patches <- function(
   p_meta <- p_meta + plot_layout(heights = c(1, rep(6, n_rows)))
 
   # Extract the legend and remove it from the plots
-  p_legend <- wrap_elements(ggpubr::get_legend(plot_panels$R_hat$short))
+  p_legend <- wrap_elements(ggpubr::get_legend(plot_panels[[1]]$R_hat$short))
   p_R_hat <- wrap_elements(
     (p_meta | p_R_hat) +
       plot_layout(widths = c(2, 6)) &
