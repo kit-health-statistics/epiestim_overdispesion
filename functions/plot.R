@@ -41,7 +41,7 @@ plot_dens <- function(df_R_hat, R_true, model_colors, limits_x) {
   for (k in 1:2) {
     # Plot the point estimates of R_eff (R_hat)
     p_R_hat[[k]] <- ggplot(df_R_hat_split[[k]], aes(x = R, color = model)) +
-      geom_line(stat = "density", linewidth = 1, alpha = 0.6) +
+      geom_line(stat = "density", linewidth = 1, alpha = 0.6, na.rm = TRUE) +
       geom_vline(aes(xintercept = R_true, linetype = "R_true"), color = "red") +
       scale_color_manual(values = model_colors) +
       scale_linetype_manual(
@@ -67,6 +67,7 @@ plot_dens <- function(df_R_hat, R_true, model_colors, limits_x) {
         stat = "density",
         linewidth = 1,
         alpha = 0.6,
+        na.rm = TRUE,
         bounds = c(0, Inf)
       ) +
       scale_color_manual(values = model_colors) +
@@ -462,7 +463,7 @@ compose_dens_patches <- function(
   p_meta <- p_meta + plot_layout(heights = c(1, rep(6, n_rows)))
 
   # Extract the legend and remove it from the plots
-  p_legend <- wrap_elements(ggpubr::get_legend(p_R_hat))
+  p_legend <- wrap_elements(ggpubr::get_legend(plot_panels$R_hat$short))
   p_R_hat <- wrap_elements(
     (p_meta | p_R_hat) +
       plot_layout(widths = c(2, 6)) &

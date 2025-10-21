@@ -194,7 +194,7 @@ list(
       # Save the distribution of the estimates
       p_densities <- compose_dens_patches(
         plot_density_panels,
-        map(plot_panels, "meta"),
+        purrr::map(plot_panels, "meta"),
         global_params$short_window,
         global_params$long_window
       )
