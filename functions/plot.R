@@ -8,7 +8,7 @@
 #' @return a list of 2 vectors of 2 elements - the limits for R estimate and
 #'   the limits for its standard errors.
 get_xlim <- function(R_eff) {
-  list(R_hat = R_eff + c(-0.8, 0.8), se_hat = c(0, 1.1))
+  list(R_hat = R_eff + c(-0.8, 0.8), se_hat = c(0, 1.8))
 }
 
 #' Plots density distributions of the estimates
@@ -54,20 +54,31 @@ plot_dens <- function(df_R_hat, R_true, model_colors, limits_x) {
         linetype = NULL,
         y = "density"
       ) +
-      # A couple of values might get clipped
+      # A couple of values might get clipped. Should be coord_cartesian()
+      # instead, but right now, there is still a couple of degenerate estimates
+      # that get removed by xlim(), but make the plot ugly with
+      # coord_cartesian()
       xlim(limits_x$R_hat) +
       theme(legend.text = element_text(size = 10))
 
     # Plot the standard errors of the R_eff estimates
     p_se_hat[[k]] <- ggplot(df_R_hat_split[[k]], aes(x = se, color = model)) +
-      geom_line(stat = "density", linewidth = 1, alpha = 0.6) +
+      geom_line(
+        stat = "density",
+        linewidth = 1,
+        alpha = 0.6,
+        bounds = c(0, Inf)
+      ) +
       scale_color_manual(values = model_colors) +
       labs(
         x = expression(se(hat(R))),
         color = "Model",
         y = "density"
       ) +
-      # A couple of values might get clipped
+      # A couple of values might get clipped. Should be coord_cartesian()
+      # instead, but right now, there is still a couple of degenerate estimates
+      # that get removed by xlim(), but make the plot ugly with
+      # coord_cartesian()
       xlim(limits_x$se_hat) +
       theme(legend.text = element_text(size = 10))
   }
