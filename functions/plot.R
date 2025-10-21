@@ -8,13 +8,14 @@
 #' @return a list of 2 vectors of 2 elements - the limits for R estimate and
 #'   the limits for its standard errors.
 get_xlim <- function(R_eff) {
-  list(R_hat = R_eff + c(-0.8, 0.8), se_hat = c(0, 2))
+  list(R_hat = R_eff + c(-0.8, 0.8), se_hat = c(0, 1.1))
 }
 
-#' Plots histograms of the estimates
+#' Plots density distributions of the estimates
 #'
-#' @description This function plots histograms of the R estimates, highlighting
-#'   the true value, and histograms of the standard error estimates
+#' @description This function plots density distributions of the R estimates, 
+#'   highlighting the true value, and density distributions of the standard 
+#'   error estimates
 #' @param df_R_hat a data frame with R estimates, after replacing the divergent
 #'   runs by NAs, containing columns
 #' @param R_true the true value of the effective reproduction number used to
@@ -24,8 +25,9 @@ get_xlim <- function(R_eff) {
 #' @param limits_x a list of the limits for the x-axis, must have 2 elements
 #'   called \code{R_hat} and \code{se_hat}. Both elements must contain a vector
 #'   with 2 elements - the axis range.
-#' @return a list containing the two histograms named as \code{R_hat} and
-#'   \code{se_hat}
+#' @return a nested list containing density plots: outer list has elements 
+#'   \code{R_hat} and \code{se_hat}, each containing a list of two plots 
+#'   (one per window length)
 plot_dens <- function(df_R_hat, R_true, model_colors, limits_x) {
   # Split the data frames to create 2 separate plots for each window width. This
   # way, it's easier to put the final plot together from multiple blocks
