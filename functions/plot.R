@@ -57,7 +57,7 @@ plot_dens <- function(df_R_hat, R_true, model_colors, limits_x) {
       # A couple of values might get clipped. Should be coord_cartesian()
       # instead, but right now, there is still a couple of degenerate estimates
       # that get removed by xlim(), but make the plot ugly with
-      # coord_cartesian()
+      # the coord_cartesian() function
       xlim(limits_x$R_hat) +
       theme(legend.text = element_text(size = 10))
 
@@ -78,7 +78,7 @@ plot_dens <- function(df_R_hat, R_true, model_colors, limits_x) {
       # A couple of values might get clipped. Should be coord_cartesian()
       # instead, but right now, there is still a couple of degenerate estimates
       # that get removed by xlim(), but make the plot ugly with
-      # coord_cartesian()
+      # the coord_cartesian() function
       xlim(limits_x$se_hat) +
       theme(legend.text = element_text(size = 10))
   }
@@ -383,6 +383,7 @@ compose_subplot_by_windows <- function(
   long_window
 ) {
   n_rows <- length(subplot_panels)
+  # Create header row with two column titles using patchwork's + operator
   p <- ggplot() +
     geom_text(
       aes(x = 1, y = 1, label = paste0(short_window, "-day window")),
