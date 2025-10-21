@@ -62,7 +62,6 @@ plot_dens <- function(df_R_hat, R_true, model_colors, limits_x) {
     p_se_hat[[k]] <- ggplot(df_R_hat_split[[k]], aes(x = se, color = model)) +
       geom_line(stat = "density", linewidth = 1, alpha = 0.6) +
       scale_color_manual(values = model_colors) +
-      scale_linetype_manual(values = c("short" = "dashed", "long" = "solid")) +
       labs(
         x = expression(se(hat(R))),
         color = "Model",
