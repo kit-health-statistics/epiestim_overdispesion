@@ -66,8 +66,8 @@ remove_divergent <- function(df_R_hat) {
   # algorithm. True value of R in our simulation scenarios is lower than 2.5,
   # thus all values above let's say 10 can be discarded as being heavily off.
   # Also a standard error of more than 14 would mean that the 50% Wald
-  # confidence interval would have width approx. 5 (2.5 on both sides), which is
-  # too much uncertainty.
+  # confidence interval would have width approx. 19 (9.5 on both sides), which
+  # is too much uncertainty.
   rows_to_keep <- with(df_R_hat, converged & R < 10 & se < 14 & !is.nan(se))
   df_R_hat |> mutate(
     R = ifelse(rows_to_keep, R, NA),
@@ -97,7 +97,8 @@ calc_coverage <- function(est, se, true_par, level) {
 #'
 #' @param scenario_id string, identifier of the simulation scenario
 #' @param df_R_hat a data frame with raw R estimates containing columns
-#'   \code{R}, \code{se}, \code{converged} and \code{model}
+#'   \code{R}, \code{se}, \code{converged} \code{window_len_fct} and
+#'   \code{model}
 #' @return a data frame with 6 columns (one per model + scenario ID +
 #'   window length factor) and 2 rows (short and long window) containing the
 #'   number of successful model fittings.
