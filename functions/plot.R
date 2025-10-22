@@ -54,11 +54,8 @@ plot_dens <- function(df_R_hat, R_true, model_colors, limits_x) {
         linetype = NULL,
         y = "density"
       ) +
-      # A couple of values might get clipped. Should be coord_cartesian()
-      # instead, but right now, there is still a couple of degenerate estimates
-      # that get removed by xlim(), but make the plot ugly with
-      # the coord_cartesian() function
-      xlim(limits_x$R_hat) +
+      # A couple of values might get clipped.
+      coord_cartesian(xlim = limits_x$R_hat) +
       theme(legend.text = element_text(size = 10))
 
     # Plot the standard errors of the R_eff estimates
@@ -76,11 +73,8 @@ plot_dens <- function(df_R_hat, R_true, model_colors, limits_x) {
         color = "Model",
         y = "density"
       ) +
-      # A couple of values might get clipped. Should be coord_cartesian()
-      # instead, but right now, there is still a couple of degenerate estimates
-      # that get removed by xlim(), but make the plot ugly with
-      # the coord_cartesian() function
-      xlim(limits_x$se_hat) +
+      # A couple of values might get clipped.
+      coord_cartesian(xlim = limits_x$se_hat) +
       theme(legend.text = element_text(size = 10))
   }
   # Return the list
