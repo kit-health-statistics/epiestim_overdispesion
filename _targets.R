@@ -9,6 +9,7 @@ tar_option_set(
     "patchwork",
     "purrr",
     "here",
+    "tidyr",
     "dplyr",
     "qs2",
     "EpiEstim",
@@ -164,6 +165,21 @@ list(
       ),
       pattern = map(trajectories, df_R_hat, scenarios),
       iteration = "list"
+    ),
+    # How many did converge?
+    tar_target(
+      convergence_tables,
+      summarize_convergence(scenarios$scenario_id, df_R_hat),
+      pattern = map(df_R_hat, scenarios),
+      iteration = "list"
+    ),
+    # Save the convergence table
+    tar_target(
+      saved_convergence_tables,
+      write_csv(
+        bind_rows(convergence_tables),
+        paste0("tables/", scenario_id, "_convergence.csv")
+      )
     ),
     # Plot the density of R estimates and its SEs
     tar_target(

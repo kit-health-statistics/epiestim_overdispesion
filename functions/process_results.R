@@ -54,16 +54,24 @@ bind_ests_to_df <- function(results) {
 #' Replace the divergent estimates by NAs
 #'
 #' @description This function goes through the data frame of raw R estimates
-#'   and replaces the divergent fits by NAs.
+#'   and replaces the divergent and otherwise suspicious fits by NAs.
 #'
 #' @param df_R_hat a data frame with raw R estimates containing columns
 #'   \code{R}, \code{se}, \code{converged} and \code{model}
 #' @return a data frame with the same columns as \code{df_R_hat}, but with some
 #'   values replaced by NAs.
 remove_divergent <- function(df_R_hat) {
+  # Replace the weird estimates by NAs, so they get ignored during plotting.
+  # We remove everything that is flagged as non-convergent by the model-fitting
+  # algorithm. True value of R in our simulation scenarios is lower than 2.5,
+  # thus all values above let's say 10 can be discarded as being heavily off.
+  # Also a standard error of more than 14 would mean that the 50% Wald
+  # confidence interval would have width approx. 5 (2.5 on both sides), which is
+  # too much uncertainty.
+  rows_to_keep <- with(df_R_hat, converged & R < 10 & se < 14 & !is.nan(se))
   df_R_hat |> mutate(
-    R = ifelse(converged, R, NA),
-    se = ifelse(converged, se, NA)
+    R = ifelse(rows_to_keep, R, NA),
+    se = ifelse(rows_to_keep, se, NA)
   )
 }
 
@@ -83,4 +91,19 @@ calc_coverage <- function(est, se, true_par, level) {
   upper <- est + qnorm(1 - (1 - level) / 2) * se
   coverage <- (lower < true_par & upper > true_par)
   mean(coverage, na.rm = TRUE)
+}
+
+#' Summarize number of convergent fittings in a contingency table
+#' 
+#' @param scenario_id string, identifier of the simulation scenario
+#' @param df_R_hat a data frame with raw R estimates containing columns
+#'   \code{R}, \code{se}, \code{converged} and \code{model}
+#' @return a data frame with 5 columns (one per model + scenario ID) and 2
+#'   rows (short and long window) containing the number of successfull model
+#'   fittings.
+summarize_convergence <- function(scenario_id, df_R_hat) {
+  df_R_hat |> group_by(window_len_fct, model) |>
+    summarise(converged = sum(!is.na(R))) |>
+    pivot_wider(names_from = "model", values_from = "converged") |> 
+    mutate(scenario_id = scenario_id)
 }
