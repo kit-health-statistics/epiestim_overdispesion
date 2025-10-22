@@ -98,13 +98,14 @@ calc_coverage <- function(est, se, true_par, level) {
 #' @param scenario_id string, identifier of the simulation scenario
 #' @param df_R_hat a data frame with raw R estimates containing columns
 #'   \code{R}, \code{se}, \code{converged} and \code{model}
-#' @return a data frame with 5 columns (one per model + scenario ID) and 2
-#'   rows (short and long window) containing the number of successfull model
-#'   fittings.
+#' @return a data frame with 6 columns (one per model + scenario ID +
+#'   window length factor) and 2 rows (short and long window) containing the
+#'   number of successful model fittings.
 summarize_convergence <- function(scenario_id, df_R_hat) {
   df_R_hat |>
     group_by(window_len_fct, model) |>
     summarise(converged = sum(!is.na(R))) |>
+    ungroup() |>
     pivot_wider(names_from = "model", values_from = "converged") |>
     mutate(scenario_id = scenario_id)
 }
