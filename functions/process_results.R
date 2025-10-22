@@ -94,7 +94,7 @@ calc_coverage <- function(est, se, true_par, level) {
 }
 
 #' Summarize number of convergent fittings in a contingency table
-#' 
+#'
 #' @param scenario_id string, identifier of the simulation scenario
 #' @param df_R_hat a data frame with raw R estimates containing columns
 #'   \code{R}, \code{se}, \code{converged} and \code{model}
@@ -102,8 +102,9 @@ calc_coverage <- function(est, se, true_par, level) {
 #'   rows (short and long window) containing the number of successfull model
 #'   fittings.
 summarize_convergence <- function(scenario_id, df_R_hat) {
-  df_R_hat |> group_by(window_len_fct, model) |>
+  df_R_hat |>
+    group_by(window_len_fct, model) |>
     summarise(converged = sum(!is.na(R))) |>
-    pivot_wider(names_from = "model", values_from = "converged") |> 
+    pivot_wider(names_from = "model", values_from = "converged") |>
     mutate(scenario_id = scenario_id)
 }
