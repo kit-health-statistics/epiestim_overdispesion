@@ -150,8 +150,6 @@ list(
           scenarios$R_eff,
           scenarios$nb_size,
           df_R_hat,
-          trajectories$X[-seq_len(global_params$n_init), ],
-          trajectories$Lambda[-seq_len(global_params$n_init), ],
           seq(0, 1, by = 0.05),
           distribution,
           model_colors

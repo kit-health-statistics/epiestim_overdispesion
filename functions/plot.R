@@ -108,8 +108,6 @@ plot_coverage <- function(
     R_eff,
     nb_size,
     df_R_hat,
-    X,
-    Lambda,
     nominal_covr,
     distribution
   )
