@@ -122,21 +122,26 @@ plot_coverage <- function(
 
   # Split the data frames to create 2 separate plots instead of facets. This
   # way, it's easier to put the final plot together from multiple blocks
-  df_split_lines <- split.data.frame(
-    df_coverage$lines,
-    df_coverage$lines$window_len_fct
+  df_split <- split.data.frame(
+    df_coverage,
+    df_coverage$window_len_fct
   )
-  df_split_points <- split.data.frame(
-    df_coverage$points,
-    df_coverage$points$window_len_fct
-  )
+
+  # Don't show the legend for the theoretical Poisson coverage for the
+  # "NegBin-Q" distribution
+  if (distribution == "NegBin-Q") {
+    linetype_guide <- "none"
+  } else {
+    linetype_guide <- "legend"
+  }
+
   p_coverage <- vector("list", 2)
-  names(p_coverage) <- names(df_split_lines)
+  names(p_coverage) <- names(df_split)
   for (k in 1:2) {
     p_coverage[[k]] <- ggplot() +
       geom_abline(intercept = 0, slope = 1, color = "grey40") +
       geom_line(
-        data = df_split_lines[[k]],
+        data = df_split[[k]],
         mapping = aes(
           x = covr_nominal,
           y = covr_empirical,
@@ -145,10 +150,6 @@ plot_coverage <- function(
           linewidth = type,
           alpha = type
         )
-      ) +
-      geom_point(
-        data = df_split_points[[k]],
-        mapping = aes(x = covr_nominal, y = covr_empirical, shape = type)
       ) +
       scale_color_manual(
         values = c(model_colors, "theoretical Poisson" = "black"),
@@ -163,7 +164,8 @@ plot_coverage <- function(
         breaks = "theoretical Poisson coverage",
         labels = c(
           "theoretical Poisson coverage" = "theoretical\nPoisson coverage"
-        )
+        ),
+        guide = linetype_guide
       ) +
       scale_linewidth_manual(
         values = c(
@@ -179,7 +181,6 @@ plot_coverage <- function(
         ),
         guide = "none"
       ) +
-      scale_shape_manual(values = 3) +
       labs(
         x = "Nominal coverage",
         y = "Empirical coverage",
