@@ -92,10 +92,6 @@ plot_dens <- function(df_R_hat, R_true, model_colors, limits_x) {
 #' @param df_R_hat a data frame with R estimates, after replacing the divergent
 #'   runs by NAs, containing columns
 #'   \code{R_hat}, \code{se_hat} and \code{converged}
-#' @param X a vector, the incidence, can be dropped when we get rid
-#'   of the normal approximation part
-#' @param Lambda vector, the single covariate, can be dropped when we get rid
-#'   of the normal approximation part
 #' @param window the length of the estimation window, can be dropped when we get
 #'   rid of the normal approximation part
 #' @param nominal_covr a vector of the nominal coverage levels
@@ -104,8 +100,6 @@ plot_coverage <- function(
   R_eff,
   nb_size,
   df_R_hat,
-  X,
-  Lambda,
   nominal_covr,
   distribution,
   model_colors
