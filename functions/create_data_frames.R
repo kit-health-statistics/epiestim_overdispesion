@@ -52,25 +52,18 @@ create_results_df <- function(X, Lambda, short_window, long_window) {
 #' @param Lambda matrix of the single covariate, can be dropped when we get rid
 #'   of the normal approximation part
 #' @param nominal_covr a vector of the nominal coverage levels
-#' @return a list containing two data frames with common columns
+#' @return a data frame with columns
 #'   \describe{
 #'     \item{\code{covr_nominal}}{the nominal coverage level}
 #'     \item{\code{covr_empirical}}{the empirical coverage level from the
 #'       simulation}
-#'     \item \code{window_len}{the length of the estimation window}
-#'     \item \code{window_len_fct}{the name of the length of the estimation
+#'     \item{\code{window_len}}{the length of the estimation window}
+#'     \item{\code{window_len_fct}}{the name of the length of the estimation
 #'       window as a factor}
-#'     \item \code{type}{string indicating types of coverage, namely
-#'       "Empirical coverage", “theoretical Poisson coverage” under model
-#'       misspecification and the coverage using the OLS estimates
-#'       ("normal approx."). The normal approximation is only in the
-#'       \code{points} data frame and will be dropped for the final version of
-#'       the paper.}
-#'   }
-#'   The data frame \code{lines} is intended for plotting the coverage as lines
-#'   and it contains additionally one column
-#'   \describe{
-#'     \item \code{model}{the corresponding distributional model}
+#'     \item{\code{model}}{the corresponding distributional model}
+#'     \item{\code{type}}{string indicating types of coverage, namely
+#'       "Empirical coverage" and “theoretical Poisson coverage” under model
+#'       misspecification.}
 #'   }
 create_coverage_df <- function(
   R_eff,
@@ -99,40 +92,6 @@ create_coverage_df <- function(
       type = "Empirical coverage"
     )
 
-  # What would be the coverage, if we assume the data to be normally distributed
-  # (i.e. we approximate the NB by a Gaussian)? Same for all models.
-  # For simplicity we assume that X / Lambda = R + iid Gaussian error,
-  # so that the sample mean and variance give us the point estimate and the
-  # standard error directly. This is very crude, but can give us an idea,
-  # whether the counts already converge to a Gaussian, or not.
-  # Will be removed for the final plot.
-  df_coverage_norm_approx <- df_coverage_model |>
-    filter(model == "Poiss") |>
-    select(-model) |>
-    group_by(window_len_fct, window_len) |>
-    mutate(
-      type = "normal approx.",
-      covr_empirical = sapply(
-        covr_nominal,
-        calc_coverage,
-        est = apply(
-          X[seq_len(window_len[1]), ] / Lambda[seq_len(window_len[1]), ],
-          2,
-          mean,
-          na.rm = TRUE
-        ),
-        se = apply(
-          X[seq_len(window_len[1]), ] / Lambda[seq_len(window_len[1]), ],
-          2,
-          sd,
-          na.rm = TRUE
-        ) *
-          (window_len[1] - 1) /
-          # From the unbiased estimator to the MLE
-          (window_len[1] * sqrt(window_len[1])),
-        true_par = R_eff
-      )
-    )
   # What is the actual coverage when the Poisson model is misspecified?
   # If it is, the true variance of the R estimate will be the Poisson variance
   # inflated by a factor depending on the dispersion parameter of the NB
@@ -143,7 +102,8 @@ create_coverage_df <- function(
   } else if (distribution == "NegBin-Q") {
     var_infl_factor_true <- NA
   }
-  df_coverage_poiss <- df_coverage_norm_approx |>
+  df_coverage_poiss <- df_coverage_model |>
+    filter(model == "Poiss") |>
     mutate(
       covr_empirical = pnorm(
         qnorm(1 - (1 - covr_nominal) / 2) / sqrt(var_infl_factor_true)
@@ -153,9 +113,6 @@ create_coverage_df <- function(
       model = "theoretical Poisson"
     )
 
-  # Return data frames in a list
-  list(
-    lines = rbind(df_coverage_model, df_coverage_poiss),
-    points = df_coverage_norm_approx
-  )
+  # Return bound data frames
+  rbind(df_coverage_model, df_coverage_poiss)
 }
