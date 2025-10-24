@@ -289,8 +289,7 @@ plot_metadata <- function(R_eff, nb_size, magnitude, distribution) {
     )
   )
   # Remove the dispersion parameter, when it's not present for the Poisson
-  # distribution. The row corresponding to the dispersion parameter is
-  # hard-coded as the second one.
+  # distribution.
   if (distribution == "Poiss") {
     df_text <- df_text |> filter(!is.na(label))
   }
