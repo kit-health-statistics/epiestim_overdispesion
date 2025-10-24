@@ -8,9 +8,10 @@
 #'     \item 2 true values of the effective reproduction number R
 #'     \item 1 serial interval distribution
 #'   }
-#'  The final number of simulation scenarios is 8.
-#' @param distribution the count distribution used in the 8 scenarios. Either
-#'   "NegBin-L", or "NegBin-Q"
+#'  The final number of simulation scenarios is 8 for "NegBin-L", or "NegBin-Q"
+#'  and 4 for "Poiss"
+#' @param distribution the count distribution used in the 8 scenarios (or 4 for
+#'   Poisson). Poissible values: "Poiss", "NegBin-L", or "NegBin-Q"
 #' @return a data frame with scenario names and parameter values
 create_scenario_grid <- function(
   distribution = c("NegBin-L", "NegBin-Q", "Poiss")
@@ -54,14 +55,14 @@ create_scenario_grid <- function(
 
   # If the data generating process is Poisson, we don't have scenarios for
   # different dispersion values. Values of the dispersion parameter shall be
-  # all NA, thus the rows will be dropped.
+  # all NA, thus the rows will be dropped as duplicates.
   if (distribution == "Poiss") {
     scenarios <- scenarios |>
       dplyr::select(-dispersion) |>
       dplyr::distinct(.keep_all = FALSE) |>
       # Add the string denoting the dispersion back, even though it's not
       # technically needed.
-      mutate(dispersion = "not_applicable")
+      dplyr::mutate(dispersion = "not_applicable")
   }
   # Add a scenario number and ID
   scenarios |> dplyr::mutate(
