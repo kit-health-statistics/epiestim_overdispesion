@@ -11,7 +11,7 @@
 #'  The final number of simulation scenarios is 8 for "NegBin-L", or "NegBin-Q"
 #'  and 4 for "Poiss"
 #' @param distribution the count distribution used in the 8 scenarios (or 4 for
-#'   Poisson). Poissible values: "Poiss", "NegBin-L", or "NegBin-Q"
+#'   Poisson). Possible values: "Poiss", "NegBin-L", or "NegBin-Q"
 #' @return a data frame with scenario names and parameter values
 create_scenario_grid <- function(
   distribution = c("NegBin-L", "NegBin-Q", "Poiss")
