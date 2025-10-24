@@ -108,8 +108,6 @@ plot_coverage <- function(
     R_eff,
     nb_size,
     df_R_hat,
-    X,
-    Lambda,
     nominal_covr,
     distribution
   )
@@ -123,10 +121,10 @@ plot_coverage <- function(
 
   # Don't show the legend for the theoretical Poisson coverage for the
   # "NegBin-Q" distribution
-  if (distribution == "NegBin-Q") {
-    linetype_guide <- "none"
-  } else {
+  if (distribution == "NegBin-L") {
     linetype_guide <- "legend"
+  } else {
+    linetype_guide <- "none"
   }
 
   p_coverage <- vector("list", 2)
@@ -271,8 +269,8 @@ plot_trajectories <- function(X, short_window, n_init) {
 #'   number
 #' @param nb_size a positive real, the true value of the dispersion parameter
 #' @param magnitude string values, either "high", or "low"
-#' @param distribution string value indicating the count distribution, either
-#'   "NegBin-L", or "NegBin-Q"
+#' @param distribution string value indicating the count distribution:
+#'   "NegBin-L", "NegBin-Q", or "Poiss"
 #' @return a ggplot object
 plot_metadata <- function(R_eff, nb_size, magnitude, distribution) {
   df_text <- data.frame(
@@ -284,10 +282,17 @@ plot_metadata <- function(R_eff, nb_size, magnitude, distribution) {
         paste0("xi == ", (1 + 1 / nb_size))
       } else if (distribution == "NegBin-Q") {
         paste0("psi == ", 1 / nb_size)
+      } else {
+        NA
       },
       paste0("Magnitude: ", gsub("_.*", "", magnitude))
     )
   )
+  # Remove the dispersion parameter, when it's not present for the Poisson
+  # distribution.
+  if (distribution == "Poiss") {
+    df_text <- df_text |> filter(!is.na(label))
+  }
   ggplot(df_text, aes(x = x, y = y, label = label)) +
     geom_text(hjust = 0, parse = TRUE) +
     coord_cartesian(ylim = c(-3, 3), xlim = c(0.997, 1.02)) +

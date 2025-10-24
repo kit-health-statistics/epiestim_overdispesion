@@ -47,10 +47,6 @@ create_results_df <- function(X, Lambda, short_window, long_window) {
 #' @param df_R_hat a data frame with R estimates, after replacing the divergent
 #'   runs by NAs, containing columns \code{R}, \code{se}, \code{converged} and
 #'   \code{model}
-#' @param X a matrix of incidences, can be dropped when we get rid of the normal
-#'   approximation part
-#' @param Lambda matrix of the single covariate, can be dropped when we get rid
-#'   of the normal approximation part
 #' @param nominal_covr a vector of the nominal coverage levels
 #' @return a data frame with columns
 #'   \describe{
@@ -69,8 +65,6 @@ create_coverage_df <- function(
   R_eff,
   nb_size,
   df_R_hat,
-  X,
-  Lambda,
   nominal_covr,
   distribution
 ) {
@@ -99,7 +93,7 @@ create_coverage_df <- function(
   # variance is underestimated, for NegBin-Q, there is no explicit formula.
   if (distribution == "NegBin-L") {
     var_infl_factor_true <- (1 + 1 / nb_size)
-  } else if (distribution == "NegBin-Q") {
+  } else {
     var_infl_factor_true <- NA
   }
   df_coverage_poiss <- df_coverage_model |>
