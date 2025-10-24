@@ -34,7 +34,7 @@ create_scenario_grid <- function(
     } else if (distribution == "NegBin-Q") {
       c(5, 0.5)
     } else {
-      # Set the dispersion parameter to NULL for Poisson
+      # Set the dispersion parameter to NA for Poisson
       c(NA, NA)
     }
   )
