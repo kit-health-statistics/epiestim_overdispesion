@@ -69,7 +69,7 @@ list(
     si,
     with(global_params, discr_si(seq_len(n_init), mean_si, std_si))
   ),
-  # Static branching over 3 scenario blocks defined in `outer_scenarios`
+  # Static branching over 4 scenario blocks defined in `outer_scenarios`
   tar_map(
     unlist = FALSE,
     values = outer_scenarios,

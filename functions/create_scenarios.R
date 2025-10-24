@@ -3,7 +3,8 @@
 #' @description Creates the scenario grid of the simulation with
 #'   \itemize{
 #'     \item 2 orders of magnitude (5 and 100)
-#'     \item 2 degrees of dispersion (low and high)
+#'     \item 2 degrees of dispersion (low and high), does not apply for the
+#'     Poisson distribution
 #'     \item 2 true values of the effective reproduction number R
 #'     \item 1 serial interval distribution
 #'   }
@@ -56,8 +57,8 @@ create_scenario_grid <- function(
   # all NA, thus the rows will be dropped.
   if (distribution == "Poiss") {
     scenarios <- scenarios |>
-      select(-dispersion) |>
-      distinct(.keep_all = FALSE) |>
+      dplyr::select(-dispersion) |>
+      dplyr::distinct(.keep_all = FALSE) |>
       # Add the string denoting the dispersion back, even though it's not
       # technically needed.
       mutate(dispersion = "not_applicable")

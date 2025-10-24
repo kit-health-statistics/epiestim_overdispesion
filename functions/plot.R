@@ -269,8 +269,8 @@ plot_trajectories <- function(X, short_window, n_init) {
 #'   number
 #' @param nb_size a positive real, the true value of the dispersion parameter
 #' @param magnitude string values, either "high", or "low"
-#' @param distribution string value indicating the count distribution, either
-#'   "NegBin-L", or "NegBin-Q"
+#' @param distribution string value indicating the count distribution:
+#'   "NegBin-L", "NegBin-Q", or "Poiss"
 #' @return a ggplot object
 plot_metadata <- function(R_eff, nb_size, magnitude, distribution) {
   df_text <- data.frame(
@@ -289,10 +289,10 @@ plot_metadata <- function(R_eff, nb_size, magnitude, distribution) {
     )
   )
   # Remove the dispersion parameter, when it's not present for the Poisson
-  # distribution. The row for corresponding to the dispersion parameter is
+  # distribution. The row corresponding to the dispersion parameter is
   # hard-coded as the second one.
   if (distribution == "Poiss") {
-    df_text <- df_text[-2, ]
+    df_text <- df_text |> filter(!is.na(label))
   }
   ggplot(df_text, aes(x = x, y = y, label = label)) +
     geom_text(hjust = 0, parse = TRUE) +
