@@ -93,7 +93,7 @@ create_coverage_df <- function(
   # variance is underestimated, for NegBin-Q, there is no explicit formula.
   if (distribution == "NegBin-L") {
     var_infl_factor_true <- (1 + 1 / nb_size)
-  } else if (distribution == "NegBin-Q") {
+  } else {
     var_infl_factor_true <- NA
   }
   df_coverage_poiss <- df_coverage_model |>
