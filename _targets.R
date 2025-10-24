@@ -55,8 +55,8 @@ plot_size <- list(width = 14, height = 14.5)
 # NegBin-L with weekday effects
 # NegBin-Q
 outer_scenarios <- data.frame(
-  distribution = c("NegBin-L", "NegBin-L", "NegBin-Q"),
-  weekday_effect = c("weekday_no", "weekday_yes", "weekday_no")
+  distribution = c("NegBin-L", "NegBin-L", "NegBin-Q", "Poiss"),
+  weekday_effect = c("weekday_no", "weekday_yes", "weekday_no", "weekday_no")
 ) |>
   dplyr::mutate(
     scenario_id = paste(distribution, weekday_effect, sep = "_")
@@ -193,6 +193,15 @@ list(
     ),
     # Save plots
     tar_target(saved_figures, {
+      if (distribution == "Poiss") {
+        # For Poisson, we have only half the scenarios as for the rest, so the
+        # height of the resulting plot must be divided by 2. We divide by less
+        # than 2 to allow for some space for the title.
+        plot_height <- plot_size$height / 1.98
+      } else {
+        plot_height <- plot_size$height
+      }
+
       # Save the coverage plot
       p_simulation <- compose_coverage_patches(
         plot_panels,
@@ -203,7 +212,7 @@ list(
         p_simulation,
         paste(scenario_id, "simulation_coverage", sep = "_"),
         width = plot_size$width,
-        height = plot_size$height
+        height = plot_height
       )
       # Save the distribution of the estimates
       p_densities <- compose_dens_patches(
@@ -216,7 +225,7 @@ list(
         p_densities,
         paste(scenario_id, "Rhat_density", sep = "_"),
         width = plot_size$width,
-        height = plot_size$height
+        height = plot_height
       )
     })
   )

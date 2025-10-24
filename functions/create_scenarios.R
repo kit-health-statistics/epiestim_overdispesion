@@ -11,7 +11,12 @@
 #' @param distribution the count distribution used in the 8 scenarios. Either
 #'   "NegBin-L", or "NegBin-Q"
 #' @return a data frame with scenario names and parameter values
-create_scenario_grid <- function(distribution = c("NegBin-L", "NegBin-Q")) {
+create_scenario_grid <- function(
+  distribution = c("NegBin-L", "NegBin-Q", "Poiss")
+) {
+
+  distribution <- match.arg(distribution)
+
   scenario_grid <- expand.grid(
     magnitude = c("low", "high"),
     dispersion = c("low_disp", "high_disp"),
@@ -19,7 +24,6 @@ create_scenario_grid <- function(distribution = c("NegBin-L", "NegBin-Q")) {
     KEEP.OUT.ATTRS = FALSE,
     stringsAsFactors = FALSE
   )
-  distribution <- match.arg(distribution)
 
   # Pair the dispersion degree name and value
   dispersion <- data.frame(
@@ -28,6 +32,9 @@ create_scenario_grid <- function(distribution = c("NegBin-L", "NegBin-Q")) {
       c(2, 0.2)
     } else if (distribution == "NegBin-Q") {
       c(5, 0.5)
+    } else {
+      # Set the dispersion parameter to NULL for Poisson
+      c(NA, NA)
     }
   )
   # Pair the magnitude degree name, value and initialization parameters
@@ -42,16 +49,28 @@ create_scenario_grid <- function(distribution = c("NegBin-L", "NegBin-Q")) {
   # Join the parameter names and its values
   scenarios <- scenario_grid |>
     dplyr::left_join(dispersion, by = "dispersion") |>
-    dplyr::left_join(magnitude, by = "magnitude") |>
-    dplyr::mutate(
-      scenario_number = seq_len(dplyr::n()),
-      scenario_id = paste(
-        "sc",
-        stringr::str_pad(init_magnitude, 3, pad = "0"),
-        dispersion,
-        paste0("R", R_eff),
-        sep = "_"
-      )
+    dplyr::left_join(magnitude, by = "magnitude")
+
+  # If the data generating process is Poisson, we don't have scenarios for
+  # different dispersion values. Values of the dispersion parameter shall be
+  # all NA, thus the rows will be dropped.
+  if (distribution == "Poiss") {
+    scenarios <- scenarios |>
+      select(-dispersion) |>
+      distinct(.keep_all = FALSE) |>
+      # Add the string denoting the dispersion back, even though it's not
+      # technically needed.
+      mutate(dispersion = "not_applicable")
+  }
+  # Add a scenario number and ID
+  scenarios |> dplyr::mutate(
+    scenario_number = seq_len(dplyr::n()),
+    scenario_id = paste(
+      "sc",
+      stringr::str_pad(init_magnitude, 3, pad = "0"),
+      dispersion,
+      paste0("R", R_eff),
+      sep = "_"
     )
-  scenarios
+  )
 }
