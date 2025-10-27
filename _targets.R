@@ -242,7 +242,7 @@ list(
           global_params$short_window,
           global_params$long_window,
           panel_widths = c(1.3, 2, 3)
-        ) & 
+        ) &
           theme(plot.margin = unit(c(5.5, 5.5, 0.5, 5.5), "points"))
         save_plot(
           p_simulation_poster,
