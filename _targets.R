@@ -50,6 +50,9 @@ global_params <- list(
 # Size of the final plot
 plot_size <- list(width = 14, height = 14.5)
 
+# If we plot only half of the scenarios, by how much do we divide the height?
+plot_halving_coeff <- 1.98
+
 # Scenario blocks for the static branching:
 # NegBin-L
 # NegBin-L with weekday effects
@@ -197,7 +200,7 @@ list(
         # For Poisson, we have only half the scenarios as for the rest, so the
         # height of the resulting plot must be divided by 2. We divide by less
         # than 2 to allow for some space for the title.
-        plot_height <- plot_size$height / 1.98
+        plot_height <- plot_size$height / plot_halving_coeff
       } else {
         plot_height <- plot_size$height
       }
@@ -227,6 +230,28 @@ list(
         width = plot_size$width,
         height = plot_height
       )
-    })
+    }),
+    tar_target(
+      saved_figures_poster,
+      {
+        # Create the coverage plot for a subset of scenarios. We will use only
+        # NegBin-L and NegBin-Q versions, but it's easier to generate everything
+        # in one go.
+        p_simulation_poster <- compose_coverage_patches(
+          plot_panels[scenarios$R_eff == 1.5 & scenarios$magnitude == "low"],
+          global_params$short_window,
+          global_params$long_window,
+          panel_widths = c(1.3, 2, 3)
+        ) &
+          theme(plot.margin = unit(c(5.5, 5.5, 0.5, 5.5), "points"))
+        save_plot(
+          p_simulation_poster,
+          paste(scenario_id, "simulation_coverage_poster", sep = "_"),
+          # Figure dimensions must be set manually to fit the poster page
+          width = plot_size$width / 1.4,
+          height = (plot_size$height / 1.4) / 2.35
+        )
+      }
+    )
   )
 )

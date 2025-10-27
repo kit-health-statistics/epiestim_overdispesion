@@ -33,7 +33,7 @@ create_scenario_grid <- function(
     nb_size = if (distribution == "NegBin-L") {
       c(2, 0.2)
     } else if (distribution == "NegBin-Q") {
-      c(5, 0.5)
+      c(20, 1 / 0.9)
     } else {
       # Set the dispersion parameter to NA for Poisson
       c(NA, NA)

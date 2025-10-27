@@ -155,7 +155,7 @@ plot_coverage <- function(
         ),
         breaks = "theoretical Poisson coverage",
         labels = c(
-          "theoretical Poisson coverage" = "theoretical\nPoisson coverage"
+          "theoretical Poisson coverage" = "theoretical\nPoisson\ncoverage"
         ),
         guide = linetype_guide
       ) +
@@ -310,8 +310,16 @@ plot_metadata <- function(R_eff, nb_size, magnitude, distribution) {
 #'   long estimation window and a plot with parameter values.
 #' @param short_window an integer, the length of the short estimation window
 #' @param long_window an integer, the length of the long estimation window
+#' @param panel_widths vector with 3 elements specifying the width of the
+#'   vertical plot panels - parameter values (metadata), trajectories and the
+#'   coverage panel
 #' @return a patchwork plot
-compose_coverage_patches <- function(plot_panels, short_window, long_window) {
+compose_coverage_patches <- function(
+  plot_panels,
+  short_window,
+  long_window,
+  panel_widths = c(1, 3, 2)
+) {
   # We will have as many rows as the simulation scenarios
   n_rows <- length(plot_panels)
 
@@ -355,7 +363,7 @@ compose_coverage_patches <- function(plot_panels, short_window, long_window) {
 
   # Create the final plot
   p_final <- (p_meta | p_trajectories | p_coverage) +
-    plot_layout(guides = "collect", widths = c(1, 3, 2))
+    plot_layout(guides = "collect", widths = panel_widths)
   p_final
 }
 
