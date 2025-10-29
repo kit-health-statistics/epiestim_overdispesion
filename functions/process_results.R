@@ -53,12 +53,12 @@ bind_ests_to_df <- function(results) {
 
 #' Replace the divergent estimates
 #'
-#' @description This function goes through the data frame of R estimates
-#'   and replaces the divergent estimates by NA. In case of NegBin-L and
-#'   NegBin-Q distributions, the divergent estimates are replaced by the Poisson
-#'   estimates. Both the point estimates and the standard errors get replaced.
+#' @description First, marks unstable estimates as NA across all models
+#'   (extreme R/se or non-finite). Then, for NegBin-L/Q rows with
+#'   \code{converged == FALSE}, replaces \code{R} and \code{se} with the
+#'   corresponding Poisson estimates from the same iteration and window.
 #'
-#' @param df_R_hat a data frame with raw R estimates containing columns
+#' @param df_R_hat_raw a data frame with raw R estimates containing columns
 #'   \code{R}, \code{se}, \code{converged} and \code{model}
 #' @return a data frame with the same columns as \code{df_R_hat}, but with some
 #'   values replaced by the Poisson estimates.

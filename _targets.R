@@ -140,7 +140,7 @@ list(
       pattern = map(trajectories),
       iteration = "list"
     ),
-    # Replace the divergent NegBin estimates by the Poison ones
+    # Replace the divergent NegBin estimates by the Poisson ones
     tar_target(
       df_R_hat,
       replace_divergent(df_R_hat_raw),
