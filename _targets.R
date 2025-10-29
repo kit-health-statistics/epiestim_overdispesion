@@ -130,7 +130,7 @@ list(
     ),
     # Estimation
     tar_target(
-      df_R_hat,
+      df_R_hat_raw,
       create_results_df(
         trajectories$X,
         trajectories$Lambda,
@@ -138,6 +138,13 @@ list(
         global_params$long_window
       ),
       pattern = map(trajectories),
+      iteration = "list"
+    ),
+    # Replace the divergent NegBin estimates by the Poison ones
+    tar_target(
+      df_R_hat,
+      replace_divergent(df_R_hat_raw),
+      pattern = map(df_R_hat_raw),
       iteration = "list"
     ),
     # Plot the trajectories and the coverage
@@ -176,11 +183,20 @@ list(
     ),
     # Save the convergence table
     tar_target(
-      saved_convergence_tables,
-      write_csv(
-        bind_rows(convergence_tables),
-        paste0("tables/", scenario_id, "_convergence.csv")
-      )
+      saved_tables,
+      {
+        convergence <- convergence_tables |>
+          purrr::map("df_convergence") |>
+          dplyr::bind_rows()
+        unstable <- convergence_tables |>
+          purrr::map("df_unstable") |>
+          dplyr::bind_rows()
+        write_csv(
+          convergence,
+          paste0("tables/", scenario_id, "_convergence.csv")
+        )
+        write_csv(unstable, paste0("tables/", scenario_id, "_unstable.csv"))
+      }
     ),
     # Plot the density of R estimates and its SEs
     tar_target(

@@ -75,6 +75,33 @@ remove_divergent <- function(df_R_hat) {
   )
 }
 
+#' Replace the divergent estimates by the Poisson ones
+#'
+#' @description This function goes through the data frame of R estimates
+#'   and replaces the divergent NegBin-L and NegBin-Q fits by the Poisson
+#'   estimates. Both the point estimates and the standard errors get replaced.
+#'
+#' @param df_R_hat a data frame with raw R estimates containing columns
+#'   \code{R}, \code{se}, \code{converged} and \code{model}
+#' @return a data frame with the same columns as \code{df_R_hat}, but with some
+#'   values replaced by the Poisson estimates.
+replace_divergent <- function(df_R_hat) {
+  # Which rows to replace. Only negative binomial ones are affected.
+  rows_to_replace <- !df_R_hat$converged &
+    df_R_hat$model %in% c("NegBin-L", "NegBin-Q")
+  # Create a dummy data frame by repeating the Poisson part as many times as we
+  # have models. This assures, that the replacement values are located on
+  # correct positions.
+  df_R_hat_pois_copy <- df_R_hat |>
+    dplyr::filter(model == "Poiss") |>
+    replicate(n = length(unique(df_R_hat$model)), simplify = FALSE) |>
+    dplyr::bind_rows()
+
+  df_R_hat[rows_to_replace, c("R", "se")] <-
+    df_R_hat_pois_copy[rows_to_replace, c("R", "se")]
+  df_R_hat
+}
+
 #' Calculate the coverage of the CIs
 #'
 #' @description This function calculates the coverage of the true R value by the
@@ -99,14 +126,27 @@ calc_coverage <- function(est, se, true_par, level) {
 #' @param df_R_hat a data frame with raw R estimates containing columns
 #'   \code{R}, \code{se}, \code{converged} \code{window_len_fct} and
 #'   \code{model}
-#' @return a data frame with 6 columns (one per model + scenario ID +
-#'   window length factor) and 2 rows (short and long window) containing the
-#'   number of successful model fittings.
+#' @return a list containing 2 data frames with 6 columns (one per model + 
+#'   scenario ID + window length factor) and 2 rows (short and long window)
+#'   containing the number of successful model fittings (\code{df_convergence}),
+#'   or the number of unstable 
 summarize_convergence <- function(scenario_id, df_R_hat) {
-  df_R_hat |>
+  df_summarized <- df_R_hat |>
     group_by(window_len_fct, model) |>
-    summarise(converged = sum(!is.na(R))) |>
-    ungroup() |>
+    summarise(
+      converged = sum(converged & !is.na(R), na.rm = TRUE),
+      unstable = sum(!converged & is.na(R), na.rm = TRUE)
+    ) |>
+    ungroup()
+  # Create the table counting convergent runs
+  df_convergence <- df_summarized |>
+    dplyr::select(-unstable) |>
     pivot_wider(names_from = "model", values_from = "converged") |>
     mutate(scenario_id = scenario_id)
+  # Create the table counting unstable, but convergent runs
+  df_unstable <- df_summarized |> 
+    dplyr::select(-converged) |>
+    pivot_wider(names_from = "model", values_from = "unstable") |>
+    mutate(scenario_id = scenario_id)
+  list(df_convergence = df_convergence, df_unstable = df_unstable)
 }
