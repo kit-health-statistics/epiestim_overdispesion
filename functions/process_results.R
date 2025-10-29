@@ -63,14 +63,13 @@ bind_ests_to_df <- function(results) {
 #' @return a data frame with the same columns as \code{df_R_hat}, but with some
 #'   values replaced by the Poisson estimates.
 replace_divergent <- function(df_R_hat_raw) {
-  
   # Replace the divergent and other unstable estimates by NA
   rows_to_keep <- with(df_R_hat_raw, converged & R < 10 & se < 14 & !is.nan(se))
   df_R_hat <- df_R_hat_raw |> mutate(
     R = ifelse(rows_to_keep, R, NA),
     se = ifelse(rows_to_keep, se, NA)
   )
-  
+
   # Which rows to replace by the Poisson estimates. Only negative binomial ones
   # are affected.
   rows_to_replace <- !df_R_hat$converged &
