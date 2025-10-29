@@ -150,7 +150,7 @@ summarize_convergence <- function(scenario_id, df_R_hat) {
     pivot_wider(names_from = "model", values_from = "converged") |>
     mutate(scenario_id = scenario_id)
   # Create the table counting unstable, but convergent runs
-  df_unstable <- df_summarized |> 
+  df_unstable <- df_summarized |>
     dplyr::select(-converged) |>
     pivot_wider(names_from = "model", values_from = "unstable") |>
     mutate(scenario_id = scenario_id)
