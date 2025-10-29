@@ -126,16 +126,22 @@ calc_coverage <- function(est, se, true_par, level) {
 #' @param df_R_hat a data frame with raw R estimates containing columns
 #'   \code{R}, \code{se}, \code{converged} \code{window_len_fct} and
 #'   \code{model}
-#' @return a list containing 2 data frames with 6 columns (one per model + 
-#'   scenario ID + window length factor) and 2 rows (short and long window)
-#'   containing the number of successful model fittings (\code{df_convergence}),
-#'   or the number of unstable 
+#' @return a list with two data frames:
+#'   \itemize{
+#'     \item \code{df_convergence}: counts where \code{converged == TRUE} and
+#'       \code{R} is not \code{NA}, wide by \code{model}, plus
+#'       \code{window_len_fct} and \code{scenario_id}.
+#'     \item \code{df_unstable}: counts where \code{converged == TRUE} but
+#'       \code{R} is \code{NA} after post‑processing, wide by \code{model},
+#'       plus \code{window_len_fct} and \code{scenario_id}.
+#'   }
 summarize_convergence <- function(scenario_id, df_R_hat) {
   df_summarized <- df_R_hat |>
     group_by(window_len_fct, model) |>
     summarise(
       converged = sum(converged & !is.na(R), na.rm = TRUE),
-      unstable = sum(!converged & is.na(R), na.rm = TRUE)
+      # unstable = convergent but masked/flagged by NA in `R` and `se`columns
+      unstable = sum(converged & is.na(R), na.rm = TRUE)
     ) |>
     ungroup()
   # Create the table counting convergent runs
