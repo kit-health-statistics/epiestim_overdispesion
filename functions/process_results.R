@@ -107,22 +107,44 @@ calc_coverage <- function(est, se, true_par, level) {
 
 #' Summarize number of convergent fittings in a contingency table
 #'
-#' @param scenario_id string, identifier of the simulation scenario
 #' @param df_R_hat a data frame with raw R estimates containing columns
 #'   \code{R}, \code{se}, \code{converged} \code{window_len_fct} and
 #'   \code{model}
+#' @param magnitude string, magnitude of the simulation scenario
+#' @param nb_size numeric, dispersion parameter of the negative binomial
+#'   distribution used in the simulation scenario
+#' @param R_eff numeric, value of the effective reproductive number
+#'   distribution used in the simulation scenario
+#' @param true_model string, count distribution used in the simulation scenario
 #' @return a list with two data frames:
 #'   \itemize{
 #'     \item \code{df_convergence}: counts where \code{converged == TRUE} and
-#'       \code{R} is not \code{NA}, wide by \code{model}, plus
-#'       \code{window_len_fct} and \code{scenario_id}.
+#'       R estimate is not \code{NA}, wide by \code{model}, plus
+#'       metadata about the parameter values and window length
 #'     \item \code{df_unstable}: counts where \code{converged == TRUE} but
-#'       \code{R} is \code{NA} after post‑processing, wide by \code{model},
-#'       plus \code{window_len_fct} and \code{scenario_id}.
+#'       R estimate is \code{NA} after post‑processing, wide by \code{model},
+#'       plus metadata about the parameter values and window length
 #'   }
-summarize_convergence <- function(scenario_id, df_R_hat) {
+summarize_convergence <- function(
+  df_R_hat,
+  magnitude,
+  nb_size,
+  R_eff,
+  true_model
+) {
   df_summarized <- df_R_hat |>
-    group_by(window_len_fct, model) |>
+    mutate(
+      R_eff = R_eff,
+      overdispersion = if (true_model == "NegBin-Q") {
+        round(1 / nb_size, digits = 2)
+      } else if (true_model == "NegBin-L") {
+        round(1 + 1 / nb_size, digits = 2)
+      } else {
+        NA
+      },
+      magnitude = magnitude
+    ) |>
+    group_by(R_eff, overdispersion, magnitude, window_len_fct, model) |>
     summarise(
       converged = sum(converged & !is.na(R), na.rm = TRUE),
       # unstable = convergent but masked/flagged by NA in `R` and `se`columns
@@ -132,12 +154,10 @@ summarize_convergence <- function(scenario_id, df_R_hat) {
   # Create the table counting convergent runs
   df_convergence <- df_summarized |>
     dplyr::select(-unstable) |>
-    pivot_wider(names_from = "model", values_from = "converged") |>
-    mutate(scenario_id = scenario_id)
+    pivot_wider(names_from = "model", values_from = "converged")
   # Create the table counting unstable, but convergent runs
   df_unstable <- df_summarized |>
     dplyr::select(-converged) |>
-    pivot_wider(names_from = "model", values_from = "unstable") |>
-    mutate(scenario_id = scenario_id)
+    pivot_wider(names_from = "model", values_from = "unstable")
   list(df_convergence = df_convergence, df_unstable = df_unstable)
 }
