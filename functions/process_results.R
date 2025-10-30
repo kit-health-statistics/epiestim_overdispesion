@@ -31,9 +31,9 @@ extract_ests <- function(fitted_model) {
       # and NegBin-Q. Note that in `gamlss`, "NBI" denotes NegBin-Q and "NBII"
       # is NegBin-L
       if (fitted_model$family[1] == "NBI") {
-        res$overdisp <- 1 / fitted_model$sigma.coefficients
+        res$overdisp <- 1 / fitted_model$sigma.coefficients[1]
       } else if (fitted_model$family[1] == "NBII") {
-        res$overdisp <- 1 + 1 / fitted_model$sigma.coefficients
+        res$overdisp <- 1 + 1 / fitted_model$sigma.coefficients[1]
       } else {
         res$overdisp <- NA
       }
