@@ -5,16 +5,18 @@
 #'
 #' @param fitted_model a fitted \code{gamlss}, or \code{glm} model with one
 #'   covariate and no intercept
-#' @return a named list with three elements
+#' @return a named list with four elements
 #'   \describe{
 #'      \item{\code{R_hat}}{point estimate of $R_t$}
 #'      \item{\code{se_hat}}{standard error of the estimate}
+#'      \item{\code{overdisp}}{estimates of the overdispersion parameter, on
+#'      different scales for NegBin-L and NegBin-Q}
 #'      \item{\code{converged}}{logical flag indicating the convergence of the
 #'      fitting algorithm}
 #'   }
 extract_ests <- function(fitted_model) {
   # Initialize the return list
-  res <- list(R_hat = NA, se_hat = NA, converged = FALSE)
+  res <- list(R_hat = NA, se_hat = NA, overdisp = NA, converged = FALSE)
   if (!inherits(fitted_model, "try-error")) {
     res$converged <- fitted_model$converged
     # The fitted model objects are different for `glm()` and `gamlss()`
@@ -25,6 +27,16 @@ extract_ests <- function(fitted_model) {
       res$se_hat <- sqrt(
         tryCatch(vcov(fitted_model), error = function(e) matrix(NA))[1, 1]
       )
+      # The reported overdispersion parameter is different for NegBin-L
+      # and NegBin-Q. Note that in `gamlss`, "NBI" denotes NegBin-Q and "NBII"
+      # is NegBin-L
+      if (fitted_model$family[1] == "NBI") {
+        res$overdisp <- 1 / fitted_model$sigma.coefficients[1]
+      } else if (fitted_model$family[1] == "NBII") {
+        res$overdisp <- 1 + 1 / fitted_model$sigma.coefficients[1]
+      } else {
+        res$overdisp <- NA
+      }
     } else if (class(fitted_model)[1] == "glm") {
       res$R_hat <- unlist(fitted_model$coefficients[1])
       res$se_hat <- unlist(summary(fitted_model)$coefficients[1, "Std. Error"])
@@ -33,11 +45,30 @@ extract_ests <- function(fitted_model) {
   res
 }
 
+#' Arrange the estimates from a nested list to a data frame
+#'
+#' @description This function takes the list of lists of the estimates and
+#'   arranges them into a data frame.
+#' @param results the nested list containing the estimation results from all 4
+#'   models
+#' @return a data frame with 5 columns:
+#'   \itemize{
+#'     \item \code{R} the estimated effective reproductive number
+#'     \item \code{se} the estimated standard error of R
+#'     \item \code{overdisp} the estimated overdispersion parameter
+#'     \item \code{converged} logical vector indicating, whether the estimation
+#'     converged
+#'     \item \code{model} the estimated model, one of "NegBin-L", "NegBin-Q",
+#'     "Q-Poiss" and "Poiss"
+#'   }
 bind_ests_to_df <- function(results) {
   R_hat <- lapply(results, map, "R_hat") |>
     lapply(unlist) |>
     lapply(unname)
   se_hat <- lapply(results, map, "se_hat") |> lapply(unlist) |> lapply(unname)
+  overdisp <- lapply(results, map, "overdisp") |>
+    lapply(unlist) |>
+    lapply(unname)
   converged <- lapply(results, map, "converged") |>
     lapply(unlist) |>
     lapply(unname)
@@ -45,6 +76,7 @@ bind_ests_to_df <- function(results) {
   df_R_hat <- data.frame(
     R = unlist(R_hat),
     se = unlist(se_hat),
+    overdisp = unlist(overdisp),
     converged = unlist(converged),
     model = rep(names(results), each = length(R_hat[[1]]))
   )
