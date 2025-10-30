@@ -177,7 +177,14 @@ list(
     # How many did converge?
     tar_target(
       convergence_tables,
-      summarize_convergence(scenarios$scenario_id, df_R_hat),
+      summarize_convergence(
+        df_R_hat,
+        scenarios$magnitude,
+        scenarios$nb_size,
+        scenarios$R_eff,
+        # Model name from the outer scenarios data frame
+        distribution
+      ),
       pattern = map(df_R_hat, scenarios),
       iteration = "list"
     ),
