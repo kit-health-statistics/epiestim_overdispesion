@@ -53,6 +53,8 @@ fit_reg_model <- function(
 #'   \begin{itemize}
 #'     \item \code{R_hat}, estimates of the effective reproduction number
 #'     \item \code{se_hat}, estimates of the standard errors
+#'     \item \code{overdisp}, estimates of the overdispersion parameter, on
+#'     different scales for NegBin-L and NegBin-Q
 #'     \item \code{converged}, an indicator, whether the fitting algorithm
 #'     converged
 #'     \item \code{window_len}, length of the estimation window
