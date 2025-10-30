@@ -9,8 +9,8 @@
 #'   \describe{
 #'      \item{\code{R_hat}}{point estimate of $R_t$}
 #'      \item{\code{se_hat}}{standard error of the estimate}
-#'      \item \code{overdisp}, estimates of the overdispersion parameter, on
-#'      different scales for NegBin-L and NegBin-Q
+#'      \item{\code{overdisp}}{estimates of the overdispersion parameter, on
+#'      different scales for NegBin-L and NegBin-Q}
 #'      \item{\code{converged}}{logical flag indicating the convergence of the
 #'      fitting algorithm}
 #'   }
