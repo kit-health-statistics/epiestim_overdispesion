@@ -181,7 +181,9 @@ list(
         df_R_hat,
         scenarios$magnitude,
         scenarios$nb_size,
-        scenarios$R_eff
+        scenarios$R_eff,
+        # Model name from the outer scenarios data frame
+        distribution
       ),
       pattern = map(df_R_hat, scenarios),
       iteration = "list"

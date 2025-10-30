@@ -115,6 +115,7 @@ calc_coverage <- function(est, se, true_par, level) {
 #'   distribution used in the simulation scenario
 #' @param R_eff numeric, value of the effective reproductive number
 #'   distribution used in the simulation scenario
+#' @true_model string, count distribution used in the simulation scenario
 #' @return a list with two data frames:
 #'   \itemize{
 #'     \item \code{df_convergence}: counts where \code{converged == TRUE} and
@@ -124,14 +125,20 @@ calc_coverage <- function(est, se, true_par, level) {
 #'       R estimate is \code{NA} after post‑processing, wide by \code{model},
 #'       plus metadata about the parameter values and window length
 #'   }
-summarize_convergence <- function(df_R_hat, magnitude, nb_size, R_eff) {
+summarize_convergence <- function(
+  df_R_hat,
+  magnitude,
+  nb_size,
+  R_eff,
+  true_model
+) {
   df_summarized <- df_R_hat |>
     mutate(
       R_eff = R_eff,
-      overdispersion = if (df_R_hat$model[1] == "NegBin-Q") {
-        1 / nb_size
-      } else if (df_R_hat$model[1] == "NegBin-L") {
-        (1 + 1 / nb_size)
+      overdispersion = if (true_model == "NegBin-Q") {
+        round(1 / nb_size, digits = 2)
+      } else if (true_model == "NegBin-L") {
+        round(1 + 1 / nb_size, digits = 2)
       } else {
         NA
       },
