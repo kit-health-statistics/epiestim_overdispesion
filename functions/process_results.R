@@ -115,7 +115,7 @@ calc_coverage <- function(est, se, true_par, level) {
 #'   distribution used in the simulation scenario
 #' @param R_eff numeric, value of the effective reproductive number
 #'   distribution used in the simulation scenario
-#' @true_model string, count distribution used in the simulation scenario
+#' @param true_model string, count distribution used in the simulation scenario
 #' @return a list with two data frames:
 #'   \itemize{
 #'     \item \code{df_convergence}: counts where \code{converged == TRUE} and
