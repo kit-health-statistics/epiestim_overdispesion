@@ -173,6 +173,14 @@ plot_coverage <- function(
         ),
         guide = "none"
       ) +
+      scale_x_continuous(
+        breaks = seq(0, 1, by = 0.2),
+        minor_breaks = seq(0, 1, by = 0.1)
+      ) +
+      scale_y_continuous(
+        breaks = seq(0, 1, by = 0.2),
+        minor_breaks = seq(0, 1, by = 0.1)
+      ) +
       labs(
         x = "Nominal coverage",
         y = "Empirical coverage",
