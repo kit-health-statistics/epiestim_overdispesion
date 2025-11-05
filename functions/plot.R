@@ -5,10 +5,18 @@
 #'   returned as a list
 #' @param R_eff positive real, the true value of the effective reproductive
 #'   number. The x-axis is centered around this value.
+#' @param distribution the true underlying count distribution
 #' @return a list of 2 vectors of 2 elements - the limits for R estimate and
 #'   the limits for its standard errors.
-get_xlim <- function(R_eff) {
-  list(R_hat = R_eff + c(-0.8, 0.8), se_hat = c(0, 1.8))
+get_xlim <- function(R_eff, distribution) {
+  se_limits <- if (distribution == "NegBin-L") {
+    c(0, 0.6)
+  } else if (distribution == "NegBin-Q") {
+    c(0, 0.4)
+  } else if (distribution == "Poiss") {
+    c(0, 0.3)
+  }
+  list(R_hat = R_eff + c(-0.8, 0.8), se_hat = se_limits)
 }
 
 #' Plots density distributions of the estimates
@@ -69,7 +77,7 @@ plot_dens <- function(df_R_hat, R_true, model_colors, limits_x) {
       ) +
       scale_color_manual(values = model_colors) +
       labs(
-        x = expression(se(hat(R))),
+        x = expression(widehat(se)(hat(R))),
         color = "Model",
         y = "density"
       ) +
@@ -497,7 +505,7 @@ compose_dens_patches <- function(
   p_headline_se_hat <- plot_spacer() +
     ggplot() +
     geom_text(
-      aes(x = 1, y = 1, label = "Distribution~of~se(hat(R))"),
+      aes(x = 1, y = 1, label = "Distribution~of~widehat(se)(hat(R))"),
       size = 5.5,
       parse = TRUE
     ) +
