@@ -497,7 +497,7 @@ compose_dens_patches <- function(
   p_headline_se_hat <- plot_spacer() +
     ggplot() +
     geom_text(
-      aes(x = 1, y = 1, label = "Distribution~of~se(hat(R))"),
+      aes(x = 1, y = 1, label = "Distribution~of~widehat(se)(hat(R))"),
       size = 5.5,
       parse = TRUE
     ) +
