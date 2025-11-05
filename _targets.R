@@ -43,7 +43,7 @@ global_params <- list(
   short_window = 7,
   long_window = 14,
   n_sim = 1000L,
-  weekday = c(1.05, 0.24, 1.4, 1.69, 0.17, 1.4, 1.05),
+  weekday = c(1.05, 1.35, 1.69, 1.45, 1.05, 0.24, 0.17),
   base_seed = 9786L
 )
 

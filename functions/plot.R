@@ -8,7 +8,7 @@
 #' @return a list of 2 vectors of 2 elements - the limits for R estimate and
 #'   the limits for its standard errors.
 get_xlim <- function(R_eff) {
-  list(R_hat = R_eff + c(-0.8, 0.8), se_hat = c(0, 1.8))
+  list(R_hat = R_eff + c(-0.8, 0.8), se_hat = c(0, 0.6))
 }
 
 #' Plots density distributions of the estimates
@@ -69,7 +69,7 @@ plot_dens <- function(df_R_hat, R_true, model_colors, limits_x) {
       ) +
       scale_color_manual(values = model_colors) +
       labs(
-        x = expression(se(hat(R))),
+        x = expression(widehat(se)(hat(R))),
         color = "Model",
         y = "density"
       ) +
