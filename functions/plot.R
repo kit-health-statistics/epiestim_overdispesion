@@ -5,10 +5,18 @@
 #'   returned as a list
 #' @param R_eff positive real, the true value of the effective reproductive
 #'   number. The x-axis is centered around this value.
+#' @param distribution the true underlying count distribution
 #' @return a list of 2 vectors of 2 elements - the limits for R estimate and
 #'   the limits for its standard errors.
-get_xlim <- function(R_eff) {
-  list(R_hat = R_eff + c(-0.8, 0.8), se_hat = c(0, 0.6))
+get_xlim <- function(R_eff, distribution) {
+  se_limits <- if (distribution == "NegBin-L") {
+    c(0, 0.6)
+  } else if (distribution == "NegBin-Q") {
+    c(0, 0.4)
+  } else if (distribution == "Poiss"){
+    c(0, 0.3)
+  }
+  list(R_hat = R_eff + c(-0.8, 0.8), se_hat = se_limits)
 }
 
 #' Plots density distributions of the estimates

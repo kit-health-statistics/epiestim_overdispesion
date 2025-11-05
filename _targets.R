@@ -212,7 +212,7 @@ list(
         df_R_hat,
         scenarios$R_eff,
         model_colors,
-        get_xlim(scenarios$R_eff)
+        get_xlim(scenarios$R_eff, distribution)
       ),
       pattern = map(df_R_hat, scenarios),
       iteration = "list"
