@@ -1,3 +1,17 @@
+initialize_trajectory <- function(
+  n_init,
+  init_magnitude,
+  init_sd,
+  weekday_effect,
+  seed
+) {
+  # Set seed ensuring identical initialization for scenarios with the same
+  # magnitude. Creates redundant copies (nrow(scenarios) instead of 2) but
+  # simplifies pipeline structure with negligible computational cost.
+  set.seed(seed)
+  pmax(0, round(rnorm(n_init, init_magnitude * weekday_effect, init_sd)))
+}
+
 #' Generate the incidence counts from the corresponding distribution
 #'
 #' @param mu mean value of the count distribution
