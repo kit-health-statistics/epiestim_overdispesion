@@ -64,7 +64,8 @@ create_coverage_df <- function(
   nb_size,
   df_R_hat,
   nominal_covr,
-  distribution
+  distribution,
+  weekday_effect
 ) {
   # Calculate the coverage of true value of R. We take the point estimates and
   # the SEs from the fitted model.
@@ -89,7 +90,7 @@ create_coverage_df <- function(
   # inflated by a factor depending on the dispersion parameter of the NB
   # distribution. For NegBin-L, we have an explicit formula, how much the
   # variance is underestimated, for NegBin-Q, there is no explicit formula.
-  if (distribution == "NegBin-L") {
+  if (distribution == "NegBin-L" && weekday_effect == "weekday_no") {
     var_infl_factor_true <- (1 + 1 / nb_size)
   } else {
     var_infl_factor_true <- NA

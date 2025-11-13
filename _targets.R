@@ -43,7 +43,7 @@ global_params <- list(
   short_window = 7,
   long_window = 14,
   n_sim = 1000L,
-  weekday = c(1.05, 1.35, 1.69, 1.45, 1.05, 0.24, 0.17),
+  weekday = c(1.05, 1.40, 1.75, 1.40, 1.05, 0.21, 0.14),
   base_seed = 9786L
 )
 
@@ -79,26 +79,28 @@ list(
     names = scenario_id,
     # Get the data frame with scenario parameters
     tar_target(scenarios, create_scenario_grid(distribution)),
+    # Set the weekday effect. If the weekday effect is not present, we multiply
+    # the simulated mean value by 1 under the hood, so there is indeed no
+    # effect.
+    tar_target(
+      weekday_effect_vector,
+      if (weekday_effect == "weekday_yes") {
+        global_params$weekday
+      } else {
+        rep(1, global_params$n_init)
+      }
+    ),
     # Initial values. Sample iid counts using a reasonable data generating
     # mechanism.
     tar_target(
       init,
-      {
-        # Set seed ensuring identical initialization for scenarios with the same
-        # magnitude. Creates redundant copies (nrow(scenarios) instead of 2) but
-        # simplifies pipeline structure with negligible computational cost.
-        set.seed(global_params$base_seed + scenarios$init_seed)
-        pmax(
-          0,
-          round(
-            rnorm(
-              global_params$n_init,
-              scenarios$init_magnitude,
-              scenarios$init_sd
-            )
-          )
-        )
-      },
+      initialize_trajectory(
+        global_params$n_init,
+        scenarios$init_magnitude,
+        scenarios$init_sd,
+        weekday_effect = weekday_effect_vector,
+        seed = global_params$base_seed + scenarios$init_seed
+      ),
       pattern = map(scenarios),
       iteration = "list"
     ),
@@ -116,13 +118,7 @@ list(
           model = distribution,
           nb_size = scenarios$nb_size,
           seed = global_params$base_seed + scenarios$scenario_number,
-          # If the weekday effect is not present, we multiply the simulated mean
-          # value by 1 under the hood, so there is indeed no effect
-          weekday_effect = if (weekday_effect == "weekday_yes") {
-            global_params$weekday
-          } else {
-            rep(1, global_params$n_init + global_params$long_window)
-          }
+          weekday_effect = weekday_effect_vector
         )
       ),
       pattern = map(init, scenarios),
@@ -162,6 +158,7 @@ list(
           df_R_hat,
           seq(0, 1, by = 0.01),
           distribution,
+          weekday_effect,
           model_colors
         ),
         meta = plot_metadata(

@@ -110,6 +110,7 @@ plot_coverage <- function(
   df_R_hat,
   nominal_covr,
   distribution,
+  weekday_effect,
   model_colors
 ) {
   df_coverage <- create_coverage_df(
@@ -117,7 +118,8 @@ plot_coverage <- function(
     nb_size,
     df_R_hat,
     nominal_covr,
-    distribution
+    distribution,
+    weekday_effect
   )
 
   # Split the data frames to create 2 separate plots instead of facets. This
