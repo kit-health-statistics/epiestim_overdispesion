@@ -297,7 +297,7 @@ plot_metadata <- function(R_eff, nb_size, magnitude, distribution) {
     label = c(
       paste0("R[t] == ", R_eff),
       if (distribution == "NegBin-L") {
-        paste0("xi == ", (1 + 1 / nb_size))
+        paste0("xi == ", 1 / nb_size)
       } else if (distribution == "NegBin-Q") {
         paste0("psi == ", 1 / nb_size)
       } else {

@@ -169,10 +169,8 @@ summarize_convergence <- function(
   df_summarized <- df_R_hat |>
     mutate(
       R_eff = R_eff,
-      overdispersion = if (true_model == "NegBin-Q") {
+      overdispersion = if (true_model %in% c("NegBin-L", "NegBin-Q")) {
         round(1 / nb_size, digits = 2)
-      } else if (true_model == "NegBin-L") {
-        round(1 + 1 / nb_size, digits = 2)
       } else {
         NA
       },
