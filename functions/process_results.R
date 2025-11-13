@@ -27,19 +27,21 @@ extract_ests <- function(fitted_model) {
       res$se_hat <- sqrt(
         tryCatch(vcov(fitted_model), error = function(e) matrix(NA))[1, 1]
       )
-      # The reported overdispersion parameter is different for NegBin-L
-      # and NegBin-Q. Note that in `gamlss`, "NBI" denotes NegBin-Q and "NBII"
-      # is NegBin-L
-      if (fitted_model$family[1] == "NBI") {
-        res$overdisp <- 1 / fitted_model$sigma.coefficients[1]
-      } else if (fitted_model$family[1] == "NBII") {
-        res$overdisp <- 1 + 1 / fitted_model$sigma.coefficients[1]
-      } else {
-        res$overdisp <- NA
-      }
+      # The reported overdispersion parameter is fitted using a log-link, so we
+      # need to transform it back to the constrained space (0, Infinity).
+      # After doing the transformation, the parameters are on correct scales
+      # that are diferent for NegBin-L and NegBin-Q.
+      res$overdisp <- exp(fitted_model$sigma.coefficients[1])
     } else if (class(fitted_model)[1] == "glm") {
       res$R_hat <- unlist(fitted_model$coefficients[1])
       res$se_hat <- unlist(summary(fitted_model)$coefficients[1, "Std. Error"])
+      if (fitted_model$family[1] == "quasipoisson") {
+        # Calculate the quasi-Poisson overdispersion parameter using the
+        # Pearson residuals
+        res$overdisp <- sum(
+          fitted_model$residuals^2 / fitted_model$fitted.values
+        ) / (length(fitted_model$residuals) - 1)
+      }
     }
   }
   res

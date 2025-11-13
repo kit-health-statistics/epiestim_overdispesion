@@ -37,8 +37,8 @@ model_colors <- c(
 
 # Parameters common for all simulation runs
 global_params <- list(
-  mean_si = 6,
-  std_si = 1,
+  mean_si = 7.5,
+  std_si = 2.1,
   n_init = 14,
   short_window = 7,
   long_window = 14,
