@@ -17,16 +17,24 @@
 get_xlim <- function(R_true, overdisp_true, magnitude, distribution) {
   if (distribution == "NegBin-L") {
     se_limits <- if (magnitude == "high") {
-      c(0, 1.5)
+      c(0, 0.2)
     } else if (magnitude == "low") {
-      c(-1, 0.6)
+      c(0, 0.6)
     }
     overdisp_limits <- c(-1, min(10, 5 * overdisp_true))
   } else if (distribution == "NegBin-Q") {
-    se_limits <- c(0, 0.4)
+    se_limits <- if (magnitude == "high") {
+      c(0, 0.2)
+    } else if (magnitude == "low") {
+      c(0, 0.4)
+    }
     overdisp_limits <- c(0, overdisp_true + 0.08)
   } else if (distribution == "Poiss") {
-    se_limits <- c(0, 0.3)
+    se_limits <- if (magnitude == "high") {
+      c(0, 0.05)
+    } else if (magnitude == "low") {
+      c(0, 0.3)
+    }
     overdisp_limits <- c(NA, NA)
   }
   list(
