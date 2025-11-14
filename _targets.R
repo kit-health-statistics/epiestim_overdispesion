@@ -43,6 +43,8 @@ global_params <- list(
   short_window = 7,
   long_window = 14,
   n_sim = 1000L,
+  # We don't use the weekday effects in the simulation. However, they are left
+  # here just in case we need them in the future.
   weekday = c(1.05, 1.40, 1.75, 1.40, 1.05, 0.21, 0.14),
   base_seed = 9786L
 )
@@ -55,11 +57,13 @@ plot_halving_coeff <- 1.98
 
 # Scenario blocks for the static branching:
 # NegBin-L
-# NegBin-L with weekday effects
 # NegBin-Q
+# Poisson
+# None of them involves weekday effects, but they can be added by using
+# "weekday_yes"
 outer_scenarios <- data.frame(
-  distribution = c("NegBin-L", "NegBin-L", "NegBin-Q", "Poiss"),
-  weekday_effect = c("weekday_no", "weekday_yes", "weekday_no", "weekday_no")
+  distribution = c("NegBin-L", "NegBin-Q", "Poiss"),
+  weekday_effect = c("weekday_no", "weekday_no", "weekday_no")
 ) |>
   dplyr::mutate(
     scenario_id = paste(distribution, weekday_effect, sep = "_")
@@ -287,10 +291,6 @@ list(
     overdisp_panels <- list(
       NegBin.L_weekday_no = purrr::map(
         plot_density_panels_NegBin.L_weekday_no,
-        "overdisp_hat"
-      ),
-      NegBin.L_weekday_yes = purrr::map(
-        plot_density_panels_NegBin.L_weekday_yes,
         "overdisp_hat"
       ),
       NegBin.Q_weekday_no = purrr::map(
