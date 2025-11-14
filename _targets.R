@@ -208,8 +208,10 @@ list(
       plot_dens(
         df_R_hat,
         scenarios$R_eff,
-        model_colors,
-        get_xlim(scenarios$R_eff, distribution)
+        1 / scenarios$nb_size,
+        scenarios$magnitude,
+        distribution,
+        model_colors
       ),
       pattern = map(df_R_hat, scenarios),
       iteration = "list"
@@ -237,9 +239,13 @@ list(
         width = plot_size$width,
         height = plot_height
       )
-      # Save the distribution of the estimates
+      # Save the distribution of the R estimates
       p_densities <- compose_dens_patches(
-        plot_density_panels,
+        # Extract only the R estimates
+        list(
+          R_hat = purrr::map(plot_density_panels, "R_hat"),
+          se_hat = purrr::map(plot_density_panels, "se_hat")
+        ),
         purrr::map(plot_panels, "meta"),
         global_params$short_window,
         global_params$long_window
@@ -255,23 +261,53 @@ list(
       saved_figures_poster,
       {
         # Create the coverage plot for a subset of scenarios. We will use only
-        # NegBin-L and NegBin-Q versions, but it's easier to generate everything
-        # in one go.
-        p_simulation_poster <- compose_coverage_patches(
-          plot_panels[scenarios$R_eff == 1.5 & scenarios$magnitude == "low"],
-          global_params$short_window,
-          global_params$long_window,
-          panel_widths = c(1.3, 2, 3)
-        ) &
-          theme(plot.margin = unit(c(5.5, 5.5, 0.5, 5.5), "points"))
-        save_plot(
-          p_simulation_poster,
-          paste(scenario_id, "simulation_coverage_poster", sep = "_"),
-          # Figure dimensions must be set manually to fit the poster page
-          width = plot_size$width / 1.4,
-          height = (plot_size$height / 1.4) / 2.35
-        )
+        # NegBin-L and NegBin-Q versions.
+        generate_poster_figure <- distribution == "NegBin-Q" ||
+          (distribution == "NegBin-L" && weekday_effect == "weekday_no")
+        if (generate_poster_figure) {
+          p_simulation_poster <- compose_coverage_patches(
+            plot_panels[scenarios$R_eff == 1.5 & scenarios$magnitude == "low"],
+            global_params$short_window,
+            global_params$long_window,
+            panel_widths = c(1.3, 2, 3)
+          ) &
+            theme(plot.margin = unit(c(5.5, 5.5, 0.5, 5.5), "points"))
+          save_plot(
+            p_simulation_poster,
+            paste(scenario_id, "simulation_coverage_poster", sep = "_"),
+            # Figure dimensions must be set manually to fit the poster page
+            width = plot_size$width / 1.4,
+            height = (plot_size$height / 1.4) / 2.35
+          )
+        }
       }
     )
-  )
+  ),
+  tar_target(saved_overdisp_est_plots, {
+    overdisp_panels <- list(
+      NegBin.L_weekday_no = purrr::map(
+        plot_density_panels_NegBin.L_weekday_no,
+        "overdisp_hat"
+      ),
+      NegBin.L_weekday_yes = purrr::map(
+        plot_density_panels_NegBin.L_weekday_yes,
+        "overdisp_hat"
+      ),
+      NegBin.Q_weekday_no = purrr::map(
+        plot_density_panels_NegBin.Q_weekday_no,
+        "overdisp_hat"
+      )
+    )
+    meta_panels <- list(
+      NegBin.L = purrr::map(plot_panels_NegBin.L_weekday_no, "meta"),
+      NegBin.Q = purrr::map(plot_panels_NegBin.Q_weekday_no, "meta")
+    )
+    p_overdisp <- compose_overdisp_patches(overdisp_panels, meta_panels)
+    save_plot(
+      p_overdisp,
+      "overdisp_estimates",
+      width = plot_size$width,
+      height = plot_size$height
+    )
+  })
 )
