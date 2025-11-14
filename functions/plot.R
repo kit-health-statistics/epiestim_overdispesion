@@ -72,6 +72,11 @@ plot_dens <- function(
   dist_true,
   model_colors
 ) {
+  # Create a denser grid where we want `geom_line(stat = "density")` to
+  # calculate the density estimate. the default 512 occasionally creates a
+  # ragged line.
+  density_estimation_grid <- 1024
+  
   # Split the data frames to create 2 separate plots for each window width. This
   # way, it's easier to put the final plot together from multiple blocks
   df_R_hat_split <- split.data.frame(
@@ -88,7 +93,13 @@ plot_dens <- function(
   for (k in 1:2) {
     # Plot the point estimates of R_eff (R_hat)
     p_R_hat[[k]] <- ggplot(df_R_hat_split[[k]], aes(x = R, color = model)) +
-      geom_line(stat = "density", linewidth = 1, alpha = 0.6, na.rm = TRUE) +
+      geom_line(
+        stat = "density",
+        linewidth = 1,
+        alpha = 0.6,
+        na.rm = TRUE,
+        n = density_estimation_grid
+      ) +
       geom_vline(aes(xintercept = R_true, linetype = "R_true"), color = "red") +
       scale_color_manual(values = model_colors) +
       scale_linetype_manual(
@@ -112,7 +123,8 @@ plot_dens <- function(
         linewidth = 1,
         alpha = 0.6,
         na.rm = TRUE,
-        bounds = c(0, Inf)
+        bounds = c(0, Inf),
+        n = density_estimation_grid
       ) +
       scale_color_manual(values = model_colors) +
       labs(
@@ -148,7 +160,7 @@ plot_dens <- function(
           alpha = 0.6,
           na.rm = TRUE,
           bounds = c(0, Inf),
-          n = 1024
+          n = density_estimation_grid
         )
     } else if (dist_true == "NegBin-L") {
       # set the x-axis label to xi for NegBin-L
@@ -167,7 +179,7 @@ plot_dens <- function(
           # Where the density shall be calculated. We need to plot quasi-Poisson
           # and NegBin-L separately to be able to set different bounds.
           bounds = c(-1, Inf),
-          n = 1024
+          n = density_estimation_grid
         ) +
         geom_line(
           data = filter(df_R_hat, model == "NegBin-L"),
@@ -177,7 +189,7 @@ plot_dens <- function(
           alpha = 0.6,
           na.rm = TRUE,
           bounds = c(0, Inf),
-          n = 1024
+          n = density_estimation_grid
         ) +
         # A dummy line to achieve including the "NegBin-Q" label in the legend
         geom_line(
