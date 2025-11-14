@@ -77,7 +77,7 @@ plot_dens <- function(
   # calculate the density estimate. the default 512 occasionally creates a
   # ragged line.
   density_estimation_grid <- 1024
-  
+
   # Split the data frames to create 2 separate plots for each window width. This
   # way, it's easier to put the final plot together from multiple blocks
   df_R_hat_split <- split.data.frame(
@@ -711,25 +711,17 @@ compose_overdisp_patches <- function(
     # NegBin-L true data generating process
     ggplot() +
     geom_text(
-      aes(x = 1, y = 1, label = "NegBin-L"),
+      aes(x = 1, y = 1, label = "NegBin-L ground truth"),
       size = 5
     ) +
     theme_void() +
     plot_panels$NegBin.L_weekday_no +
-    # NegBin-L with weekday effects true data generating process
-    ggplot() +
-    geom_text(
-      aes(x = 1, y = 1, label = "NegBin-L with\nweekday effects"),
-      size = 5
-    ) +
-    theme_void() +
-    plot_panels$NegBin.L_weekday_yes +
     plot_layout(
       nrow = n_rows + 1,
-      ncol = 3,
+      ncol = 2,
       byrow = FALSE,
-      heights = c(1.5, rep(6, n_rows)),
-      widths = c(2.5, 6, 6),
+      heights = c(1, rep(6, n_rows)),
+      widths = c(2, 6),
       guides = "collect",
       axes = "collect_x",
       axis_titles = "collect"
@@ -743,7 +735,7 @@ compose_overdisp_patches <- function(
     # NegBin-Q true data generating process
     ggplot() +
     geom_text(
-      aes(x = 1, y = 1, label = "NegBin-Q"),
+      aes(x = 1, y = 1, label = "NegBin-Q ground truth"),
       size = 5
     ) +
     theme_void() +
@@ -752,8 +744,8 @@ compose_overdisp_patches <- function(
       nrow = n_rows + 1,
       ncol = 2,
       byrow = FALSE,
-      heights = c(1.5, rep(6, n_rows)),
-      widths = c(2., 6),
+      heights = c(1, rep(6, n_rows)),
+      widths = c(2, 6),
       guides = "collect",
       axes = "collect"
     ) &
@@ -768,7 +760,7 @@ compose_overdisp_patches <- function(
 
   # Combine everything
   p_main <- wrap_elements(
-    (p_negbin_l | p_negbin_q) + plot_layout(widths = c(14, 8))
+    (p_negbin_l | p_negbin_q) + plot_layout(widths = c(8, 8))
   ) +
     p_legend +
     plot_layout(widths = c(10, 1))
