@@ -1,5 +1,5 @@
 R_eff,overdispersion,magnitude,window_len_fct,NegBin-L,NegBin-Q,Poiss,Q-Poiss
-1.5,0.5,low,long,53,270,0,0
+1.5,0.5,low,long,53,271,0,0
 1.5,0.5,low,short,128,422,0,0
 1.5,0.5,high,long,128,285,0,0
 1.5,0.5,high,short,177,443,0,0
@@ -7,11 +7,11 @@ R_eff,overdispersion,magnitude,window_len_fct,NegBin-L,NegBin-Q,Poiss,Q-Poiss
 1.5,5,low,short,9,22,0,0
 1.5,5,high,long,0,1,0,0
 1.5,5,high,short,8,22,0,0
-2.5,0.5,low,long,91,286,0,0
+2.5,0.5,low,long,91,287,0,0
 2.5,0.5,low,short,91,414,0,0
 2.5,0.5,high,long,175,301,0,0
-2.5,0.5,high,short,209,423,0,0
+2.5,0.5,high,short,210,423,0,0
 2.5,5,low,long,0,2,0,0
-2.5,5,low,short,7,28,0,0
+2.5,5,low,short,8,28,0,0
 2.5,5,high,long,0,0,0,0
 2.5,5,high,short,11,24,0,0

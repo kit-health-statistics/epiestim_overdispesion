@@ -1,22 +1,39 @@
 #' Returns the x-axis limits for the R estimate distribution plot
 #'
 #' @description This function returns the x-axis limits for the plot of R
-#'   estimate distribution and the plot of its standard errors. The limits are
-#'   returned as a list
+#'   estimate distribution, the plot of its standard errors and the plot of the
+#'   overdispersion parameter estimate density. The limits are determined
+#'   manually and returned as a list.
 #' @param R_eff positive real, the true value of the effective reproductive
 #'   number. The x-axis is centered around this value.
+#' @param overdisp_true the true value of the overdispersion parameter used to
+#'   generate the trajectory
+#' @param magnitude string indicating whether the scenario operates with low, or
+#'   high magnitudes.
 #' @param distribution the true underlying count distribution
-#' @return a list of 2 vectors of 2 elements - the limits for R estimate and
-#'   the limits for its standard errors.
-get_xlim <- function(R_eff, distribution) {
-  se_limits <- if (distribution == "NegBin-L") {
-    c(0, 0.6)
+#' @return a list of 3 vectors of 2 elements - the limits for R estimate,
+#'   the limits for its standard errors and the limits of the overdispersion
+#'   estimates
+get_xlim <- function(R_true, overdisp_true, magnitude, distribution) {
+  if (distribution == "NegBin-L") {
+    se_limits <- if (magnitude == "high") {
+      c(0, 1.5)
+    } else if (magnitude == "low") {
+      c(-1, 0.6)
+    }
+    overdisp_limits <- c(-1, min(10, 5 * overdisp_true))
   } else if (distribution == "NegBin-Q") {
-    c(0, 0.4)
+    se_limits <- c(0, 0.4)
+    overdisp_limits <- c(0, overdisp_true + 0.08)
   } else if (distribution == "Poiss") {
-    c(0, 0.3)
+    se_limits <- c(0, 0.3)
+    overdisp_limits <- c(NA, NA)
   }
-  list(R_hat = R_eff + c(-0.8, 0.8), se_hat = se_limits)
+  list(
+    R_hat = R_true + c(-0.8, 0.8),
+    se_hat = se_limits,
+    overdisp_hat = overdisp_limits
+  )
 }
 
 #' Plots density distributions of the estimates
@@ -28,15 +45,25 @@ get_xlim <- function(R_eff, distribution) {
 #'   runs by NAs, containing columns
 #' @param R_true the true value of the effective reproduction number used to
 #'   generate the trajectory
+#' @param overdisp_true the true value of the overdispersion parameter used to
+#'   generate the trajectory
+#' @param magnitude string indicating whether the scenario operates with low, or
+#'   high magnitudes.
+#' @param dist_true string, the true count distribution of the data generating
+#'   process
 #' @param model_colors a named vector specifying the model colors. Must have
 #'   names "Poiss", "Q-Poiss", "NegBin-L" and "NegBin-Q"
-#' @param limits_x a list of the limits for the x-axis, must have 2 elements
-#'   called \code{R_hat} and \code{se_hat}. Both elements must contain a vector
-#'   with 2 elements - the axis range.
 #' @return a nested list containing density plots: outer list has elements
 #'   \code{R_hat} and \code{se_hat}, each containing a list of two plots
 #'   (one per window length)
-plot_dens <- function(df_R_hat, R_true, model_colors, limits_x) {
+plot_dens <- function(
+  df_R_hat,
+  R_true,
+  overdisp_true,
+  magnitude,
+  dist_true,
+  model_colors
+) {
   # Split the data frames to create 2 separate plots for each window width. This
   # way, it's easier to put the final plot together from multiple blocks
   df_R_hat_split <- split.data.frame(
@@ -44,7 +71,11 @@ plot_dens <- function(df_R_hat, R_true, model_colors, limits_x) {
     df_R_hat$window_len_fct
   )
 
-  p_R_hat <- p_se_hat <- vector("list", 2)
+  # Calculate the x-limits for the plot of R estimates, its standard errors and
+  # the dispersion parameter estimates
+  limits_x <- get_xlim(R_true, overdisp_true, magnitude, dist_true)
+
+  p_R_hat <- p_se_hat <- p_overdisp_hat <- vector("list", 2)
   names(p_R_hat) <- names(p_se_hat) <- names(df_R_hat_split)
   for (k in 1:2) {
     # Plot the point estimates of R_eff (R_hat)
@@ -85,8 +116,107 @@ plot_dens <- function(df_R_hat, R_true, model_colors, limits_x) {
       coord_cartesian(xlim = limits_x$se_hat) +
       theme(legend.text = element_text(size = 10))
   }
+
+  # Plot the point estimates of the overdispersion parameter. We use 2 facets
+  # for 2 window lengths, therefore, we create the plot outside the for loop.
+  df_R_hat_overdisp <- if (dist_true == "Poiss") {
+    # For the Poisson ground truth we don't plot anything
+    p_overdisp_hat <- NULL
+  } else {
+    # We plot only parameters on the same scale. If the ground truth is
+    # NegBin-Q, then only the NegBin-Q parameter estimates are on the same
+    # scale. For NegBin-L, we can plot both the NegBin-L and the quasi-Poisson
+    # estimate.
+    if (dist_true == "NegBin-Q") {
+      # set the x-axis label to psi for NegBin-Q
+      x_label <- expression(psi)
+      # Plot the geometries
+      p_overdisp_hat <- ggplot() +
+        geom_line(
+          data = filter(df_R_hat, model == "NegBin-Q"),
+          aes(x = overdisp, color = "NegBin-Q", linetype = window_len_fct),
+          stat = "density",
+          linewidth = 1,
+          alpha = 0.6,
+          na.rm = TRUE,
+          bounds = c(0, Inf),
+          n = 1024
+        )
+    } else if (dist_true == "NegBin-L") {
+      # set the x-axis label to xi for NegBin-L
+      x_label <- expression(xi)
+      # Plot the geometries
+      p_overdisp_hat <- ggplot() +
+        geom_line(
+          data = filter(df_R_hat, model == "Q-Poiss"),
+          # Shift the overdispersion parameter by 1 to make it comparable with
+          # NegBin-L
+          aes(x = overdisp - 1, color = "Q-Poiss", linetype = window_len_fct),
+          stat = "density",
+          linewidth = 1,
+          alpha = 0.6,
+          na.rm = TRUE,
+          # Where the density shall be calculated. We need to plot quasi-Poisson
+          # and NegBin-L separately to be able to set different bounds.
+          bounds = c(-1, Inf),
+          n = 1024
+        ) +
+        geom_line(
+          data = filter(df_R_hat, model == "NegBin-L"),
+          aes(x = overdisp, color = "NegBin-L", linetype = window_len_fct),
+          stat = "density",
+          linewidth = 1,
+          alpha = 0.6,
+          na.rm = TRUE,
+          bounds = c(0, Inf),
+          n = 1024
+        ) +
+        # A dummy line to achieve including the "NegBin-Q" label in the legend
+        geom_line(
+          aes(x = c(-10, -11), y = c(0, 0), color = "NegBin-Q"),
+          linewidth = 1,
+          alpha = 0.6
+        )
+    }
+
+    # Extract the lengths of the estimation window to include it in plot
+    # labels
+    window_lengths <- unique(df_R_hat$window_len)
+
+    p_overdisp_hat <- p_overdisp_hat +
+      geom_vline(
+        aes(xintercept = overdisp_true, linetype = "overdisp_true"),
+        color = "red"
+      ) +
+      scale_color_manual(
+        values = model_colors,
+        breaks = c("Q-Poiss", "NegBin-L", "NegBin-Q")
+      ) +
+      scale_linetype_manual(
+        name = NULL,
+        values = c(
+          "overdisp_true" = "dotted",
+          "short" = "dotted",
+          "long" = "solid"
+        ),
+        labels = c(
+          "overdisp_true" = "overdispersion\nparameter",
+          "short" = paste0(min(window_lengths), "-day window"),
+          "long" = paste0(max(window_lengths), "-day window")
+        )
+      ) +
+      labs(
+        x = x_label,
+        color = "Model",
+        y = "density"
+      ) +
+      # A couple of values might get clipped.
+      coord_cartesian(xlim = limits_x$overdisp_hat) +
+      theme(legend.text = element_text(size = 10))
+  }
+
   # Return the list
-  list(R_hat = p_R_hat, se_hat = p_se_hat)
+  list(R_hat = p_R_hat, se_hat = p_se_hat, overdisp_hat = p_overdisp_hat)
 }
 
 #' Plots nominal vs empirical coverage
@@ -442,7 +572,7 @@ compose_subplot_by_windows <- function(
 #' Compose density plot patches into the final plot
 #'
 #' @description This function composes density plots from all the scenario runs
-#' together, including titles and labels, using the patchwork approach.
+#'   together, including titles and labels, using the patchwork approach.
 #' @param plot_panels a list of lists of patchwork patches. The number of
 #'   simulation scenarios is the length of the outer list. Each inner list
 #'   contains 2 lists - the density plot of R estimate and the density plot of
@@ -459,31 +589,29 @@ compose_dens_patches <- function(
   short_window,
   long_window
 ) {
-  # We will have as many rows as the simulation scenarios
-  n_rows <- length(plot_panels)
-
   # Compose the density plots of R estimates
   p_R_hat <- compose_subplot_by_windows(
-    map(plot_panels, "R_hat"),
+    plot_panels$R_hat,
     short_window,
     long_window
   )
   # Compose the density plots of SEs of R estimates
   p_se_hat <- compose_subplot_by_windows(
-    map(plot_panels, "se_hat"),
+    plot_panels$se_hat,
     short_window,
     long_window
   )
 
   # Compose the panel of the metadata about the parameter values
   p_meta <- plot_spacer()
-  for (k in seq_len(n_rows)) {
+  for (k in seq_len(length(plot_meta_panels))) {
     p_meta <- p_meta / plot_meta_panels[[k]]
   }
-  p_meta <- p_meta + plot_layout(heights = c(1, rep(6, n_rows)))
+  p_meta <- p_meta +
+    plot_layout(heights = c(1, rep(6, length(plot_meta_panels))))
 
   # Extract the legend and remove it from the plots
-  p_legend <- wrap_elements(ggpubr::get_legend(plot_panels[[1]]$R_hat$short))
+  p_legend <- wrap_elements(ggpubr::get_legend(plot_panels$R_hat[[1]]$short))
   p_R_hat <- wrap_elements(
     (p_meta | p_R_hat) +
       plot_layout(widths = c(2, 6)) &
@@ -523,6 +651,97 @@ compose_dens_patches <- function(
   # Combine everything
   p_main <- wrap_elements(
     (p_headline / p_plot) + plot_layout(heights = c(1, 22))
+  ) +
+    p_legend +
+    plot_layout(widths = c(10, 1))
+  p_main
+}
+
+#' Compose plot patches of the overdispersion parameter estimates
+#'
+#' @description This function composes plots of the distribution of the
+#'   overdispersion parameter estimates from all the scenario runs and also
+#'   all applicable scenario blocks: NegBin-L, NegBin-L with weekday effects
+#'   and NegBin-Q. The patchwork approach is used to add labels and titles.
+#' @param plot_panels a list of lists of patchwork patches.
+#' @param plot_meta_panels a list containing plots of the parameter values used
+#'   in the simulation scenario.
+#' @return a patchwork plot
+compose_overdisp_patches <- function(
+  plot_panels,
+  plot_meta_panels
+) {
+  # How many vertical strips we have
+  n_strips <- length(plot_panels)
+  # How many rows there are in each strip
+  n_rows <- length(plot_panels[[1]])
+
+  strips <- vector("list", n_strips)
+  names(strips) <- names(plot_panels)
+
+  p_negbin_l <- plot_spacer() +
+    plot_meta_panels$NegBin.L +
+    # NegBin-L true data generating process
+    ggplot() +
+    geom_text(
+      aes(x = 1, y = 1, label = "NegBin-L"),
+      size = 5
+    ) +
+    theme_void() +
+    plot_panels$NegBin.L_weekday_no +
+    # NegBin-L with weekday effects true data generating process
+    ggplot() +
+    geom_text(
+      aes(x = 1, y = 1, label = "NegBin-L with\nweekday effects"),
+      size = 5
+    ) +
+    theme_void() +
+    plot_panels$NegBin.L_weekday_yes +
+    plot_layout(
+      nrow = n_rows + 1,
+      ncol = 3,
+      byrow = FALSE,
+      heights = c(1.5, rep(6, n_rows)),
+      widths = c(2.5, 6, 6),
+      guides = "collect",
+      axes = "collect_x",
+      axis_titles = "collect"
+    ) &
+    theme(
+      legend.position = "none"
+    )
+
+  p_negbin_q <- plot_spacer() +
+    plot_meta_panels$NegBin.Q +
+    # NegBin-Q true data generating process
+    ggplot() +
+    geom_text(
+      aes(x = 1, y = 1, label = "NegBin-Q"),
+      size = 5
+    ) +
+    theme_void() +
+    plot_panels$NegBin.Q_weekday_no +
+    plot_layout(
+      nrow = n_rows + 1,
+      ncol = 2,
+      byrow = FALSE,
+      heights = c(1.5, rep(6, n_rows)),
+      widths = c(2., 6),
+      guides = "collect",
+      axes = "collect"
+    ) &
+    theme(
+      legend.position = "none"
+    )
+
+  # Extract the legend from one of the partial plots
+  p_legend <- wrap_elements(
+    ggpubr::get_legend(plot_panels$NegBin.L_weekday_no[[1]])
+  )
+
+  # Combine everything
+  p_main <- wrap_elements(
+    (p_negbin_l | p_negbin_q) + plot_layout(widths = c(14, 8))
   ) +
     p_legend +
     plot_layout(widths = c(10, 1))
