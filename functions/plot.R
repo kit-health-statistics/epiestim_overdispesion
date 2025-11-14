@@ -17,7 +17,7 @@
 get_xlim <- function(R_true, overdisp_true, magnitude, distribution) {
   if (distribution == "NegBin-L") {
     se_limits <- if (magnitude == "high") {
-      c(0, 0.2)
+      c(0, 0.15)
     } else if (magnitude == "low") {
       c(0, 0.6)
     }
