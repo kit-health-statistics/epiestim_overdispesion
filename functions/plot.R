@@ -63,7 +63,8 @@ get_xlim <- function(R_true, overdisp_true, magnitude, distribution) {
 #'   names "Poiss", "Q-Poiss", "NegBin-L" and "NegBin-Q"
 #' @return a nested list containing density plots: outer list has elements
 #'   \code{R_hat} and \code{se_hat}, each containing a list of two plots
-#'   (one per window length)
+#'   (one per window length), and \code{overdisp_hat} containing just one
+#'   density plot
 plot_dens <- function(
   df_R_hat,
   R_true,
@@ -124,7 +125,13 @@ plot_dens <- function(
         alpha = 0.6,
         na.rm = TRUE,
         bounds = c(0, Inf),
-        n = density_estimation_grid
+        # Increase the grid density a little more for the Poison SEs, where
+        # the line is more rough than for the rest.
+        n = if (dist_true == "Poiss") {
+          2 * density_estimation_grid
+        } else {
+          density_estimation_grid
+        }
       ) +
       scale_color_manual(values = model_colors) +
       labs(
@@ -139,7 +146,7 @@ plot_dens <- function(
 
   # Plot the point estimates of the overdispersion parameter. We use 2 facets
   # for 2 window lengths, therefore, we create the plot outside the for loop.
-  df_R_hat_overdisp <- if (dist_true == "Poiss") {
+  if (dist_true == "Poiss") {
     # For the Poisson ground truth we don't plot anything
     p_overdisp_hat <- NULL
   } else {
