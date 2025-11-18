@@ -6,7 +6,6 @@ library("tidyverse")
 library("patchwork")
 library("EpiEstim")
 library("gamlss")  # For the gamlss() function
-library("ggmagnify")  # For the geom_magnify() function
 theme_set(theme_bw())
 # this is all from https://royalsocietypublishing.org/doi/10.1098/rsif.2021.0429
 # and https://github.com/willgreen236/Heterogeneity_transmission/blob/main/heterogeneity_function.R#L842

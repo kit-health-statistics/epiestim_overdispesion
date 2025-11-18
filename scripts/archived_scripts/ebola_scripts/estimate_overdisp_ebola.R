@@ -6,7 +6,6 @@ library("tidyverse")
 library("patchwork")
 library("EpiEstim")
 library("gamlss")  # For the gamlss() function
-library("ggmagnify")  # For the geom_magnify() function
 theme_set(theme_bw())
 
 ebola_df <- read_csv(file = here::here("data", "ebola", "ebola_df.csv"))
