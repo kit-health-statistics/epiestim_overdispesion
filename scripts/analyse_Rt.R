@@ -180,7 +180,7 @@ analyse_Rt <- function(incidence, start_date, end_date, window_width, mean_si, s
   # These colors are selected from the ggokabeito package designed for creating
   # color-blindness friendly charts
   model_colors <- c(
-    "Poiss" = "#009E73", "Q-Poiss" = "#F0E442",
+    "Poiss" = "#009E73", "Q-Poiss" = "#E69F00",
     "NegBin-L" = "#56B4E9", "NegBin-Q" = "#CC79A7"
   )
   

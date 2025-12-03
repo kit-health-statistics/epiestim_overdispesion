@@ -30,7 +30,7 @@ ggplot2::theme_set(ggplot2::theme_bw())
 # Set the global objects =======================================================
 model_colors <- c(
   "Poiss" = "#009E73",
-  "Q-Poiss" = "#F0E442",
+  "Q-Poiss" = "#E69F00",
   "NegBin-L" = "#56B4E9",
   "NegBin-Q" = "#CC79A7"
 )
