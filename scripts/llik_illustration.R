@@ -272,5 +272,16 @@ p_loglik_individual_bw <- ggplot() +
 p_incidence_loglik_bw <- p_incidence_bw + p_loglik_individual_bw + 
   plot_layout(design = "A\nB\nB\nB\nB")
 
-ggsave("figure/Incidence_and_llik_bw_identity.pdf", p_incidence_loglik_bw, width = 6, 
-       height = 5)
+ggsave(
+  "figure/Incidence_and_llik_bw_identity.pdf",
+  p_incidence_loglik_bw,
+  width = 6,
+  height = 5
+)
+ggsave(
+  "figure/Incidence_and_llik_bw_identity.png",
+  p_incidence_loglik_bw,
+  width = 6,
+  height = 5,
+  dpi = 400
+)

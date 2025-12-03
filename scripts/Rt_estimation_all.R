@@ -217,6 +217,7 @@ composite_plot <- (
 ) +
   plot_layout(widths = c(3, 3, 3, 1))
 ggsave("figure/composite_plot.pdf", composite_plot, width = 14, height = 11)
+ggsave("figure/composite_plot.png", composite_plot, width = 14, height = 11, dpi = 400)
 
 # Supplementary plots --------------------------------------------------
 
@@ -245,6 +246,7 @@ nbin_L_plot <- (
 ) +
   plot_layout(widths = c(3, 3, 3, 1))
 ggsave("figure/nbin_L_vs_qpis_plot.pdf", nbin_L_plot, width = 14, height = 6.5)
+ggsave("figure/nbin_L_vs_qpis_plot.png", nbin_L_plot, width = 14, height = 6.5, dpi = 400)
 
 # NegBin-Q "exact" vs. approximate
 p_nbin_Q_legend <- wrap_elements(ggpubr::get_legend(results$flu$plt$p_nbin_Q_exact_vs_approx))
@@ -271,6 +273,7 @@ nbin_Q_plot <- (
 ) +
   plot_layout(widths = c(3, 3, 3, 1))
 ggsave("figure/nbin_Q_approximation_plot.pdf", nbin_Q_plot, width = 14, height = 6.5)
+ggsave("figure/nbin_Q_approximation_plot.png", nbin_Q_plot, width = 14, height = 6.5, dpi = 400)
 
 # Overdispersion parameter estimates over time
 p_disp_legend <- wrap_elements(ggpubr::get_legend(results$flu$plt$p_disp))
@@ -305,3 +308,4 @@ disp_plot <- (
 ) +
   plot_layout(widths = c(3, 3, 3, 1))
 ggsave("figure/overdispersion_parameters.pdf", disp_plot, width = 14, height = 6.5)
+ggsave("figure/overdispersion_parameters.png", disp_plot, width = 14, height = 6.5, dpi = 400)
