@@ -136,6 +136,21 @@ df_updated <- rows_update(
   by = c("Date", "Model")
 )
 results$ebola$plt$p_nbin_L_vs_qpois <- results$ebola$plt$p_nbin_L_vs_qpois %+% df_updated
+# Adjust individual plots *********************************************
+
+# Rescale the y-axis for the Poisson and quasi-Poisson models in the COVID-19
+# examples
+plots_to_adjust_y <- c(
+  "p_nbin_L_vs_nbin_Q",
+  "p_pois",
+  "p_qpois",
+  "p_nbin_L_vs_qpois",
+  "p_nbin_Q_exact_vs_approx"
+)
+for (plt in plots_to_adjust_y) {
+  results$covid$plt[[plt]] <- results$covid$plt[[plt]] +
+    coord_cartesian(ylim = c(0.6, 1.8))
+}
 
 # Adjust individual plots
 plots_to_adjust_date <- c("p_incidence", "p_nbin_L_vs_nbin_Q", "p_pois_vs_qpois",
@@ -197,15 +212,13 @@ p_legend <- wrap_elements(ggpubr::get_legend(results$flu$plt$p_nbin_L_vs_nbin_Q)
 composite_plot_elements <- vector("list", 3)
 names(composite_plot_elements) <- names(params)
 for (disease in names(composite_plot_elements)) {
-  composite_plot_elements[[disease]] <- (
-    with(
-      results[[disease]]$plt,
-      p_incidence / p_pois_vs_qpois / p_nbin_L_vs_nbin_Q
-    ) +
-      plot_layout(heights = c(1, 1, 1), guides = "collect") &
-      theme(legend.position = "none") & 
-      annotations[[disease]]
-  ) |>
+  composite_plot_elements[[disease]] <- (with(
+    results[[disease]]$plt,
+    p_incidence / p_pois / p_qpois / p_nbin_L_vs_nbin_Q
+  ) +
+    plot_layout(heights = c(1, 1, 1, 1), guides = "collect") &
+    theme(legend.position = "none") &
+    annotations[[disease]]) |>
     wrap_elements()
 }
 
@@ -216,8 +229,14 @@ composite_plot <- (
   )
 ) +
   plot_layout(widths = c(3, 3, 3, 1))
-ggsave("figure/composite_plot.pdf", composite_plot, width = 14, height = 11)
-ggsave("figure/composite_plot.png", composite_plot, width = 14, height = 11, dpi = 400)
+ggsave("figure/composite_plot.pdf", composite_plot, width = 14, height = 14)
+ggsave(
+  "figure/composite_plot.png",
+  composite_plot,
+  width = 14,
+  height = 14,
+  dpi = 400
+)
 
 # Supplementary plots --------------------------------------------------
 

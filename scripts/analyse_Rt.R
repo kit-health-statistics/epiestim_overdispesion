@@ -196,8 +196,8 @@ analyse_Rt <- function(incidence, start_date, end_date, window_width, mean_si, s
     theme(legend.position = "none") +
     coord_cartesian(ylim = c(0, max(incidence_subset$Cases)))
 
-  # 2. Poisson vs. QP
-  p_pois_vs_qpois <- ggplot(
+  # 2. Poisson
+  p_pois <- ggplot(
     df_R_hat,
     aes(
       x = Date, y = R, ymin = lwr, ymax = upr, color = Model, fill = Model,
@@ -208,7 +208,7 @@ analyse_Rt <- function(incidence, start_date, end_date, window_width, mean_si, s
     geom_hline(yintercept = 1, linetype = "dotted") +
     geom_ribbon(color = NA) +
     scale_alpha_manual(
-      values = c("Poiss" = 0.5, "Q-Poiss" = 0.5, "NegBin-L" = 0.0, "NegBin-Q" = 0),
+      values = c("Poiss" = 0.5, "Q-Poiss" = 0, "NegBin-L" = 0, "NegBin-Q" = 0),
       guide = guide_legend(override.aes = list(alpha = 0.5))
     ) +
     scale_color_manual(
@@ -220,16 +220,59 @@ analyse_Rt <- function(incidence, start_date, end_date, window_width, mean_si, s
       values = model_colors
     ) +
     labs(
-      title = "Poisson vs. Quasi-Poisson",
+      title = "Poisson",
       y = expression(hat(R))
     ) +
     coord_cartesian(
-      ylim = c(0, 3), 
+      ylim = c(0, 3),
       xlim = range(incidence_subset$Date)
     ) +
     plot_theme
 
-  # 3. NegBin-L vs. NegBin-Q
+  # 3. Quasi-Poisson
+  p_qpois <- ggplot(
+    df_R_hat,
+    aes(
+      x = Date,
+      y = R,
+      ymin = lwr,
+      ymax = upr,
+      color = Model,
+      fill = Model,
+      alpha = Model
+    )
+  ) +
+    geom_line(linewidth = 0.8) +
+    geom_hline(yintercept = 1, linetype = "dotted") +
+    geom_ribbon(color = NA) +
+    scale_alpha_manual(
+      values = c(
+        "Poiss" = 0,
+        "Q-Poiss" = 0.5,
+        "NegBin-L" = 0.0,
+        "NegBin-Q" = 0
+      ),
+      guide = guide_legend(override.aes = list(alpha = 0.5))
+    ) +
+    scale_color_manual(
+      name = "Model",
+      values = model_colors
+    ) +
+    scale_fill_manual(
+      name = "Model",
+      values = model_colors
+    ) +
+    labs(
+      title = "Quasi-Poisson",
+      y = expression(hat(R))
+    ) +
+    coord_cartesian(
+      ylim = c(0, 3),
+      xlim = range(incidence_subset$Date)
+    ) +
+    plot_theme
+
+  # 4. NegBin-L vs. NegBin-Q
   p_nbin_L_vs_nbin_Q <- ggplot(
     df_R_hat,
     aes(
@@ -262,7 +305,7 @@ analyse_Rt <- function(incidence, start_date, end_date, window_width, mean_si, s
     ) +
     plot_theme
 
-  # 4. Overdisp Params. NegBin-Q plotted on using a second plot axis
+  # 5. Overdisp Params. NegBin-Q plotted on using a second plot axis
   sec_axis_scale <- median(disp$nbin_Q / disp$nbin_L)
   disp$nbin_Q_transformed <- disp$nbin_Q / sec_axis_scale
   df_disp <- tibble(
@@ -291,7 +334,7 @@ analyse_Rt <- function(incidence, start_date, end_date, window_width, mean_si, s
     ) +
     plot_theme
 
-  # 5. NegBin-L vs. QP (Extra plot, will probably go to the supplement)
+  # 6. NegBin-L vs. QP (Extra plot, will probably go to the supplement)
   p_nbin_L_vs_qpois <- ggplot(
     df_R_hat,
     aes(
@@ -326,8 +369,8 @@ analyse_Rt <- function(incidence, start_date, end_date, window_width, mean_si, s
       xlim = range(incidence_subset$Date)
     ) +
     plot_theme
-  
-  # 6. NegBin-Q, "exact" vs. approximate estimates
+
+  # 7. NegBin-Q, "exact" vs. approximate estimates
   df_nbin_Q_approx <- tibble(
     Date = rep(incidence_subset$Date[t_ends], 2),
     R = c(R_hat$nbin_Q, R_hat$nbin_Q_approx),
