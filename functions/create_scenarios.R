@@ -14,39 +14,65 @@
 #'   Poisson). Possible values: "Poiss", "NegBin-L", or "NegBin-Q"
 #' @return a data frame with scenario names and parameter values
 create_scenario_grid <- function(
-  distribution = c("NegBin-L", "NegBin-Q", "Poiss")
+  distribution = c("NegBin-L", "NegBin-Q", "Poiss", "Branching")
 ) {
 
   distribution <- match.arg(distribution)
 
   scenario_grid <- expand.grid(
     magnitude = c("low", "high"),
-    dispersion = c("low_disp", "high_disp"),
+    dispersion = c("low", "high"),
     R_eff = c(1.5, 2.5),
     KEEP.OUT.ATTRS = FALSE,
     stringsAsFactors = FALSE
   )
 
-  # Pair the dispersion degree name and value
-  dispersion <- data.frame(
-    dispersion = c("low_disp", "high_disp"),
-    nb_size = if (distribution == "NegBin-L") {
-      c(2, 0.2)
-    } else if (distribution == "NegBin-Q") {
-      c(1 / 0.02, 1 / 0.06)
-    } else {
-      # Set the dispersion parameter to NA for Poisson
-      c(NA, NA)
-    }
-  )
+  # Pair the dispersion degree name and values of the corresponding parameters
+  if (distribution == "Branching") {
+    dispersion <- data.frame(
+      dispersion = c("low", "high"),
+      nb_size = c(NA, NA),
+      R_sd = c(0.1, 0.3),
+      reporting_prob = c(0.8, 0.8)
+    )
+  } else {
+    dispersion <- data.frame(
+      dispersion = c("low", "high"),
+      nb_size = if (distribution == "NegBin-L") {
+        c(2, 0.2)
+      } else if (distribution == "NegBin-Q") {
+        c(1 / 0.02, 1 / 0.06)
+      } else {
+        # Set the negative binomial dispersion parameter to NA for Poisson
+        c(NA, NA)
+      },
+      # Set the parameters for the branching process to NA
+      offspring_disp = c(NA, NA),
+      R_sd = c(NA, NA),
+      reporting_prob = c(NA, NA)
+    )
+  }
+  
   # Pair the magnitude degree name, value and initialization parameters
-  magnitude <- data.frame(
-    magnitude = c("low", "high"),
-    # Parameters for generating the initial values
-    init_magnitude = c(5, 100),
-    init_sd = c(2, 10),
-    init_seed = c(10L, 100L)
-  )
+  if (distribution == "Branching") {
+    magnitude <- data.frame(
+      magnitude = "low",
+      # Initial value
+      init_magnitude = 15,
+      # No sd and seed, since for the branching process we initialize by a
+      # single number - by the number of initial infectious individuals
+      init_sd = NA,
+      init_seed = NA
+    )
+  } else {
+    magnitude <- data.frame(
+      magnitude = c("low", "high"),
+      # Parameters for generating the initial values
+      init_magnitude = c(5, 100),
+      init_sd = c(2, 10),
+      init_seed = c(10L, 100L)
+    )
+  }
 
   # Join the parameter names and its values
   scenarios <- scenario_grid |>
@@ -63,6 +89,12 @@ create_scenario_grid <- function(
       # Add the string denoting the dispersion back, even though it's not
       # technically needed.
       dplyr::mutate(dispersion = "not_applicable")
+  }
+  # If the data generating process is a branching process, we don't have
+  # scenarios for higher magnitudes.
+  if (distribution == "Branching") {
+    scenarios <- scenarios |>
+      filter(magnitude == "low")
   }
   # Add a scenario number and ID
   scenarios |> dplyr::mutate(

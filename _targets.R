@@ -40,6 +40,8 @@ global_params <- list(
   mean_si = 7.5,
   std_si = 2.1,
   n_init = 14,
+  # Length of the generated trajectory, before the estimation window begins.
+  n_burnin = 14,
   short_window = 7,
   long_window = 14,
   n_sim = 1000L,
@@ -62,8 +64,8 @@ plot_halving_coeff <- 1.75
 # None of them involves weekday effects, but they can be added by using
 # "weekday_yes"
 outer_scenarios <- data.frame(
-  distribution = c("NegBin-L", "NegBin-Q", "Poiss"),
-  weekday_effect = c("weekday_no", "weekday_no", "weekday_no")
+  distribution = c("NegBin-L", "NegBin-Q", "Poiss", "Branching"),
+  weekday_effect = c("weekday_no", "weekday_no", "weekday_no", "weekday_no")
 ) |>
   dplyr::mutate(
     scenario_id = paste(distribution, weekday_effect, sep = "_")
@@ -103,7 +105,8 @@ list(
         scenarios$init_magnitude,
         scenarios$init_sd,
         weekday_effect = weekday_effect_vector,
-        seed = global_params$base_seed + scenarios$init_seed
+        seed = global_params$base_seed + scenarios$init_seed,
+        model = distribution
       ),
       pattern = map(scenarios),
       iteration = "list"
@@ -115,14 +118,17 @@ list(
         global_params,
         generate_trajectories(
           n_sim = n_sim,
-          init,
+          n_burnin = n_burnin,
+          init = init,
           R_eff = scenarios$R_eff,
           si = si,
-          lgt = n_init + long_window,
+          lgt = long_window,
           model = distribution,
           nb_size = scenarios$nb_size,
-          seed = global_params$base_seed + scenarios$scenario_number,
-          weekday_effect = weekday_effect_vector
+          weekday_effect = weekday_effect_vector,
+          R_sd = scenarios$R_sd,
+          reporting_prob = scenarios$reporting_prob,
+          seed = global_params$base_seed + scenarios$scenario_number
         )
       ),
       pattern = map(init, scenarios),
@@ -154,7 +160,8 @@ list(
         trajectories = plot_trajectories(
           trajectories$X,
           global_params$short_window,
-          global_params$n_init
+          if (distribution == "Branching") 0 else global_params$n_init,
+          global_params$n_burnin
         ),
         coverage = plot_coverage(
           scenarios$R_eff,
@@ -169,7 +176,8 @@ list(
           scenarios$R_eff,
           scenarios$nb_size,
           scenarios$magnitude,
-          distribution
+          distribution,
+          scenarios$dispersion
         )
       ),
       pattern = map(trajectories, df_R_hat, scenarios),
@@ -214,15 +222,15 @@ list(
         scenarios$R_eff,
         1 / scenarios$nb_size,
         scenarios$magnitude,
-        distribution,
-        model_colors
+        model_colors,
+        distribution
       ),
       pattern = map(df_R_hat, scenarios),
       iteration = "list"
     ),
     # Save plots
     tar_target(saved_figures, {
-      if (distribution == "Poiss") {
+      if (distribution == "Poiss" || distribution == "Branching") {
         # For Poisson, we have only half the scenarios as for the rest, so the
         # height of the resulting plot must be divided by 2. We divide by less
         # than 2 to allow for some space for the title.
