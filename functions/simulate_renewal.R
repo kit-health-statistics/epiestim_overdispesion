@@ -254,6 +254,8 @@ simulate_branching <- function(
 #'  the renewal equation.
 #'
 #' @param n_sim an integer, number of trajectories to generate
+#' @param n_burnin an integer, the length of the burn-in period before the
+#'   first estimation window begins.
 #' @param init a vector or a scalar. For the renewal equation models "Poiss",
 #'   "NegBin-Q" and "NegBin-L", this is a vector of the incidence at the
 #'   beginning of the incidence trajectory. For the branching process model,
@@ -265,8 +267,8 @@ simulate_branching <- function(
 #'   must not be longer than the \code{init} vector
 #' @param lgt positive integer, total length of one trajectory. All trajectories
 #'   are of equal length
-#' @param model the count distribution, one of "Poiss", "NegBin-Q" and
-#'   "NegBin-L"
+#' @param model the count distribution, one of "Poiss", "NegBin-Q", "NegBin-L"
+#'   and "Branching"
 #' @param nb_size positive real value, the size parameter of the negative
 #'   binomial distribution for "NegBin-Q" and "NegBin-L"
 #' @param seed an integer, seed to be set before the `n_sim` replications of the
