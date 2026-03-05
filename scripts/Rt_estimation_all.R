@@ -156,7 +156,13 @@ plots_to_adjust_y <- c(
 )
 for (plt in plots_to_adjust_y) {
   results$covid$plt[[plt]] <- results$covid$plt[[plt]] +
-    coord_cartesian(ylim = c(0.6, 1.8))
+    coord_cartesian(
+      ylim = c(0.6, 1.8),
+      xlim = c(
+        min(results$covid$plt[[plt]]$data$Date) - params$covid$window_width,
+        max(results$covid$plt[[plt]]$data$Date)
+      )
+    )
 }
 
 # Add x-axis breaks, which are different for each pathogen
