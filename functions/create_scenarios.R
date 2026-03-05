@@ -52,7 +52,7 @@ create_scenario_grid <- function(
       reporting_prob = c(NA, NA)
     )
   }
-  
+
   # Pair the magnitude degree name, value and initialization parameters
   if (distribution == "Branching") {
     magnitude <- data.frame(

@@ -109,30 +109,30 @@ simulate_renewal <- function(
 #' Simulate incidence using the branching process
 #'
 #' @description This function simulates an incidence trajectory based on the
-#' branching process. 
-#' 
+#' branching process.
+#'
 #' \deqn{I_g = \sum_{i = 1}^{I_{g - 1}}Z_{i, g - 1},}
 #'
 #' where \eqn{I_g} is the size of generation \eqn{g} and \eqn{Z_{i,g}} is the
 #' number of offspring of individual \eqn{i} from generation \eqn{g}. The
 #' offspring distribution here is for simplicity defined as the Poisson
 #' distribution.
-#' 
+#'
 #' We include the overdispersion by sampling different reproductive number
 #' \eqn{R_{g,i}} per each individual according to the log-normal distribution,
 #' that is
-#' 
+#'
 #' \deqn{R_{g, i} \sim Lognormal(R, \sigma_R^2),}
-#' 
+#'
 #' where \eqn{R} is the true value of the reproductive number.
-#' 
+#'
 #' As a second source of overdispersion, we introduce underreporting in the
 #' form of binomial thinning, where we report on average only a given proportion
 #' of the final incidence.
-#' 
+#'
 #' We run the branching process for multiple generations and
-#' then incorporate the generation time to go from the generation sizes \eqn{I_g} to
-#' the incidence \eqn{X_t} in calendar time \eqn{t}.
+#' then incorporate the generation time to go from the generation sizes
+#' \eqn{I_g} to the incidence \eqn{X_t} in calendar time \eqn{t}.
 #'
 #' @param init an integer, the initial number of infectious individual, i.e. the
 #'   size of the 0-th generation of the branching process
@@ -163,8 +163,8 @@ simulate_branching <- function(
   R_sd = 0.1,
   reporting_prob = 1
 ) {
-  # Create a vector of discrete generation times, from which we will draw using
-  # `sample()`
+  # Create a vector of discrete generation times, from which we will draw
+  # using `sample()`
   gen_time_to_sample <- seq_along(si)
   # We sample the individual R_t values from a log-normal distribution with
   # mean `R` and standard deviation `R_sd`. However the `rlnorm()` function
@@ -195,7 +195,10 @@ simulate_branching <- function(
   gen <- 1
   while (t_actual < lgt) {
     # How many offspring the individuals from the previous generation generate
-    offspring <- rpois(nrow(df_individuals[[gen]]), df_individuals[[gen]]$R_sampled)
+    offspring <- rpois(
+      nrow(df_individuals[[gen]]),
+      df_individuals[[gen]]$R_sampled
+    )
     sum_offspring <- sum(offspring)
     # New generation
     df_individuals[[gen + 1]] <- data.frame(
@@ -205,7 +208,7 @@ simulate_branching <- function(
       R_sampled = exp(rnorm(sum_offspring, mean = R_meanlog, sd = R_sdlog)),
       # Time of infection is the time of infection of the parent plus a random
       # generation time
-      t = rep(df_individuals[[gen]]$t, times = offspring) + 
+      t = rep(df_individuals[[gen]]$t, times = offspring) +
         sample(
           gen_time_to_sample,
           size = sum_offspring,
@@ -215,7 +218,7 @@ simulate_branching <- function(
     )
     # We take the minimum infection time of the newly infected individuals as
     # the actual time, since all new infection events will occur only after this
-    # time point. 
+    # time point.
     t_actual <- min(c(df_individuals[[gen + 1]]$t, lgt))
     # Increase the generation counter
     gen <- gen + 1
@@ -324,7 +327,15 @@ generate_trajectories <- function(
   } else {
     trajectories <- replicate(
       n_sim,
-      simulate_renewal(init, R_eff, si, lgt + n_burnin + length(init), model, nb_size, weekday_effect),
+      simulate_renewal(
+        init,
+        R_eff,
+        si,
+        lgt + n_burnin + length(init),
+        model,
+        nb_size,
+        weekday_effect
+      ),
       simplify = FALSE
     )
   }
