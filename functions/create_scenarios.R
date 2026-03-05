@@ -47,7 +47,6 @@ create_scenario_grid <- function(
         c(NA, NA)
       },
       # Set the parameters for the branching process to NA
-      offspring_disp = c(NA, NA),
       R_sd = c(NA, NA),
       reporting_prob = c(NA, NA)
     )

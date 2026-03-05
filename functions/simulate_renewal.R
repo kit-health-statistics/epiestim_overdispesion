@@ -141,9 +141,6 @@ simulate_renewal <- function(
 #' @param si a non-negative vector, the distribution of the serial interval,
 #'   must not be of the same length, or longer than \code{lgt}
 #' @param lgt positive integer, total length of the trajectory
-#' @param offspring_disp a positive real value larger than 1 indicating the
-#'   degree of overdispersion in the offspring distribution. The variance of the
-#'   offspring distribution is \code{R * offspring_disp}
 #' @param R_sd positive real value, the standard deviation of the log-normal
 #'   distribution on the individual effective reproductive numbers
 #' @param reporting_prob proportion of the incidence that gets reported on
@@ -159,7 +156,6 @@ simulate_branching <- function(
   R,
   si,
   lgt,
- # offspring_disp = 2,
   R_sd = 0.1,
   reporting_prob = 1
 ) {
