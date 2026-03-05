@@ -280,9 +280,9 @@ nbin_L_plot <- (
   )
 ) +
   plot_layout(widths = c(3, 3, 3, 1))
-ggsave("figure/nbin_L_vs_qpis_plot.pdf", nbin_L_plot, width = 14, height = 6.5)
+ggsave("figure/nbin_L_vs_qpois_plot.pdf", nbin_L_plot, width = 14, height = 6.5)
 ggsave(
-  "figure/nbin_L_vs_qpis_plot.png",
+  "figure/nbin_L_vs_qpois_plot.png",
   nbin_L_plot,
   width = 14,
   height = 6.5,
