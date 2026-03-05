@@ -115,23 +115,24 @@ simulate_renewal <- function(
 #'
 #' where \eqn{I_g} is the size of generation \eqn{g} and \eqn{Z_{i,g}} is the
 #' number of offspring of individual \eqn{i} from generation \eqn{g}. The
-#' offspring distribution here is defined as the Neyman type A distribution.
+#' offspring distribution here is for simplicity defined as the Poisson
+#' distribution.
 #' 
-#' We run the branching process for multiple generations and
-#' then incorporate the generation time to go from the generation sizes \eqn{I_g} to
-#' the incidence \eqn{X_t} in calendar time \eqn{t}.
-#' 
-#' Apart from the offspring distribution we include additional overdispersion by
-#' sampling different reproductive number \eqn{R_{g,i}} per each individual
-#' according to the log-normal distribution, that is
+#' We include the overdispersion by sampling different reproductive number
+#' \eqn{R_{g,i}} per each individual according to the log-normal distribution,
+#' that is
 #' 
 #' \deqn{R_{g, i} \sim Lognormal(R, \sigma_R^2),}
 #' 
 #' where \eqn{R} is the true value of the reproductive number.
 #' 
-#' As the final source of overdispersion, we introduce underreporting in the
+#' As a second source of overdispersion, we introduce underreporting in the
 #' form of binomial thinning, where we report on average only a given proportion
 #' of the final incidence.
+#' 
+#' We run the branching process for multiple generations and
+#' then incorporate the generation time to go from the generation sizes \eqn{I_g} to
+#' the incidence \eqn{X_t} in calendar time \eqn{t}.
 #'
 #' @param init an integer, the initial number of infectious individual, i.e. the
 #'   size of the 0-th generation of the branching process
