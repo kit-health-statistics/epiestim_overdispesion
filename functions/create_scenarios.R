@@ -94,7 +94,7 @@ create_scenario_grid <- function(
   # scenarios for higher magnitudes.
   if (distribution == "Branching") {
     scenarios <- scenarios |>
-      filter(magnitude == "low")
+      dplyr::filter(magnitude == "low")
   }
   # Add a scenario number and ID
   scenarios |> dplyr::mutate(
