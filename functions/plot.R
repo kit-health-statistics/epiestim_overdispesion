@@ -38,35 +38,35 @@ get_legend_theme <- function() {
 get_xlim <- function(R_true, overdisp_true, magnitude, distribution) {
   if (distribution == "NegBin-L") {
     se_limits <- if (magnitude == "high") {
-      c(0, 0.15)
+      c(0, 0.075)
     } else if (magnitude == "low") {
-      c(0, 0.6)
+      c(0, 0.4)
     }
     overdisp_limits <- c(-1, min(10, 5 * overdisp_true))
   } else if (distribution == "NegBin-Q") {
     se_limits <- if (magnitude == "high") {
       c(0, 0.2)
     } else if (magnitude == "low") {
-      c(0, 0.4)
+      c(0, 0.3)
     }
     overdisp_limits <- c(0, overdisp_true + 0.08)
   } else if (distribution == "Poiss") {
     se_limits <- if (magnitude == "high") {
       c(0, 0.05)
     } else if (magnitude == "low") {
-      c(0, 0.3)
+      c(0, 0.2)
     }
     overdisp_limits <- c(NA, NA)
   } else if (distribution == "Branching") {
     se_limits <- if (magnitude == "high") {
-      c(0, 0.05)
+      c(0, 0.04)
     } else if (magnitude == "low") {
       c(0, 0.4)
     }
     overdisp_limits <- c(NA, NA)
   }
   list(
-    R_hat = R_true + c(-0.8, 0.8),
+    R_hat = R_true + c(-0.7, 0.7),
     se_hat = se_limits,
     overdisp_hat = overdisp_limits
   )
