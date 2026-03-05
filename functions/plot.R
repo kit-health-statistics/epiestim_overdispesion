@@ -449,13 +449,6 @@ plot_trajectories <- function(X, short_window, n_init, n_burnin) {
       label = paste0(short_window, "-day window"),
       label.size = 3
     ) +
-    ggpubr::geom_bracket(
-      xmin = n_init + 1,
-      xmax = n_init + n_burnin,
-      y.position = max_cases + 2.5 * bracket_offset,
-      label = "Burn-in period",
-      label.size = 3
-    ) +
     scale_color_manual(
       values = c(
         "Initial" = "black",
@@ -477,14 +470,26 @@ plot_trajectories <- function(X, short_window, n_init, n_burnin) {
     coord_cartesian(ylim = c(0, max_cases + 3.5 * bracket_offset)) +
     labs(x = "Day", y = "Cases") +
     theme(axis.title = element_text(size = 16))
-  
-  if (n_init > 0 ) {
+
+  # Add the brace for the initialization period, if present
+  if (n_init > 0) {
     p <- p +
       ggpubr::geom_bracket(
         xmin = 1,
         xmax = n_init,
         y.position = max_cases + 2.5 * bracket_offset,
         label = "Initialization",
+        label.size = 3
+      )
+  }
+  # Add the brace for the burn-in period, if present
+  if (n_burnin > 0) {
+    p <- p +
+      ggpubr::geom_bracket(
+        xmin = n_init + 1,
+        xmax = n_init + n_burnin,
+        y.position = max_cases + 2.5 * bracket_offset,
+        label = "Burn-in period",
         label.size = 3
       )
   }
