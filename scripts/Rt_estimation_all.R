@@ -3,6 +3,7 @@ library(ggplot2)
 library(EpiEstim)
 library(gamlss)
 library(patchwork)
+library(xtable)
 source("scripts/analyse_Rt.R")
 
 # Running the analysis on 3 datasets:
@@ -334,7 +335,29 @@ ggsave(
 
 # Overdispersion parameter estimates over time
 p_disp_legend <- wrap_elements(ggpubr::get_legend(results$flu$plt$p_disp))
-disp_plot_elements <- vector("list", 3)
+# Make an almost identical copy of the legend of the plot of the dispersion
+# parameters, only this time using the U+03D5 unicode symbol for phi. Otherwise
+# the symbol shows as U+03C6 when saved in the PNG format.
+p_disp_legend_png <- (
+  results$flu$plt$p_disp +
+    scale_alpha_manual(
+      name = "Parameter\ntransformation",
+      values = rep(1, 3),
+      labels = c(
+        "Q-Poiss" = "\u03d5",
+        "NegBin-L" = expression(frac(1, xi)),
+        "NegBin-Q" = expression(frac(1, psi))
+      ),
+      guide = guide_legend(
+        override.aes = list(
+          color = c("#56B4E9", "#CC79A7", "#E69F00")
+        )
+      )
+    )
+) |>
+  ggpubr::get_legend() |>
+  wrap_elements()
+disp_plot_elements <- disp_plot_elements_png <- vector("list", 3)
 names(disp_plot_elements) <- names(params)
 for (disease in names(disp_plot_elements)) {
   # Change the hardcoded margin back to another value to center the plot title.
@@ -362,10 +385,15 @@ ggsave(
   width = 14,
   height = 6.5
 )
+disp_plot_png <- (with(
+  disp_plot_elements,
+  flu | covid | ebola | p_disp_legend_png
+)) +
+  plot_layout(widths = c(3, 3, 3, 1))
 ggsave(
   "figure/overdispersion_parameters.png",
-  disp_plot,
+  disp_plot_png,
   width = 14,
   height = 6.5,
-  dpi = 400
+  dpi = 400,
 )

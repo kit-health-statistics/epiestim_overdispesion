@@ -115,7 +115,7 @@ plot_dens <- function(
 
   # Calculate the x-limits for the plot of R estimates, its standard errors and
   # the dispersion parameter estimates
-  limits_x <- get_xlim(R_true, overdisp_true, magnitude, dist_true)
+  limits_x <- get_xlim(R_true, 1 / overdisp_true, magnitude, dist_true)
 
   p_R_hat <- p_se_hat <- p_overdisp_hat <- vector("list", 2)
   names(p_R_hat) <- names(p_se_hat) <- names(df_R_hat_split)
@@ -184,7 +184,7 @@ plot_dens <- function(
     # estimate.
     if (dist_true == "NegBin-Q") {
       # set the x-axis label to psi for NegBin-Q
-      x_label <- expression(psi)
+      x_label <- expression(frac(1, psi))
       # Plot the geometries
       p_overdisp_hat <- ggplot() +
         geom_line(
@@ -199,7 +199,7 @@ plot_dens <- function(
         )
     } else if (dist_true == "NegBin-L") {
       # set the x-axis label to xi for NegBin-L
-      x_label <- expression(xi)
+      x_label <- expression(frac(1, xi))
       # Plot the geometries
       p_overdisp_hat <- ggplot() +
         geom_line(
@@ -241,7 +241,7 @@ plot_dens <- function(
 
     p_overdisp_hat <- p_overdisp_hat +
       geom_vline(
-        aes(xintercept = overdisp_true, linetype = "overdisp_true"),
+        aes(xintercept = 1 / overdisp_true, linetype = "overdisp_true"),
         color = "red"
       ) +
       scale_color_manual(
@@ -256,7 +256,7 @@ plot_dens <- function(
           "long" = "solid"
         ),
         labels = c(
-          "overdisp_true" = "overdispersion\nparameter",
+          "overdisp_true" = "inverse of\nthe true value",
           "short" = paste0(min(window_lengths), "-day window"),
           "long" = paste0(max(window_lengths), "-day window")
         )
@@ -520,9 +520,9 @@ plot_metadata <- function(
     label = c(
       paste0("R[t] == ", R_eff),
       if (distribution == "NegBin-L") {
-        paste0("xi == ", 1 / nb_size)
+        paste0("xi == ", nb_size)
       } else if (distribution == "NegBin-Q") {
-        paste0("psi == ", 1 / nb_size)
+        paste0("psi == ", nb_size)
       } else if (distribution == "Branching") {
         paste0("Disp.: ", dispersion)
       } else {

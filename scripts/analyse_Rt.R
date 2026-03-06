@@ -336,7 +336,7 @@ analyse_Rt <- function(
     ) +
     plot_theme
 
-  # 5. Overdisp Params. NegBin-Q plotted on using a second plot axis
+  # 5. Overdisp Params. NegBin-Q plotted on using a second plot axis.
   sec_axis_scale <- median(disp$nbin_Q / disp$nbin_L)
   disp$nbin_Q_transformed <- disp$nbin_Q / sec_axis_scale
   df_disp <- tibble(
@@ -350,7 +350,7 @@ analyse_Rt <- function(
 
   p_disp <- ggplot(
     df_disp,
-    aes(x = Date, y = Dispersion, color = Model, group = Model)
+    aes(x = Date, y = Dispersion, color = Model, group = Model, alpha = Model)
   ) +
     geom_line(linewidth = 0.8) +
     scale_y_continuous(
@@ -360,9 +360,23 @@ analyse_Rt <- function(
       name = "Model",
       values = model_colors[-1]
     ) +
+    scale_alpha_manual(
+      name = "Parameter\ntransformation",
+      values = rep(1, 3),
+      labels = c(
+        "Q-Poiss" = expression(phi),
+        "NegBin-L" = expression(frac(1, xi)),
+        "NegBin-Q" = expression(frac(1, psi))
+      ),
+      guide = guide_legend(
+        override.aes = list(
+          color = model_colors[c(3, 4, 2)]
+        )
+      )
+    ) +
     labs(
       title = "Overdispersion Parameters",
-      y = "Overdispersion"
+      y = "NegBin-L & Q-Poiss"
     ) +
     coord_cartesian(
       ylim = c(0, max(df_disp$Dispersion)),
