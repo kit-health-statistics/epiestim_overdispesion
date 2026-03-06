@@ -220,7 +220,7 @@ list(
       plot_dens(
         df_R_hat,
         scenarios$R_eff,
-        1 / scenarios$nb_size,
+        scenarios$nb_size,
         scenarios$magnitude,
         model_colors,
         distribution
