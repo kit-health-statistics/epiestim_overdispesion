@@ -198,7 +198,6 @@ plot_dens <- function(
           n = density_estimation_grid
         )
     } else if (dist_true == "NegBin-L") {
-      browser()
       # set the x-axis label to xi for NegBin-L
       x_label <- expression(frac(1, xi))
       # Plot the geometries
