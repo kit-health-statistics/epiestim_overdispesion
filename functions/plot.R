@@ -38,28 +38,35 @@ get_legend_theme <- function() {
 get_xlim <- function(R_true, overdisp_true, magnitude, distribution) {
   if (distribution == "NegBin-L") {
     se_limits <- if (magnitude == "high") {
-      c(0, 0.15)
+      c(0, 0.075)
     } else if (magnitude == "low") {
-      c(0, 0.6)
+      c(0, 0.4)
     }
     overdisp_limits <- c(-1, min(10, 5 * overdisp_true))
   } else if (distribution == "NegBin-Q") {
     se_limits <- if (magnitude == "high") {
       c(0, 0.2)
     } else if (magnitude == "low") {
-      c(0, 0.4)
+      c(0, 0.3)
     }
     overdisp_limits <- c(0, overdisp_true + 0.08)
   } else if (distribution == "Poiss") {
     se_limits <- if (magnitude == "high") {
       c(0, 0.05)
     } else if (magnitude == "low") {
-      c(0, 0.3)
+      c(0, 0.2)
+    }
+    overdisp_limits <- c(NA, NA)
+  } else if (distribution == "Branching") {
+    se_limits <- if (magnitude == "high") {
+      c(0, 0.04)
+    } else if (magnitude == "low") {
+      c(0, 0.4)
     }
     overdisp_limits <- c(NA, NA)
   }
   list(
-    R_hat = R_true + c(-0.8, 0.8),
+    R_hat = R_true + c(-0.7, 0.7),
     se_hat = se_limits,
     overdisp_hat = overdisp_limits
   )
@@ -91,8 +98,8 @@ plot_dens <- function(
   R_true,
   overdisp_true,
   magnitude,
-  dist_true,
-  model_colors
+  model_colors,
+  dist_true = c("Poiss", "NegBin-Q", "NegBin-L", "Branching")
 ) {
   # Create a denser grid where we want `geom_line(stat = "density")` to
   # calculate the density estimate. the default 512 occasionally creates a
@@ -167,8 +174,8 @@ plot_dens <- function(
 
   # Plot the point estimates of the overdispersion parameter. We use 2 facets
   # for 2 window lengths, therefore, we create the plot outside the for loop.
-  if (dist_true == "Poiss") {
-    # For the Poisson ground truth we don't plot anything
+  if (dist_true == "Poiss" || dist_true == "Branching") {
+    # For the Poisson, or branching process ground truth we don't plot anything
     p_overdisp_hat <- NULL
   } else {
     # We plot only parameters on the same scale. If the ground truth is
@@ -219,7 +226,8 @@ plot_dens <- function(
           bounds = c(0, Inf),
           n = density_estimation_grid
         ) +
-        # A dummy line to achieve including the "NegBin-Q" label in the legend
+        # A dummy line to achieve the inclusion of the "NegBin-Q" label in the
+        # legend
         geom_line(
           aes(x = c(-10, -11), y = c(0, 0), color = "NegBin-Q"),
           linewidth = 1,
@@ -392,9 +400,9 @@ plot_coverage <- function(
 #' @param short_window an integer, the length of the short estimation window
 #' @param n_init an integer, the number of initial values of the trajectory
 #' @return a ggplot object
-plot_trajectories <- function(X, short_window, n_init) {
+plot_trajectories <- function(X, short_window, n_init, n_burnin) {
   df_trajectories <- reshape2::melt(
-    # Display only the first 100 simulation runs to make the plot readable
+    # Display only the first 100 simulation runs to keep the plot readable
     X[, seq_len(min(100, ncol(X)))],
     varnames = c("day", "trajectory"),
     value.name = "cases"
@@ -402,8 +410,10 @@ plot_trajectories <- function(X, short_window, n_init) {
     mutate(
       segment = dplyr::case_when(
         day < n_init ~ "Initial",
-        day >= n_init & day < short_window + n_init ~ "Short window",
-        day >= short_window + n_init ~ "Long window"
+        day >= n_init & day < n_init + n_burnin ~ "Burn-in",
+        day >= n_init + n_burnin &
+          day < short_window + n_init + n_burnin ~ "Short window",
+        day >= short_window + n_init + n_burnin ~ "Long window"
       )
     )
 
@@ -412,9 +422,9 @@ plot_trajectories <- function(X, short_window, n_init) {
   bracket_offset <- max_cases * 0.08  # 8% of the max value
 
   # The long window is the length of the trajectory minus the initialization
-  long_window <- nrow(X) - n_init
+  long_window <- nrow(X) - n_init - n_burnin
 
-  ggplot() +
+  p <- ggplot() +
     geom_line(
       data = df_trajectories,
       mapping = aes(
@@ -426,30 +436,32 @@ plot_trajectories <- function(X, short_window, n_init) {
       )
     ) +
     ggpubr::geom_bracket(
-      xmin = n_init + 1,
+      xmin = n_init + n_burnin + 1,
       xmax = nrow(X),
       y.position = max_cases + 2.5 * bracket_offset,
       label = paste0(long_window, "-day window"),
       label.size = 3
     ) +
     ggpubr::geom_bracket(
-      xmin = n_init + 1,
-      xmax = n_init + short_window,
-      y.position = max_cases + 0.5 * bracket_offset,
+      xmin = n_init + n_burnin + 1,
+      xmax = n_init + n_burnin + short_window,
+      y.position = max_cases + 0.1 * bracket_offset,
       label = paste0(short_window, "-day window"),
       label.size = 3
     ) +
     scale_color_manual(
       values = c(
         "Initial" = "black",
-        "Short window" = "black",
-        "Long window" = "gray30"
+        "Burn-in" = "black",
+        "Short window" = "gray20",
+        "Long window" = "gray40"
       ),
       guide = "none"
     ) +
     scale_alpha_manual(
       values = c(
         "Initial" = 1,
+        "Burn-in" = 0.1,
         "Short window" = 0.1,
         "Long window" = 0.1
       ),
@@ -458,6 +470,30 @@ plot_trajectories <- function(X, short_window, n_init) {
     coord_cartesian(ylim = c(0, max_cases + 3.5 * bracket_offset)) +
     labs(x = "Day", y = "Cases") +
     theme(axis.title = element_text(size = 16))
+
+  # Add the brace for the initialization period, if present
+  if (n_init > 0) {
+    p <- p +
+      ggpubr::geom_bracket(
+        xmin = 1,
+        xmax = n_init,
+        y.position = max_cases + 2.5 * bracket_offset,
+        label = "Initialization",
+        label.size = 3
+      )
+  }
+  # Add the brace for the burn-in period, if present
+  if (n_burnin > 0) {
+    p <- p +
+      ggpubr::geom_bracket(
+        xmin = n_init + 1,
+        xmax = n_init + n_burnin,
+        y.position = max_cases + 2.5 * bracket_offset,
+        label = "Burn-in period",
+        label.size = 3
+      )
+  }
+  p
 }
 
 #' Plots the metadata of the simulation scenario
@@ -471,7 +507,13 @@ plot_trajectories <- function(X, short_window, n_init) {
 #' @param distribution string value indicating the count distribution:
 #'   "NegBin-L", "NegBin-Q", or "Poiss"
 #' @return a ggplot object
-plot_metadata <- function(R_eff, nb_size, magnitude, distribution) {
+plot_metadata <- function(
+  R_eff,
+  nb_size,
+  magnitude,
+  distribution,
+  dispersion = NULL
+) {
   df_text <- data.frame(
     x = rep(1, 3),
     y = c(1, 0, -1),
@@ -481,6 +523,8 @@ plot_metadata <- function(R_eff, nb_size, magnitude, distribution) {
         paste0("xi == ", 1 / nb_size)
       } else if (distribution == "NegBin-Q") {
         paste0("psi == ", 1 / nb_size)
+      } else if (distribution == "Branching") {
+        paste0("Disp.: ", dispersion)
       } else {
         NA
       },
