@@ -65,14 +65,14 @@ fit_all_models <- function(X, Lambda, window, window_start) {
   window_end <- window_start + window - 1L
   if (
     window < 1L ||
-    window_start < 1L ||
-    window_end > nrow(X) ||
-    window_end > nrow(Lambda)
+      window_start < 1L ||
+      window_end > nrow(X) ||
+      window_end > nrow(Lambda)
   ) {
     stop("`window_start` and `window` must define an in-bounds slice of X and Lambda.")  # nolint
   }
   window_idx <- seq.int(window_start, window_end)
-  
+
   pre_vectorized_fitting <- function(ind, model) {
     fit_reg_model(
       X = X[window_idx, ind],
