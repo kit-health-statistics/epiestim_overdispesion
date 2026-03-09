@@ -49,6 +49,8 @@ fit_reg_model <- function(
 #' @param X a matrix of the simulated counts, one column per simulation run
 #' @param Lambda a matrix of the single covariate, one column per simulation run
 #' @param window the length of the estimation window
+#' @param window_start an index, where the estimation window begins including
+#'   the first point.
 #' @return a data frame with three columns:
 #'   \begin{itemize}
 #'     \item \code{R_hat}, estimates of the effective reproduction number
@@ -59,11 +61,11 @@ fit_reg_model <- function(
 #'     converged
 #'     \item \code{window_len}, length of the estimation window
 #'   \end{itemize}
-fit_all_models <- function(X, Lambda, window) {
+fit_all_models <- function(X, Lambda, window, window_start) {
   pre_vectorized_fitting <- function(ind, model) {
     fit_reg_model(
-      X = tail(X[, ind], window),
-      Lambda = tail(Lambda[, ind], window),
+      X = X[seq_len(window) - 1 + window_start, ind],
+      Lambda = Lambda[seq_len(window) - 1 + window_start, ind],
       model = model
     )
   }

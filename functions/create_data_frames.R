@@ -20,11 +20,13 @@
 #'     either "short", or "long"
 #'   \end{itemize}
 create_results_df <- function(X, Lambda, short_window, long_window) {
+  # Where the estimation window begins
+  window_start <- nrow(X) - long_window + 1
   # Fitting for the short window
-  df_R_hat_raw_short <- fit_all_models(X, Lambda, short_window) |>
+  df_R_hat_raw_short <- fit_all_models(X, Lambda, short_window, window_start) |>
     mutate(window_len_fct = "short")
   # Fitting for the long window
-  df_R_hat_raw_long <- fit_all_models(X, Lambda, long_window) |>
+  df_R_hat_raw_long <- fit_all_models(X, Lambda, long_window, window_start) |>
     mutate(window_len_fct = "long")
 
   # Bind together and make the window length into a factor
