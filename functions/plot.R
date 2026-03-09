@@ -195,7 +195,9 @@ plot_dens <- function(
           alpha = 0.6,
           na.rm = TRUE,
           bounds = c(0, Inf),
-          n = density_estimation_grid
+          # For the dispersion parameter, we sometimes need a denser grid to
+          # avoid ragged density lines
+          n = 3 * density_estimation_grid
         )
     } else if (dist_true == "NegBin-L") {
       # set the x-axis label to xi for NegBin-L
@@ -214,7 +216,9 @@ plot_dens <- function(
           # Where the density shall be calculated. We need to plot quasi-Poisson
           # and NegBin-L separately to be able to set different bounds.
           bounds = c(-1, Inf),
-          n = density_estimation_grid
+          # For the dispersion parameter, we sometimes need a denser grid to
+          # avoid ragged density lines
+          n = 3 * density_estimation_grid
         ) +
         geom_line(
           data = filter(df_R_hat, model == "NegBin-L"),
@@ -224,7 +228,9 @@ plot_dens <- function(
           alpha = 0.6,
           na.rm = TRUE,
           bounds = c(0, Inf),
-          n = density_estimation_grid
+          # For the dispersion parameter, we sometimes need a denser grid to
+          # avoid ragged density lines
+          n = 3 * density_estimation_grid
         ) +
         # A dummy line to achieve the inclusion of the "NegBin-Q" label in the
         # legend
