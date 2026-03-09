@@ -62,10 +62,21 @@ fit_reg_model <- function(
 #'     \item \code{window_len}, length of the estimation window
 #'   \end{itemize}
 fit_all_models <- function(X, Lambda, window, window_start) {
+  window_end <- window_start + window - 1L
+  if (
+    window < 1L ||
+    window_start < 1L ||
+    window_end > nrow(X) ||
+    window_end > nrow(Lambda)
+  ) {
+    stop("`window_start` and `window` must define an in-bounds slice of X and Lambda.")  # nolint
+  }
+  window_idx <- seq.int(window_start, window_end)
+  
   pre_vectorized_fitting <- function(ind, model) {
     fit_reg_model(
-      X = X[seq_len(window) - 1 + window_start, ind],
-      Lambda = Lambda[seq_len(window) - 1 + window_start, ind],
+      X = X[window_idx, ind],
+      Lambda = Lambda[window_idx, ind],
       model = model
     )
   }
