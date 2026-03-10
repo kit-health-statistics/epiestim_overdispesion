@@ -4,7 +4,8 @@ analyse_Rt <- function(
   end_date,
   window_width,
   mean_si,
-  std_si
+  std_si,
+  model_colors
 ) {
   # Set the ggplot theme
   plot_theme <- theme_bw() +
@@ -191,14 +192,6 @@ analyse_Rt <- function(
   )
 
   # Create plots ----------------------------------------------------
-  # These colors are selected from the ggokabeito package designed for creating
-  # color-blindness friendly charts
-  model_colors <- c(
-    "Poiss" = "#009E73",
-    "Q-Poiss" = "#E69F00",
-    "NegBin-L" = "#56B4E9",
-    "NegBin-Q" = "#CC79A7"
-  )
 
   # 1. Incidence
   p_incidence <- ggplot(

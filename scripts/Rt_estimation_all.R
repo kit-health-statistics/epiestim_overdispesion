@@ -18,6 +18,15 @@ Sys.setlocale("LC_ALL", "English")
 params <- replicate(3, list())
 names(params) <- c("flu", "covid", "ebola")
 
+# Set the colors for different models. These colors are selected from the
+# ggokabeito package designed for creating color-blind friendly charts
+model_colors <- c(
+  "Poiss" = "#009E73",
+  "Q-Poiss" = "#E69F00",
+  "NegBin-L" = "#56B4E9",
+  "NegBin-Q" = "#CC79A7"
+)
+
 # Read the flu data --------------------------------------------------
 
 # Data are from:
@@ -102,7 +111,15 @@ names(results) <- names(params)
 for (disease in names(results)) {
   results[[disease]] <- with(
     params[[disease]],
-    analyse_Rt(incidence, start_date, end_date, window_width, mean_si, std_si)
+    analyse_Rt(
+      incidence,
+      start_date,
+      end_date,
+      window_width,
+      mean_si,
+      std_si,
+      model_colors
+    )
   )
 }
 
@@ -115,9 +132,8 @@ for (disease in names(results)) {
 # confidence intervals are actually higher for Poisson.
 # As a result, NegBin-L is trying to estimate its dispersion parameter as very
 # low and runs into the problem of numerical instabilities. For this reason we
-# replace these 2 NegBin-L estimates by the Poisson estimates.
-# The changes are carried out in the plot only! If we want to report other
-# quantities, we would have to change them too.
+# replace these 2 NegBin-L estimates by the Poisson estimates. We also replace
+# the NegBin-L AIC values by the Poisson AICs in these 2 instances.
 dates_underdisp <- as.Date(c("2015-04-26", "2015-04-19"))
 df_replace <- results$ebola$plt$p_nbin_L_vs_nbin_Q$data |>
   filter(
@@ -263,6 +279,11 @@ ggsave(
 
 # Supplementary plots --------------------------------------------------
 
+# Comparison of models using AIC - supplementary boxplots + table
+# This chunk has been moved to an external snippet due to the lengthiness of the
+# code generating the table
+source("scripts/AIC_comparison_snippet.R")
+
 # NegBin-L vs. quasi-Poisson
 p_nbin_L_legend <- wrap_elements(
   ggpubr::get_legend(results$flu$plt$p_nbin_L_vs_qpois)
@@ -350,7 +371,7 @@ p_disp_legend_png <- (
       ),
       guide = guide_legend(
         override.aes = list(
-          color = c("#56B4E9", "#CC79A7", "#E69F00")
+          color = model_colors[c("NegBin-L", "NegBin-Q", "Q-Poiss")]
         )
       )
     )
