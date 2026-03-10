@@ -122,7 +122,7 @@ for (disease in names(params)) {
       axis.text = element_text(size = 13),
       legend.text = element_text(size = 14),
       legend.title = element_text(size = 15)
-    ) +
+    )
     if (disease != "ebola") {
       p_aic_box[[disease]] <- p_aic_box[[disease]] +
         ggmagnify::geom_magnify(
