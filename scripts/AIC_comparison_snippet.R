@@ -7,6 +7,9 @@ ind_underdisp <- which(
   seq(params$ebola$start_date, params$ebola$end_date, by = 7) %in%
     dates_underdisp
 ) - params$ebola$window_width  # Shift by the first estimation window
+# Check that we really found the problematic indices. This can be verified by
+# looking at the dispersion parameter estimate that is in this case very low.
+stopifnot(all(results$ebola$disp$nbin_L[ind_underdisp] < 1e-10))
 # Replace the weird AIC values
 results$ebola$AIC$nbin_L[ind_underdisp] <- results$ebola$AIC$pois[ind_underdisp]
 # Extract the aic values for all estimation windows
