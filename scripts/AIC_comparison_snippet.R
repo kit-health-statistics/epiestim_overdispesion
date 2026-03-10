@@ -84,7 +84,7 @@ table_aic <- table_aic[, column_order] |>
 table_aic[grepl("NA", table_aic)] <- ""
 rownames(table_aic) <- c("Pandemic Influenza", "COVID-19", "Ebola")
 # Print the table
-xtable(table_aic)
+aic_latex <- xtable(table_aic)
 
 # AIC Boxplots ------------------------------------------
 

@@ -283,6 +283,7 @@ ggsave(
 # This chunk has been moved to an external snippet due to the lengthiness of the
 # code generating the table
 source("scripts/AIC_comparison_snippet.R")
+print(aic_latex)
 
 # NegBin-L vs. quasi-Poisson
 p_nbin_L_legend <- wrap_elements(
