@@ -123,11 +123,14 @@ for (disease in names(params)) {
       legend.text = element_text(size = 14),
       legend.title = element_text(size = 15)
     ) +
-    ggmagnify::geom_magnify(
-      from = magn_from[[disease]],
-      to = magn_to[[disease]],
-      axes = "y"
-    )
+    if (disease != "ebola") {
+      p_aic_box[[disease]] <- p_aic_box[[disease]] +
+        ggmagnify::geom_magnify(
+          from = magn_from[[disease]],
+          to = magn_to[[disease]],
+          axes = "y"
+        )
+    }
 }
 
 # Extract the legend
