@@ -455,6 +455,13 @@ plot_trajectories <- function(X, short_window, n_init, n_burnin) {
       label = paste0(short_window, "-day window"),
       label.size = 3
     ) +
+    ggpubr::geom_bracket(
+      xmin = n_init + 1,
+      xmax = n_init + n_burnin,
+      y.position = max_cases + 2.5 * bracket_offset,
+      label = "Burn-in period",
+      label.size = 3
+    ) +
     scale_color_manual(
       values = c(
         "Initial" = "black",
