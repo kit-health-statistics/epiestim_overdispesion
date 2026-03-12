@@ -261,8 +261,8 @@ list(
             p_simulation_poster,
             paste(scenario_id, "simulation_coverage_poster", sep = "_"),
             # Figure dimensions must be set manually to fit the poster page
-            width = plot_size$width / 1.4,
-            height = (plot_size$height / 1.4) / 2.35
+            width = plot_size["width"] / 1.4,
+            height = (plot_size["height"] / 1.4) / 2.35
           )
         }
       }
