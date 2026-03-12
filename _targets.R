@@ -52,7 +52,7 @@ global_params <- list(
 )
 
 # Size of the final plot
-plot_size <- list(width = 11, height = 11.7)
+plot_size <- c(width = 11, height = 11.7)
 
 # If we plot only half of the scenarios, by how much do we divide the height?
 plot_halving_coeff <- 1.75
@@ -230,43 +230,14 @@ list(
     ),
     # Save plots
     tar_target(saved_figures, {
-      if (distribution == "Poiss" || distribution == "Branching") {
-        # For Poisson, we have only half the scenarios as for the rest, so the
-        # height of the resulting plot must be divided by 2. We divide by less
-        # than 2 to allow for some space for the title.
-        plot_height <- plot_size$height / plot_halving_coeff
-      } else {
-        plot_height <- plot_size$height
-      }
-
-      # Save the coverage plot
-      p_simulation <- compose_coverage_patches(
+      compose_and_save_plots(
+        distribution,
         plot_panels,
-        global_params$short_window,
-        global_params$long_window
-      )
-      save_plot(
-        p_simulation,
-        paste(scenario_id, "simulation_coverage", sep = "_"),
-        width = plot_size$width,
-        height = plot_height
-      )
-      # Save the distribution of the R estimates
-      p_densities <- compose_dens_patches(
-        # Extract only the R estimates
-        list(
-          R_hat = purrr::map(plot_density_panels, "R_hat"),
-          se_hat = purrr::map(plot_density_panels, "se_hat")
-        ),
-        purrr::map(plot_panels, "meta"),
-        global_params$short_window,
-        global_params$long_window
-      )
-      save_plot(
-        p_densities,
-        paste(scenario_id, "Rhat_density", sep = "_"),
-        width = plot_size$width,
-        height = plot_height
+        plot_density_panels,
+        unlist(global_params[c("short_window", "long_window")]),
+        plot_size,
+        scenario_id,
+        plot_halving_coeff
       )
     }),
     tar_target(
@@ -316,8 +287,8 @@ list(
     save_plot(
       p_overdisp,
       "overdisp_estimates",
-      width = plot_size$width,
-      height = plot_size$height
+      width = plot_size["width"],
+      height = plot_size["height"]
     )
   })
 )
