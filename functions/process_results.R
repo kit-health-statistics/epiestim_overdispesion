@@ -194,13 +194,13 @@ summarize_convergence <- function(
       },
       magnitude = magnitude
     ) |>
-    group_by(R_eff, overdispersion, magnitude, window_len_fct, model) |>
+    group_by(magnitude, R_eff, overdispersion, window_len_fct, model) |>
     summarise(
       converged = sum(converged & !is.na(R), na.rm = TRUE),
       # unstable = convergent but masked/flagged by NA in `R` and `se`columns
-      unstable = sum(converged & is.na(R), na.rm = TRUE)
-    ) |>
-    ungroup()
+      unstable = sum(converged & is.na(R), na.rm = TRUE),
+      .groups = "drop"
+    )
   # Create the table counting convergent runs
   df_convergence <- df_summarized |>
     dplyr::select(-unstable) |>

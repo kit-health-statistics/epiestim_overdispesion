@@ -21,9 +21,9 @@ create_scenario_grid <- function(
   distribution <- match.arg(distribution)
 
   scenario_grid <- expand.grid(
-    magnitude = c("low", "high"),
     dispersion = c("low", "high"),
     R_eff = c(1.5, 2.5),
+    magnitude = c("low", "high"),
     KEEP.OUT.ATTRS = FALSE,
     stringsAsFactors = FALSE
   )
