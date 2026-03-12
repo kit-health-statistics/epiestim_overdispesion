@@ -831,6 +831,27 @@ compose_overdisp_patches <- function(
   p_main
 }
 
+#' Save final plots based on the model type
+#'
+#' @description This function is a wrapper around the
+#'   \code{compose_coverage_patches} and \code{compose_dens_patches}. The plots
+#'   are arranged according to the requirements for the given distribution
+#'   (Poisson, NegBin-L and NegBin-Q) and saved in the PDF and PNG format.
+#' @param plot_panels_coverage a list of lists of patchwork patches
+#'   corresponding to the coverage plot that are composed using the
+#'   \code{compose_coverage_patches} function.
+#' @param plot_panels_density a list of lists of patchwork patches
+#'   corresponding to the density plot that are composed using the
+#'   \code{compose_dens_patches} function.
+#' @param window_lengths a named integer vector stating the length of the short
+#'   and long estimation windows.
+#' @param plot_size a named vector stating the width and height of the saved
+#'   plot.
+#' @param scenario_id a string identifying the scenario block (Poisson, NegBin-L
+#'   or NegBin-Q)
+#' @param plot_halving_coeff a numeric value dividing the final plot height,
+#'   when we want to display only half of the scenarios in the plot. This is not
+#'   exactly 2 and must be found by trial and error.
 compose_and_save_plots <- function(
   distribution,
   plot_panels_coverage,
