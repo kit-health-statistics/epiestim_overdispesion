@@ -439,7 +439,8 @@ plot_trajectories <- function(X, short_window, n_init, n_burnin) {
         group = trajectory,
         color = segment,
         alpha = segment
-      )
+      ),
+      linewidth = 0.3
     ) +
     ggpubr::geom_bracket(
       xmin = n_init + n_burnin + 1,
@@ -466,8 +467,8 @@ plot_trajectories <- function(X, short_window, n_init, n_burnin) {
       values = c(
         "Initial" = "black",
         "Burn-in" = "black",
-        "Short window" = "gray20",
-        "Long window" = "gray40"
+        "Short window" = "gray30",
+        "Long window" = "gray60"
       ),
       guide = "none"
     ) +
