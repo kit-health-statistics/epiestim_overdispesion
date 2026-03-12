@@ -49,7 +49,7 @@ get_xlim <- function(R_true, overdisp_true, magnitude, distribution) {
     } else if (magnitude == "low") {
       c(0, 0.3)
     }
-    overdisp_limits <- c(0, overdisp_true + 0.08)
+    overdisp_limits <- c(0, overdisp_true + 0.065)
   } else if (distribution == "Poiss") {
     se_limits <- if (magnitude == "high") {
       c(0, 0.05)
@@ -154,9 +154,9 @@ plot_dens <- function(
         na.rm = TRUE,
         bounds = c(0, Inf),
         # Increase the grid density a little more for the Poison SEs, where
-        # the line is more rough than for the rest.
+        # the line is rougher than for the rest.
         n = if (dist_true == "Poiss") {
-          2 * density_estimation_grid
+          3 * density_estimation_grid
         } else {
           density_estimation_grid
         }
@@ -786,7 +786,7 @@ compose_overdisp_patches <- function(
       ncol = 2,
       byrow = FALSE,
       heights = get_header_proportions(n_rows),
-      widths = c(2, 6),
+      widths = c(2, 5),
       guides = "collect",
       axes = "collect_x",
       axis_titles = "collect"
@@ -808,7 +808,7 @@ compose_overdisp_patches <- function(
       ncol = 2,
       byrow = FALSE,
       heights = get_header_proportions(n_rows),
-      widths = c(2, 6),
+      widths = c(2, 5),
       guides = "collect",
       axes = "collect"
     ) &
