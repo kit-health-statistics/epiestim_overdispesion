@@ -848,7 +848,7 @@ compose_and_save_plots <- function(
   } else {
     plot_height <- plot_size["height"]
   }
-  
+
   # For NegBin-L, we split the coverage plots from high and low magnitude
   # scenarios. The scenarios must be ordered in a way that the low magnitude
   # ones comes first.
