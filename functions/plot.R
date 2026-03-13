@@ -852,7 +852,7 @@ compose_and_save_plots <- function(
   window_lengths,
   plot_size,
   scenario_id,
-  plot_halving_coeff = NA
+  plot_halving_coeff
 ) {
   if (distribution %in% c("Poiss", "Branching")) {
     # For Poisson, we have only half the scenarios as for the rest, so the
