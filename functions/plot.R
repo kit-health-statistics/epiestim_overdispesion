@@ -49,7 +49,7 @@ get_xlim <- function(R_true, overdisp_true, magnitude, distribution) {
     } else if (magnitude == "low") {
       c(0, 0.3)
     }
-    overdisp_limits <- c(0, overdisp_true + 0.08)
+    overdisp_limits <- c(0, overdisp_true + 0.065)
   } else if (distribution == "Poiss") {
     se_limits <- if (magnitude == "high") {
       c(0, 0.05)
@@ -154,9 +154,9 @@ plot_dens <- function(
         na.rm = TRUE,
         bounds = c(0, Inf),
         # Increase the grid density a little more for the Poison SEs, where
-        # the line is more rough than for the rest.
+        # the line is rougher than for the rest.
         n = if (dist_true == "Poiss") {
-          2 * density_estimation_grid
+          3 * density_estimation_grid
         } else {
           density_estimation_grid
         }
@@ -439,7 +439,8 @@ plot_trajectories <- function(X, short_window, n_init, n_burnin) {
         group = trajectory,
         color = segment,
         alpha = segment
-      )
+      ),
+      linewidth = 0.3
     ) +
     ggpubr::geom_bracket(
       xmin = n_init + n_burnin + 1,
@@ -459,8 +460,8 @@ plot_trajectories <- function(X, short_window, n_init, n_burnin) {
       values = c(
         "Initial" = "black",
         "Burn-in" = "black",
-        "Short window" = "gray20",
-        "Long window" = "gray40"
+        "Short window" = "gray30",
+        "Long window" = "gray60"
       ),
       guide = "none"
     ) +
@@ -534,7 +535,7 @@ plot_metadata <- function(
       } else {
         NA
       },
-      paste0("Magn.: ", gsub("_.*", "", magnitude))
+      paste0("Init.: ", gsub("_.*", "", magnitude))
     )
   )
   # Remove the dispersion parameter, when it's not present for the Poisson
@@ -779,7 +780,7 @@ compose_overdisp_patches <- function(
       ncol = 2,
       byrow = FALSE,
       heights = get_header_proportions(n_rows),
-      widths = c(2, 6),
+      widths = c(2, 5),
       guides = "collect",
       axes = "collect_x",
       axis_titles = "collect"
@@ -801,7 +802,7 @@ compose_overdisp_patches <- function(
       ncol = 2,
       byrow = FALSE,
       heights = get_header_proportions(n_rows),
-      widths = c(2, 6),
+      widths = c(2, 5),
       guides = "collect",
       axes = "collect"
     ) &
@@ -821,4 +822,107 @@ compose_overdisp_patches <- function(
     p_legend +
     plot_layout(widths = c(6, 1))
   p_main
+}
+
+#' Save final plots based on the model type
+#'
+#' @description This function is a wrapper around the
+#'   \code{compose_coverage_patches} and \code{compose_dens_patches}. The plots
+#'   are arranged according to the requirements for the given distribution
+#'   (Poisson, NegBin-L and NegBin-Q) and saved in the PDF and PNG format.
+#' @param plot_panels_coverage a list of lists of patchwork patches
+#'   corresponding to the coverage plot that are composed using the
+#'   \code{compose_coverage_patches} function.
+#' @param plot_panels_density a list of lists of patchwork patches
+#'   corresponding to the density plot that are composed using the
+#'   \code{compose_dens_patches} function.
+#' @param window_lengths a named integer vector stating the length of the short
+#'   and long estimation windows.
+#' @param plot_size a named vector stating the width and height of the saved
+#'   plot.
+#' @param scenario_id a string identifying the scenario block (Poisson, NegBin-L
+#'   or NegBin-Q)
+#' @param plot_halving_coeff a numeric value dividing the final plot height,
+#'   when we want to display only half of the scenarios in the plot. This is not
+#'   exactly 2 and must be found by trial and error.
+compose_and_save_plots <- function(
+  distribution,
+  plot_panels_coverage,
+  plot_panels_density,
+  window_lengths,
+  plot_size,
+  scenario_id,
+  plot_halving_coeff
+) {
+  if (distribution %in% c("Poiss", "Branching")) {
+    # For Poisson, we have only half the scenarios as for the rest, so the
+    # height of the resulting plot must be divided by 2. We divide by less
+    # than 2 to allow for some space for the title.
+    plot_height <- plot_size["height"] / plot_halving_coeff
+  } else {
+    plot_height <- plot_size["height"]
+  }
+
+  # For NegBin-L, we split the coverage plots from high and low magnitude
+  # scenarios. The scenarios must be ordered in a way that the low magnitude
+  # ones comes first.
+  if (distribution == "NegBin-L") {
+    # Number of plots must be even
+    n_plots <- length(plot_panels_coverage)
+    # Coverage plots
+    p_coverage_low_magnitude <- compose_coverage_patches(
+      plot_panels_coverage[seq_len(n_plots / 2)],
+      window_lengths["short_window"],
+      window_lengths["long_window"]
+    )
+    p_coverage_high_magnitude <- compose_coverage_patches(
+      plot_panels_coverage[seq(n_plots / 2 + 1, n_plots)],
+      window_lengths["short_window"],
+      window_lengths["long_window"]
+    )
+    save_plot(
+      p_coverage_low_magnitude,
+      paste(scenario_id, "simulation_coverage", "low_magn", sep = "_"),
+      width = plot_size["width"],
+      height = plot_height / plot_halving_coeff
+    )
+    save_plot(
+      p_coverage_high_magnitude,
+      paste(scenario_id, "simulation_coverage", "high_magn", sep = "_"),
+      width = plot_size["width"],
+      height = plot_height / plot_halving_coeff
+    )
+  } else {
+    # For the rest of the scenarios, we plot the coverage from all scenarios in
+    # a single figure
+    p_coverage <- compose_coverage_patches(
+      plot_panels_coverage,
+      window_lengths["short_window"],
+      window_lengths["long_window"]
+    )
+    save_plot(
+      p_coverage,
+      paste(scenario_id, "simulation_coverage", sep = "_"),
+      width = plot_size["width"],
+      height = plot_height
+    )
+  }
+  # Distribution of the R estimates and its standard errors. There is always one
+  # plot for all scenarios.
+  p_densities <- compose_dens_patches(
+    # Extract only the R estimates and its standard errors
+    list(
+      R_hat = purrr::map(plot_panels_density, "R_hat"),
+      se_hat = purrr::map(plot_panels_density, "se_hat")
+    ),
+    purrr::map(plot_panels_coverage, "meta"),
+    window_lengths["short_window"],
+    window_lengths["long_window"]
+  )
+  save_plot(
+    p_densities,
+    paste(scenario_id, "Rhat_density", sep = "_"),
+    width = plot_size["width"],
+    height = plot_height
+  )
 }

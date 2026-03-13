@@ -21,9 +21,9 @@ create_scenario_grid <- function(
   distribution <- match.arg(distribution)
 
   scenario_grid <- expand.grid(
-    magnitude = c("low", "high"),
     dispersion = c("low", "high"),
     R_eff = c(1.5, 2.5),
+    magnitude = c("low", "high"),
     KEEP.OUT.ATTRS = FALSE,
     stringsAsFactors = FALSE
   )
@@ -42,7 +42,7 @@ create_scenario_grid <- function(
       nb_size = if (distribution == "NegBin-L") {
         c(2, 0.2)
       } else if (distribution == "NegBin-Q") {
-        c(1 / 0.02, 1 / 0.06)
+        c(50, 16.6)
       } else {
         # Set the negative binomial dispersion parameter to NA for Poisson
         c(NA, NA)
