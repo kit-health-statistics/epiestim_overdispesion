@@ -535,7 +535,7 @@ plot_metadata <- function(
       } else {
         NA
       },
-      paste0("Magn.: ", gsub("_.*", "", magnitude))
+      paste0("Init.: ", gsub("_.*", "", magnitude))
     )
   )
   # Remove the dispersion parameter, when it's not present for the Poisson
