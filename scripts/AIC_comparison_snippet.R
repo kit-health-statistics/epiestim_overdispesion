@@ -44,15 +44,25 @@ df_aic <- bind_rows(df_aic) |>
 # test rejections on the significance level 5 %. In this settings, when we test
 # for the presence of overdispersion, the parameter value lies on the boundary
 # of the parameteric space, rendering the likelihood ratio test conservative.
-# However, even with the conservative likelihood ratio test, we reject most of
-# the times.
+# For this reason, we have to correct the test. If the parameter value under the
+# null hypothesis lies inside the parametric space, the test statistic
+# asymptotically follows a chi^2(1) distribution. However, since the parameter
+# under the null lies on the boundary of the space (zero), the test statistic
+# is distributed according to an equal mixture of the chi^2(1) and a point mass
+# at zero.
 table_aic <- df_aic |>
   group_by(pathogen, model) |>
   summarise(
     mean_aic = mean(aic),
     lower_aic_percent = sum(lower_aic_than_poiss) / n() * 100,
-    lr_test_reject_percent = sum(1 - pchisq(lr_test_stat, 1) < 0.05) /
-      n() * 100,
+    # For a non-corrected LR test we would calculate the p-value
+    # as `1 - pchisq(lr_test_stat, 1)`. However we have to account for the half
+    # of the probability mass located at zero.
+    lr_test_reject_percent = sum(
+      1 - 0.5 * (
+        ifelse(lr_test_stat < 0, 0, 1) + pchisq(lr_test_stat, 1)
+      ) < 0.05
+    ) / n() * 100,
     .groups = "drop"
   ) |>
   # Widen the table, so that we have one row per pathogen and three columns
