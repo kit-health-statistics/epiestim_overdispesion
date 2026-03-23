@@ -320,7 +320,7 @@ generate_trajectories <- function(
     if (is.na(offspring_disp) || is.na(reporting_prob)) {
       stop("For the branching process option, 'offspring_disp' and 'reporting_prob' must be specified") # nolint
     }
-    if (offspring_disp < 1) {
+    if (offspring_disp <= 1) {
       stop("For the branching process option, 'offspring_disp' must be larger than 1") # nolint
     }
   } else if ((model == "NegBin-Q" || model == "NegBin-L") && is.na(nb_size)) {
