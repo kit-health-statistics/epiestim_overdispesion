@@ -316,10 +316,10 @@ generate_trajectories <- function(
   seed = 432
 ) {
   model <- match.arg(model)
-  if (
-    model == "Branching" && (is.na(offspring_disp) || is.na(reporting_prob))
-  ) {
-    stop("For the branching process option, 'offspring_disp' and 'reporting_prob' must be specified") # nolint
+  if (model == "Branching") {
+    if (is.na(offspring_disp) || is.na(reporting_prob)) {
+      stop("For the branching process option, 'offspring_disp' and 'reporting_prob' must be specified") # nolint
+    }
     if (offspring_disp < 1) {
       stop("For the branching process option, 'offspring_disp' must be larger than 1") # nolint
     }
