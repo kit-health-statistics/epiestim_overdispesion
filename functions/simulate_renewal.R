@@ -13,12 +13,8 @@ initialize_trajectory <- function(
   # generate some initial values for the renewal equation models only. For the
   # branching process, we need a single initial value, which is the value of
   # `init_magnitude`.
-  if (model == "Branching") {
-    init_magnitude
-  } else {
-    set.seed(seed)
-    pmax(0, round(rnorm(n_init, init_magnitude * weekday_effect, init_sd)))
-  }
+  set.seed(seed)
+  pmax(0, abs(round(rnorm(n_init, init_magnitude * weekday_effect, init_sd))))
 }
 
 #' Generate the incidence counts from the corresponding distribution
@@ -115,24 +111,20 @@ simulate_renewal <- function(
 #'
 #' where \eqn{I_g} is the size of generation \eqn{g} and \eqn{Z_{i,g}} is the
 #' number of offspring of individual \eqn{i} from generation \eqn{g}. The
-#' offspring distribution here is for simplicity defined as the Poisson
+#' offspring distribution here is defined as a "double" Poison distribution,
+#' meaning, that each individual has a Poisson distributed number of offspring
+#' clusters and each offspring cluster contains again a Poisson distributed
+#' number of individuals. All individuals from the same clusters become
+#' infectious at the same time, i.e. they have the same serial interval
 #' distribution.
-#'
-#' We include the overdispersion by sampling different reproductive number
-#' \eqn{R_{g,i}} per each individual according to the log-normal distribution,
-#' that is
-#'
-#' \deqn{R_{g, i} \sim Lognormal(R, \sigma_R^2),}
-#'
-#' where \eqn{R} is the true value of the reproductive number.
-#'
-#' As a second source of overdispersion, we introduce underreporting in the
-#' form of binomial thinning, where we report on average only a given proportion
-#' of the final incidence.
 #'
 #' We run the branching process for multiple generations and
 #' then incorporate the generation time to go from the generation sizes
 #' \eqn{I_g} to the incidence \eqn{X_t} in calendar time \eqn{t}.
+#'
+#' As an additional source of overdispersion, we introduce underreporting in the
+#' form of binomial thinning, where we report on average only a given proportion
+#' of the final incidence.
 #'
 #' @param init an integer, the initial number of infectious individual, i.e. the
 #'   size of the 0-th generation of the branching process
@@ -141,8 +133,9 @@ simulate_renewal <- function(
 #' @param si a non-negative vector, the distribution of the serial interval,
 #'   must not be of the same length, or longer than \code{lgt}
 #' @param lgt positive integer, total length of the trajectory
-#' @param R_sd positive real value, the standard deviation of the log-normal
-#'   distribution on the individual effective reproductive numbers
+#' @param offspring_disp a positive real value larger than 1 indicating the
+#'   degree of overdispersion in the offspring distribution. The variance of the
+#'   offspring distribution is \code{R * offspring_disp}
 #' @param reporting_prob proportion of the incidence that gets reported on
 #'   average
 #' @return a named list with two elements
@@ -156,32 +149,35 @@ simulate_branching <- function(
   R,
   si,
   lgt,
-  R_sd = 0.1,
+  offspring_disp = 2,
   reporting_prob = 1
 ) {
-  # Create a vector of discrete generation times, from which we will draw
-  # using `sample()`
-  gen_time_to_sample <- seq_along(si)
-  # We sample the individual R_t values from a log-normal distribution with
-  # mean `R` and standard deviation `R_sd`. However the `rlnorm()` function
-  # accepts parameters on the scale of the non-transformed normal distribution.
-  # We have to therefore reparametrize.
-  R_sdlog <- sqrt(log(R_sd^2 / R^2 + 1))
-  R_meanlog <- log(R) - R_sdlog^2 / 2
+  # Create a vector of discrete serial intervals/generation times, from which we
+  # will draw using `sample()`
+  si_to_sample <- seq_along(si)
+  # Total trajectory length including the initialization
+  lgt_total <- lgt + length(init)
 
   # We store the branching process as a list. Each list element corresponds to
   # one generation with a data frame containing the information about each
   # individual in the given generation.
-  df_individuals <- list(
-    data.frame(
-      # Number of the individual in this generation
-      individual = seq_len(init),
-      # Individual-specific R
-      R_sampled = rlnorm(init, meanlog = R_meanlog, sdlog = R_sdlog),
-      # Time of infection
-      t = 0
-    )
-  )
+  # The first generation is special, as the initially infectious individuals are
+  # distributed across multiple calendar time points.
+  df_individuals <- sapply(
+    seq_along(init),
+    function(ind) {
+      data.frame(
+        # Number of the individual in this generation
+        individual = seq_len(init[ind]),
+        # Time of infection
+        t = rep(ind - length(init), init[ind])
+      )
+    },
+    simplify = FALSE
+  ) |>
+    bind_rows() |>
+    list()
+
   # We need to stop the simulation as soon as all infections until time `lgt`
   # (included) are generated. `t_actual` stores the calendar time, until which
   # all branching events have been resolved, i.e. no individual before this time
@@ -190,27 +186,26 @@ simulate_branching <- function(
   # Generation counter to index the list with data frames.
   gen <- 1
   while (t_actual < lgt) {
-    # How many offspring the individuals from the previous generation generate
-    offspring <- rpois(
-      nrow(df_individuals[[gen]]),
-      df_individuals[[gen]]$R_sampled
+    # How many offspring clusters the individuals from the previous generation
+    # generate
+    clusters <- rpois(
+      nrow(df_individuals[[gen]]), R / (offspring_disp - 1)
     )
-    sum_offspring <- sum(offspring)
+    # How many individuals are there in the cluster.
+    inner_offspring <- sapply(clusters, rpois, lambda = offspring_disp - 1) |>
+      unlist()
     # New generation
     df_individuals[[gen + 1]] <- data.frame(
-      # Number of the individual in this generation
-      individual = seq_len(sum_offspring),
-      # Individual-specific R
-      R_sampled = exp(rnorm(sum_offspring, mean = R_meanlog, sd = R_sdlog)),
+      # Number of individuals in this generation
+      individual = seq_len(sum(inner_offspring)),
       # Time of infection is the time of infection of the parent plus a random
-      # generation time
-      t = rep(df_individuals[[gen]]$t, times = offspring) +
-        sample(
-          gen_time_to_sample,
-          size = sum_offspring,
-          replace = TRUE,
-          prob = si
-        )
+      # generation time. The generation time is sampled once for a whole
+      # cluster.
+      t = rep(
+        rep(df_individuals[[gen]]$t, times = clusters) +
+          sample(si_to_sample, size = sum(clusters), replace = TRUE, prob = si),
+        times = inner_offspring
+      )
     )
     # We take the minimum infection time of the newly infected individuals as
     # the actual time, since all new infection events will occur only after this
@@ -222,26 +217,29 @@ simulate_branching <- function(
 
   # Aggregate the infections into the incidence curve.
   df_incid <- dplyr::bind_rows(df_individuals) |>
+    dplyr::mutate(t = t + length(init)) |>  # Shift the calendar time
     dplyr::group_by(t) |>
     dplyr::summarise(incidence = dplyr::n())
   # We might have some times, where no infection occurred. To pad the incidence
-  # curve by zeros, we will have to do a join with a complete dataframe.
-  df_time <- data.frame(t = seq_len(lgt + 1) - 1)
+  # curve by zeros, we will have to do a join with a complete data frame.
+  df_time <- data.frame(t = seq_len(lgt_total))
   incid <- dplyr::left_join(df_time, df_incid, by = "t") |>
     dplyr::pull(incidence) |>
     tidyr::replace_na(0)
 
-  # Add underreporting as binomial thinning. We drop the initialization here.
-  underrep_incid <- rbinom(lgt, incid[-1], reporting_prob)
+  # Add underreporting as binomial thinning, that is, each case has a fixed
+  # probability to be reported.
+  underrep_incid <- rbinom(lgt_total, incid, reporting_prob)
 
   # Pre-calculate the Lambda to match the output from the `simulate_renewal()`
   # function. This Lambda will be then used to fit the renewal model. Note that
-  # this quantity is not used in the branching process.
+  # this quantity is not used to calculate any characteristics of the branching
+  # process.
   Lambda <- c(
     # NAs at the beginning
     rep(NA, length(si)),
     sapply(
-      seq_len(lgt - length(si)),
+      seq_len(lgt_total - length(si)),
       function(ind) sum(underrep_incid[ind - 1 + seq_along(si)] * rev(si))
     )
   )
@@ -295,15 +293,15 @@ generate_trajectories <- function(
   model = c("Poiss", "NegBin-Q", "NegBin-L", "Branching"),
   nb_size = NA,
   weekday_effect = c(1, 1),
-  R_sd = NA,
+  offspring_disp = NA,
   reporting_prob = NA,
   seed = 432
 ) {
   model <- match.arg(model)
   if (
-    model == "Branching" && (is.na(R_sd) || is.na(reporting_prob))
+    model == "Branching" && (is.na(offspring_disp) || is.na(reporting_prob))
   ) {
-    stop("For the branching process option, 'R_sd' and 'reporting_prob' must be specified") # nolint
+    stop("For the branching process option, 'offspring_disp' and 'reporting_prob' must be specified") # nolint
   } else if ((model == "NegBin-Q" || model == "NegBin-L") && is.na(nb_size)) {
     stop("For the negative binomial options, 'nb_size' must be specified.")
   }
@@ -317,7 +315,7 @@ generate_trajectories <- function(
         R_eff,
         si,
         lgt + n_burnin,
-        R_sd,
+        offspring_disp,
         reporting_prob
       ),
       simplify = FALSE

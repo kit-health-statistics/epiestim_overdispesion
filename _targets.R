@@ -126,7 +126,7 @@ list(
           model = distribution,
           nb_size = scenarios$nb_size,
           weekday_effect = weekday_effect_vector,
-          R_sd = scenarios$R_sd,
+          offspring_disp = scenarios$offspring_disp,
           reporting_prob = scenarios$reporting_prob,
           seed = global_params$base_seed + scenarios$scenario_number
         )
@@ -161,7 +161,12 @@ list(
           trajectories$X,
           global_params$short_window,
           if (distribution == "Branching") 0 else global_params$n_init,
-          global_params$n_burnin
+          # A longer burn-in period for the branching process to take off
+          if (distribution == "Branching") {
+            2 * global_params$n_burnin
+          } else {
+            global_params$n_burnin
+          }
         ),
         coverage = plot_coverage(
           scenarios$R_eff,
