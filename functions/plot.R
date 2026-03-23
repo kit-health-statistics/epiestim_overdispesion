@@ -513,13 +513,15 @@ plot_trajectories <- function(X, short_window, n_init, n_burnin) {
 #' @param magnitude string values, either "high", or "low"
 #' @param distribution string value indicating the count distribution:
 #'   "NegBin-L", "NegBin-Q", or "Poiss"
+#' @param offspring_disp a real number larger than 1, the dispersion parameter
+#'   of the offspring distribution in the branching process scenarios
 #' @return a ggplot object
 plot_metadata <- function(
   R_eff,
   nb_size,
   magnitude,
   distribution,
-  dispersion = NULL
+  offspring_disp = NULL
 ) {
   df_text <- data.frame(
     x = rep(1, 3),
@@ -531,11 +533,15 @@ plot_metadata <- function(
       } else if (distribution == "NegBin-Q") {
         paste0("psi == ", nb_size)
       } else if (distribution == "Branching") {
-        paste0("Disp.: ", dispersion)
+        paste0("gamma == ", offspring_disp)
       } else {
         NA
       },
-      paste0("Init.: ", gsub("_.*", "", magnitude))
+      if (distribution == "Branching") {
+        NA
+      } else {
+        paste0("Init.: ", gsub("_.*", "", magnitude))
+      }
     )
   )
   # Remove the dispersion parameter, when it's not present for the Poisson

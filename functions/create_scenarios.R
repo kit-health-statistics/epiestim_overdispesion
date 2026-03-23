@@ -33,8 +33,8 @@ create_scenario_grid <- function(
     dispersion <- data.frame(
       dispersion = c("low", "high"),
       nb_size = c(NA, NA),
-      R_sd = c(0.1, 0.3),
-      reporting_prob = c(0.8, 0.8)
+      offspring_disp = c(1.5, 3),
+      reporting_prob = c(0.5, 0.5)
     )
   } else {
     dispersion <- data.frame(
@@ -48,6 +48,7 @@ create_scenario_grid <- function(
         c(NA, NA)
       },
       # Set the parameters for the branching process to NA
+      offspring_disp = c(NA, NA),
       R_sd = c(NA, NA),
       reporting_prob = c(NA, NA)
     )
@@ -58,11 +59,9 @@ create_scenario_grid <- function(
     magnitude <- data.frame(
       magnitude = "low",
       # Initial value
-      init_magnitude = 15,
-      # No sd and seed, since for the branching process we initialize by a
-      # single number - by the number of initial infectious individuals
-      init_sd = NA,
-      init_seed = NA
+      init_magnitude = 4,
+      init_sd = 2,
+      init_seed = 10L
     )
   } else {
     magnitude <- data.frame(
@@ -91,10 +90,12 @@ create_scenario_grid <- function(
       dplyr::mutate(dispersion = "not_applicable")
   }
   # If the data generating process is a branching process, we don't have
-  # scenarios for higher magnitudes.
+  # scenarios for higher magnitudes and we also rewrite the true value of R to
+  # be lower in order to make the trajectories less explosive.
   if (distribution == "Branching") {
     scenarios <- scenarios |>
-      dplyr::filter(magnitude == "low")
+      dplyr::filter(magnitude == "low") |>
+      mutate(R_eff = dplyr::case_when(R_eff == 1.5 ~ 1.2, R_eff == 2.5 ~ 2))
   }
   # Add a scenario number and ID
   scenarios |> dplyr::mutate(
