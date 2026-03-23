@@ -1,3 +1,19 @@
+#' Initialize a simulation trajectory
+#'
+#' @description This function initializes a simulation trajectory using an iid
+#' sample of normal random variables that are made non-negative and rounded
+#' to count values.
+#'
+#' @param n_init integer, the number of initial points to generate
+#' @param init_magnitude the mean of the normal distribution to sample from
+#' @param init_sd the standard deviation of the normal distribution to sample
+#'   from
+#' @param weekday_effect vector of real values, potential multiplicative weekday
+#'   effect. Currently not used.
+#' @param seed seed value for sampling the initial values
+#' @param model the count distribution, one of "Poiss", "NegBin-Q", "NegBin-L"
+#'   and "Branching"
+#' @return integer vector of initial values of a simulation trajectory
 initialize_trajectory <- function(
   n_init,
   init_magnitude,
@@ -9,10 +25,7 @@ initialize_trajectory <- function(
   model <- match.arg(model)
   # Set seed ensuring identical initialization for scenarios with the same
   # magnitude. Creates redundant copies (nrow(scenarios) instead of 2) but
-  # simplifies pipeline structure with negligible computational cost. We
-  # generate some initial values for the renewal equation models only. For the
-  # branching process, we need a single initial value, which is the value of
-  # `init_magnitude`.
+  # simplifies pipeline structure with negligible computational cost.
   set.seed(seed)
   pmax(0, abs(round(rnorm(n_init, init_magnitude * weekday_effect, init_sd))))
 }
