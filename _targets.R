@@ -182,7 +182,7 @@ list(
           scenarios$nb_size,
           scenarios$magnitude,
           distribution,
-          scenarios$dispersion
+          scenarios$offspring_disp
         )
       ),
       pattern = map(trajectories, df_R_hat, scenarios),
