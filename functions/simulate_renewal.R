@@ -124,7 +124,7 @@ simulate_renewal <- function(
 #'
 #' where \eqn{I_g} is the size of generation \eqn{g} and \eqn{Z_{i,g}} is the
 #' number of offspring of individual \eqn{i} from generation \eqn{g}. The
-#' offspring distribution here is defined as a "double" Poison distribution,
+#' offspring distribution here is defined as a "double" Poisson distribution,
 #' meaning, that each individual has a Poisson distributed number of offspring
 #' clusters and each offspring cluster contains again a Poisson distributed
 #' number of individuals. All individuals from the same clusters become
