@@ -1,5 +1,12 @@
-analyse_Rt <- function(incidence, start_date, end_date, window_width, mean_si, std_si) {
-  
+analyse_Rt <- function(
+  incidence,
+  start_date,
+  end_date,
+  window_width,
+  mean_si,
+  std_si,
+  model_colors
+) {
   # Set the ggplot theme
   plot_theme <- theme_bw() +
     theme(
@@ -9,7 +16,7 @@ analyse_Rt <- function(incidence, start_date, end_date, window_width, mean_si, s
       legend.text = element_text(size = 14),
       legend.title = element_text(size = 15)
     )
-  
+
   incidence_subset <- incidence |> filter(Date >= start_date & Date <= end_date)
   n_obs <- nrow(incidence_subset) # How many observations
 
@@ -26,7 +33,9 @@ analyse_Rt <- function(incidence, start_date, end_date, window_width, mean_si, s
       si_distr[seq_len(t)] * incidence$Cases[seq(t, 1)]
     )
   }
-  lambda_subset <- lambda[incidence$Date >= start_date & incidence$Date <= end_date]
+  lambda_subset <- lambda[
+    incidence$Date >= start_date & incidence$Date <= end_date
+  ]
 
   pairs <- cbind(lambda_subset, incidence_subset$Cases)
   colnames(pairs) <- c("lambda", "Cases")
@@ -39,10 +48,10 @@ analyse_Rt <- function(incidence, start_date, end_date, window_width, mean_si, s
       pairs[0:(window_width - 1) + x, ]
     },
     simplify = FALSE
-  ) %>%
+  ) |>
     lapply(as.data.frame)
 
-  for (k in 1:length(t_starts)) {
+  for (k in seq_along(t_starts)) {
     # Poisson model
     models_pois[[k]] <- glm(
       data = model_mats[[k]],
@@ -76,81 +85,87 @@ analyse_Rt <- function(incidence, start_date, end_date, window_width, mean_si, s
 
   # Extract the coefficient
   R_hat <- list()
-  R_hat$pois <- models_pois %>%
-    lapply(coefficients) %>%
+  R_hat$pois <- models_pois |>
+    lapply(coefficients) |>
     unlist()
-  R_hat$qpois <- models_qpois %>%
-    lapply(coefficients) %>%
+  R_hat$qpois <- models_qpois |>
+    lapply(coefficients) |>
     unlist()
-  R_hat$nbin_Q <- models_nbin_Q %>%
-    lapply(coefficients) %>%
+  R_hat$nbin_Q <- models_nbin_Q |>
+    lapply(coefficients) |>
     unlist()
-  R_hat$nbin_L <- models_nbin_L %>%
-    lapply(coefficients) %>%
+  R_hat$nbin_L <- models_nbin_L |>
+    lapply(coefficients) |>
     unlist()
   # NegBin-Q model, estimates based on the approximate formulas
-  R_hat$nbin_Q_approx <- model_mats |> 
-    lapply(function (x) {sum(x$Cases / x$lambda) / window_width}) |> unlist()
+  R_hat$nbin_Q_approx <- model_mats |>
+    lapply(function(x) {
+      sum(x$Cases / x$lambda) / window_width
+    }) |>
+    unlist()
 
   # Extract the dispersion parameter estimates
   disp <- list()
-  disp$qpois <- models_qpois %>%
-    lapply(summary) %>%
-    lapply(function(x) x$dispersion) %>%
+  disp$qpois <- models_qpois |>
+    lapply(summary) |>
+    lapply(function(x) x$dispersion) |>
     unlist()
-  disp$nbin_Q <- models_nbin_Q %>%
+  disp$nbin_Q <- models_nbin_Q |>
     lapply(function(x) {
       exp(x$sigma.coefficients[1])
-    }) %>%
-    unlist() %>%
+    }) |>
+    unlist() |>
     unname()
-  disp$nbin_L <- models_nbin_L %>%
+  disp$nbin_L <- models_nbin_L |>
     lapply(function(x) {
       exp(x$sigma.coefficients[1])
-    }) %>%
-    unlist() %>%
+    }) |>
+    unlist() |>
     unname()
   # NegBin-Q model, estimates based on the approximate formulas
   disp$nbin_Q_approx <- vapply(
-    X = 1:length(t_starts),
+    X = seq_along(t_starts),
     FUN.VALUE = 0,
-    FUN = function (j) {
-      num <- (model_mats[[j]]$Cases - R_hat$nbin_Q_approx[j] * model_mats[[j]]$lambda)^2
+    FUN = function(j) {
+      num <- (model_mats[[j]]$Cases -
+                R_hat$nbin_Q_approx[j] * model_mats[[j]]$lambda)^2
       denom <- (R_hat$nbin_Q_approx[j] * model_mats[[j]]$lambda)^2
       sum(num / denom) / (window_width - 1)
     }
   )
-  
+
   # Extract the standard error
   R_hat_sd <- list()
-  R_hat_sd$pois <- models_pois %>%
-    lapply(summary) %>%
-    lapply(function(x) x$coefficients[2]) %>%
+  R_hat_sd$pois <- models_pois |>
+    lapply(summary) |>
+    lapply(function(x) x$coefficients[2]) |>
     unlist()
-  R_hat_sd$qpois <- models_qpois %>%
-    lapply(summary) %>%
-    lapply(function(x) x$coefficients[2]) %>%
+  R_hat_sd$qpois <- models_qpois |>
+    lapply(summary) |>
+    lapply(function(x) x$coefficients[2]) |>
     unlist()
-  R_hat_sd$nbin_Q <- models_nbin_Q %>%
-    lapply(summary) %>%
-    lapply(function(x) x[3]) %>%
+  R_hat_sd$nbin_Q <- models_nbin_Q |>
+    lapply(summary) |>
+    lapply(function(x) x[3]) |>
     unlist()
-  R_hat_sd$nbin_L <- models_nbin_L %>%
-    lapply(summary) %>%
-    lapply(function(x) x[3]) %>%
+  R_hat_sd$nbin_L <- models_nbin_L |>
+    lapply(summary) |>
+    lapply(function(x) x[3]) |>
     unlist()
-  R_hat_sd$nbin_Q_approx <- sqrt(R_hat$nbin_Q_approx^2 * disp$nbin_Q_approx / window_width)
+  R_hat_sd$nbin_Q_approx <- sqrt(
+    R_hat$nbin_Q_approx^2 * disp$nbin_Q_approx / window_width
+  )
 
   # Get the AIC values
   AIC_vals <- list()
-  AIC_vals$pois <- models_pois %>%
-    lapply(function(x) x$aic) %>%
+  AIC_vals$pois <- models_pois |>
+    lapply(function(x) x$aic) |>
     unlist()
-  AIC_vals$nbin_Q <- models_nbin_Q %>%
-    lapply(function(x) x$aic) %>%
+  AIC_vals$nbin_Q <- models_nbin_Q |>
+    lapply(function(x) x$aic) |>
     unlist()
-  AIC_vals$nbin_L <- models_nbin_L %>%
-    lapply(function(x) x$aic) %>%
+  AIC_vals$nbin_L <- models_nbin_L |>
+    lapply(function(x) x$aic) |>
     unlist()
 
   # Create plots ----------------------------------------------------
@@ -177,13 +192,7 @@ analyse_Rt <- function(incidence, start_date, end_date, window_width, mean_si, s
   )
 
   # Create plots ----------------------------------------------------
-  # These colors are selected from the ggokabeito package designed for creating
-  # color-blindness friendly charts
-  model_colors <- c(
-    "Poiss" = "#009E73", "Q-Poiss" = "#E69F00",
-    "NegBin-L" = "#56B4E9", "NegBin-Q" = "#CC79A7"
-  )
-  
+
   # 1. Incidence
   p_incidence <- ggplot(
     incidence_subset,
@@ -196,11 +205,16 @@ analyse_Rt <- function(incidence, start_date, end_date, window_width, mean_si, s
     theme(legend.position = "none") +
     coord_cartesian(ylim = c(0, max(incidence_subset$Cases)))
 
-  # 2. Poisson vs. QP
-  p_pois_vs_qpois <- ggplot(
+  # 2. Poisson
+  p_pois <- ggplot(
     df_R_hat,
     aes(
-      x = Date, y = R, ymin = lwr, ymax = upr, color = Model, fill = Model,
+      x = Date,
+      y = R,
+      ymin = lwr,
+      ymax = upr,
+      color = Model,
+      fill = Model,
       alpha = Model
     )
   ) +
@@ -208,7 +222,7 @@ analyse_Rt <- function(incidence, start_date, end_date, window_width, mean_si, s
     geom_hline(yintercept = 1, linetype = "dotted") +
     geom_ribbon(color = NA) +
     scale_alpha_manual(
-      values = c("Poiss" = 0.5, "Q-Poiss" = 0.5, "NegBin-L" = 0.0, "NegBin-Q" = 0),
+      values = c("Poiss" = 0.5, "Q-Poiss" = 0, "NegBin-L" = 0, "NegBin-Q" = 0),
       guide = guide_legend(override.aes = list(alpha = 0.5))
     ) +
     scale_color_manual(
@@ -220,20 +234,25 @@ analyse_Rt <- function(incidence, start_date, end_date, window_width, mean_si, s
       values = model_colors
     ) +
     labs(
-      title = "Poisson vs. Quasi-Poisson",
+      title = "Poisson",
       y = expression(hat(R))
     ) +
     coord_cartesian(
-      ylim = c(0, 3), 
+      ylim = c(0, 3),
       xlim = range(incidence_subset$Date)
     ) +
     plot_theme
 
-  # 3. NegBin-L vs. NegBin-Q
-  p_nbin_L_vs_nbin_Q <- ggplot(
+  # 3. Quasi-Poisson
+  p_qpois <- ggplot(
     df_R_hat,
     aes(
-      x = Date, y = R, ymin = lwr, ymax = upr, color = Model, fill = Model,
+      x = Date,
+      y = R,
+      ymin = lwr,
+      ymax = upr,
+      color = Model,
+      fill = Model,
       alpha = Model
     )
   ) +
@@ -241,7 +260,55 @@ analyse_Rt <- function(incidence, start_date, end_date, window_width, mean_si, s
     geom_hline(yintercept = 1, linetype = "dotted") +
     geom_ribbon(color = NA) +
     scale_alpha_manual(
-      values = c("Poiss" = 0, "Q-Poiss" = 0, "NegBin-L" = 0.5, "NegBin-Q" = 0.5),
+      values = c(
+        "Poiss" = 0,
+        "Q-Poiss" = 0.5,
+        "NegBin-L" = 0.0,
+        "NegBin-Q" = 0
+      ),
+      guide = guide_legend(override.aes = list(alpha = 0.5))
+    ) +
+    scale_color_manual(
+      name = "Model",
+      values = model_colors
+    ) +
+    scale_fill_manual(
+      name = "Model",
+      values = model_colors
+    ) +
+    labs(
+      title = "Quasi-Poisson",
+      y = expression(hat(R))
+    ) +
+    coord_cartesian(
+      ylim = c(0, 3),
+      xlim = range(incidence_subset$Date)
+    ) +
+    plot_theme
+
+  # 4. NegBin-L vs. NegBin-Q
+  p_nbin_L_vs_nbin_Q <- ggplot(
+    df_R_hat,
+    aes(
+      x = Date,
+      y = R,
+      ymin = lwr,
+      ymax = upr,
+      color = Model,
+      fill = Model,
+      alpha = Model
+    )
+  ) +
+    geom_line(linewidth = 0.8) +
+    geom_hline(yintercept = 1, linetype = "dotted") +
+    geom_ribbon(color = NA) +
+    scale_alpha_manual(
+      values = c(
+        "Poiss" = 0,
+        "Q-Poiss" = 0,
+        "NegBin-L" = 0.5,
+        "NegBin-Q" = 0.5
+      ),
       guide = guide_legend(override.aes = list(alpha = 0.5))
     ) +
     scale_color_manual(
@@ -257,45 +324,69 @@ analyse_Rt <- function(incidence, start_date, end_date, window_width, mean_si, s
       y = expression(hat(R))
     ) +
     coord_cartesian(
-      ylim = c(0, 3), 
+      ylim = c(0, 3),
       xlim = range(incidence_subset$Date)
     ) +
     plot_theme
 
-  # 4. Overdisp Params. NegBin-Q plotted on using a second plot axis
+  # 5. Overdisp Params. NegBin-Q plotted on using a second plot axis.
   sec_axis_scale <- median(disp$nbin_Q / disp$nbin_L)
   disp$nbin_Q_transformed <- disp$nbin_Q / sec_axis_scale
   df_disp <- tibble(
     Date = rep(incidence_subset$Date[t_ends], 3),
     Dispersion = c(disp$qpois, disp$nbin_L, disp$nbin_Q_transformed),
-    Model = factor(rep(c("Q-Poiss", "NegBin-L", "NegBin-Q"), each = length(disp$qpois)))
+    Model = factor(rep(
+      c("Q-Poiss", "NegBin-L", "NegBin-Q"),
+      each = length(disp$qpois)
+    ))
   )
 
   p_disp <- ggplot(
     df_disp,
-    aes(x = Date, y = Dispersion, color = Model, group = Model)
+    aes(x = Date, y = Dispersion, color = Model, group = Model, alpha = Model)
   ) +
     geom_line(linewidth = 0.8) +
-    scale_y_continuous(sec.axis = sec_axis(~ . * sec_axis_scale, name = "NegBin-Q")) +
+    scale_y_continuous(
+      sec.axis = sec_axis(~ . * sec_axis_scale, name = "NegBin-Q")
+    ) +
     scale_color_manual(
       name = "Model",
       values = model_colors[-1]
     ) +
+    scale_alpha_manual(
+      name = "Parameter\ntransformation",
+      values = rep(1, 3),
+      labels = c(
+        "Q-Poiss" = expression(phi),
+        "NegBin-L" = expression(frac(1, xi)),
+        "NegBin-Q" = expression(frac(1, psi))
+      ),
+      guide = guide_legend(
+        override.aes = list(
+          color = model_colors[c(3, 4, 2)]
+        )
+      )
+    ) +
     labs(
       title = "Overdispersion Parameters",
-      y = "Overdispersion"
+      y = "NegBin-L & Q-Poiss"
     ) +
     coord_cartesian(
-      ylim = c(0, max(df_disp$Dispersion)), 
+      ylim = c(0, max(df_disp$Dispersion)),
       xlim = range(incidence_subset$Date)
     ) +
     plot_theme
 
-  # 5. NegBin-L vs. QP (Extra plot, will probably go to the supplement)
+  # 6. NegBin-L vs. QP (Extra plot, will probably go to the supplement)
   p_nbin_L_vs_qpois <- ggplot(
     df_R_hat,
     aes(
-      x = Date, y = R, ymin = lwr, ymax = upr, color = Model, fill = Model,
+      x = Date,
+      y = R,
+      ymin = lwr,
+      ymax = upr,
+      color = Model,
+      fill = Model,
       alpha = Model
     )
   ) +
@@ -303,7 +394,12 @@ analyse_Rt <- function(incidence, start_date, end_date, window_width, mean_si, s
     geom_hline(yintercept = 1, linetype = "dotted") +
     geom_ribbon(color = NA) +
     scale_alpha_manual(
-      values = c("Poiss" = 0, "Q-Poiss" = 0.5, "NegBin-L" = 0.5, "NegBin-Q" = 0),
+      values = c(
+        "Poiss" = 0,
+        "Q-Poiss" = 0.5,
+        "NegBin-L" = 0.5,
+        "NegBin-Q" = 0
+      ),
       breaks = c("Q-Poiss", "NegBin-L"),
       guide = guide_legend(override.aes = list(alpha = 0.5))
     ) +
@@ -322,12 +418,12 @@ analyse_Rt <- function(incidence, start_date, end_date, window_width, mean_si, s
       y = expression(hat(R))
     ) +
     coord_cartesian(
-      ylim = c(0, 3), 
+      ylim = c(0, 3),
       xlim = range(incidence_subset$Date)
     ) +
     plot_theme
-  
-  # 6. NegBin-Q, "exact" vs. approximate estimates
+
+  # 7. NegBin-Q, "exact" vs. approximate estimates
   df_nbin_Q_approx <- tibble(
     Date = rep(incidence_subset$Date[t_ends], 2),
     R = c(R_hat$nbin_Q, R_hat$nbin_Q_approx),
@@ -348,7 +444,12 @@ analyse_Rt <- function(incidence, start_date, end_date, window_width, mean_si, s
   p_nbin_Q_exact_vs_approx <- ggplot(
     df_nbin_Q_approx,
     aes(
-      x = Date, y = R, ymin = lwr, ymax = upr, color = Model, fill = Model
+      x = Date,
+      y = R,
+      ymin = lwr,
+      ymax = upr,
+      color = Model,
+      fill = Model
     )
   ) +
     geom_line(linewidth = 0.8) +
@@ -357,29 +458,43 @@ analyse_Rt <- function(incidence, start_date, end_date, window_width, mean_si, s
     scale_color_manual(
       name = "Model",
       values = c(model_colors["NegBin-Q"], "NegBin-Q approx." = "gray30"),
-      labels = c("NegBin-Q" = "NegBin-Q\n", "NegBin-Q approx." = "NegBin-Q\napprox.")
+      labels = c(
+        "NegBin-Q" = "NegBin-Q\n",
+        "NegBin-Q approx." = "NegBin-Q\napprox."
+      )
     ) +
     scale_fill_manual(
       name = "Model",
       values = c(model_colors["NegBin-Q"], "NegBin-Q approx." = "gray30"),
-      labels = c("NegBin-Q" = "NegBin-Q\n", "NegBin-Q approx." = "NegBin-Q\napprox.")
+      labels = c(
+        "NegBin-Q" = "NegBin-Q\n",
+        "NegBin-Q approx." = "NegBin-Q\napprox."
+      )
     ) +
     labs(
       title = "NegBin-Q vs. its approximation",
       y = expression(hat(R))
     ) +
     coord_cartesian(
-      ylim = c(0, 3), 
+      ylim = c(0, 3),
       xlim = range(incidence_subset$Date)
     ) +
     plot_theme
 
   ret <- list(
-    R_hat = R_hat, R_hat_sd = R_hat_sd, disp = disp, AIC = AIC_vals,
-    plt = list(p_incidence = p_incidence, p_pois_vs_qpois = p_pois_vs_qpois, 
-               p_nbin_L_vs_nbin_Q = p_nbin_L_vs_nbin_Q, p_disp = p_disp,
-               p_nbin_L_vs_qpois = p_nbin_L_vs_qpois,
-               p_nbin_Q_exact_vs_approx = p_nbin_Q_exact_vs_approx)
+    R_hat = R_hat,
+    R_hat_sd = R_hat_sd,
+    disp = disp,
+    AIC = AIC_vals,
+    plt = list(
+      p_incidence = p_incidence,
+      p_pois = p_pois,
+      p_qpois = p_qpois,
+      p_nbin_L_vs_nbin_Q = p_nbin_L_vs_nbin_Q,
+      p_disp = p_disp,
+      p_nbin_L_vs_qpois = p_nbin_L_vs_qpois,
+      p_nbin_Q_exact_vs_approx = p_nbin_Q_exact_vs_approx
+    )
   )
-  return(ret)
+  ret
 }

@@ -16,9 +16,16 @@
 #'   }
 extract_ests <- function(fitted_model) {
   # Initialize the return list
-  res <- list(R_hat = NA, se_hat = NA, overdisp = NA, converged = FALSE)
+  res <- list(
+    R_hat = NA,
+    se_hat = NA,
+    aic = NA,
+    overdisp = NA,
+    converged = FALSE
+  )
   if (!inherits(fitted_model, "try-error")) {
     res$converged <- fitted_model$converged
+    res$aic <- fitted_model$aic
     # The fitted model objects are different for `glm()` and `gamlss()`
     if (class(fitted_model)[1] == "gamlss") {
       res$R_hat <- unlist(fitted_model$mu.coefficients[1])
@@ -71,6 +78,9 @@ bind_ests_to_df <- function(results) {
   overdisp <- lapply(results, map, "overdisp") |>
     lapply(unlist) |>
     lapply(unname)
+  aic <- lapply(results, map, "aic") |>
+    lapply(unlist) |>
+    lapply(unname)
   converged <- lapply(results, map, "converged") |>
     lapply(unlist) |>
     lapply(unname)
@@ -79,6 +89,7 @@ bind_ests_to_df <- function(results) {
     R = unlist(R_hat),
     se = unlist(se_hat),
     overdisp = unlist(overdisp),
+    aic = unlist(aic),
     converged = unlist(converged),
     model = rep(names(results), each = length(R_hat[[1]]))
   )
@@ -107,7 +118,8 @@ replace_divergent <- function(df_R_hat_raw) {
   df_R_hat <- df_R_hat_raw |> mutate(
     R = ifelse(rows_to_keep, R, NA),
     se = ifelse(rows_to_keep, se, NA),
-    overdisp = ifelse(rows_to_keep, overdisp, NA)
+    overdisp = ifelse(rows_to_keep, overdisp, NA),
+    aic = ifelse(rows_to_keep, aic, NA)
   )
 
   # Which rows to replace by the Poisson estimates. Only negative binomial ones
@@ -182,13 +194,13 @@ summarize_convergence <- function(
       },
       magnitude = magnitude
     ) |>
-    group_by(R_eff, overdispersion, magnitude, window_len_fct, model) |>
+    group_by(magnitude, R_eff, overdispersion, window_len_fct, model) |>
     summarise(
       converged = sum(converged & !is.na(R), na.rm = TRUE),
       # unstable = convergent but masked/flagged by NA in `R` and `se`columns
-      unstable = sum(converged & is.na(R), na.rm = TRUE)
-    ) |>
-    ungroup()
+      unstable = sum(converged & is.na(R), na.rm = TRUE),
+      .groups = "drop"
+    )
   # Create the table counting convergent runs
   df_convergence <- df_summarized |>
     dplyr::select(-unstable) |>

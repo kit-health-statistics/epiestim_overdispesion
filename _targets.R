@@ -40,6 +40,8 @@ global_params <- list(
   mean_si = 7.5,
   std_si = 2.1,
   n_init = 14,
+  # Length of the generated trajectory, before the estimation window begins.
+  n_burnin = 14,
   short_window = 7,
   long_window = 14,
   n_sim = 1000L,
@@ -50,7 +52,7 @@ global_params <- list(
 )
 
 # Size of the final plot
-plot_size <- list(width = 11, height = 11.7)
+plot_size <- c(width = 11, height = 11.7)
 
 # If we plot only half of the scenarios, by how much do we divide the height?
 plot_halving_coeff <- 1.75
@@ -62,8 +64,8 @@ plot_halving_coeff <- 1.75
 # None of them involves weekday effects, but they can be added by using
 # "weekday_yes"
 outer_scenarios <- data.frame(
-  distribution = c("NegBin-L", "NegBin-Q", "Poiss"),
-  weekday_effect = c("weekday_no", "weekday_no", "weekday_no")
+  distribution = c("NegBin-L", "NegBin-Q", "Poiss", "Branching"),
+  weekday_effect = c("weekday_no", "weekday_no", "weekday_no", "weekday_no")
 ) |>
   dplyr::mutate(
     scenario_id = paste(distribution, weekday_effect, sep = "_")
@@ -103,7 +105,8 @@ list(
         scenarios$init_magnitude,
         scenarios$init_sd,
         weekday_effect = weekday_effect_vector,
-        seed = global_params$base_seed + scenarios$init_seed
+        seed = global_params$base_seed + scenarios$init_seed,
+        model = distribution
       ),
       pattern = map(scenarios),
       iteration = "list"
@@ -115,14 +118,17 @@ list(
         global_params,
         generate_trajectories(
           n_sim = n_sim,
-          init,
+          n_burnin = n_burnin,
+          init = init,
           R_eff = scenarios$R_eff,
           si = si,
-          lgt = n_init + long_window,
+          lgt = long_window,
           model = distribution,
           nb_size = scenarios$nb_size,
-          seed = global_params$base_seed + scenarios$scenario_number,
-          weekday_effect = weekday_effect_vector
+          weekday_effect = weekday_effect_vector,
+          offspring_disp = scenarios$offspring_disp,
+          reporting_prob = scenarios$reporting_prob,
+          seed = global_params$base_seed + scenarios$scenario_number
         )
       ),
       pattern = map(init, scenarios),
@@ -154,7 +160,13 @@ list(
         trajectories = plot_trajectories(
           trajectories$X,
           global_params$short_window,
-          global_params$n_init
+          if (distribution == "Branching") 0 else global_params$n_init,
+          # A longer burn-in period for the branching process to take off
+          if (distribution == "Branching") {
+            2 * global_params$n_burnin
+          } else {
+            global_params$n_burnin
+          }
         ),
         coverage = plot_coverage(
           scenarios$R_eff,
@@ -169,7 +181,8 @@ list(
           scenarios$R_eff,
           scenarios$nb_size,
           scenarios$magnitude,
-          distribution
+          distribution,
+          scenarios$offspring_disp
         )
       ),
       pattern = map(trajectories, df_R_hat, scenarios),
@@ -212,53 +225,24 @@ list(
       plot_dens(
         df_R_hat,
         scenarios$R_eff,
-        1 / scenarios$nb_size,
+        scenarios$nb_size,
         scenarios$magnitude,
-        distribution,
-        model_colors
+        model_colors,
+        distribution
       ),
       pattern = map(df_R_hat, scenarios),
       iteration = "list"
     ),
     # Save plots
     tar_target(saved_figures, {
-      if (distribution == "Poiss") {
-        # For Poisson, we have only half the scenarios as for the rest, so the
-        # height of the resulting plot must be divided by 2. We divide by less
-        # than 2 to allow for some space for the title.
-        plot_height <- plot_size$height / plot_halving_coeff
-      } else {
-        plot_height <- plot_size$height
-      }
-
-      # Save the coverage plot
-      p_simulation <- compose_coverage_patches(
+      compose_and_save_plots(
+        distribution,
         plot_panels,
-        global_params$short_window,
-        global_params$long_window
-      )
-      save_plot(
-        p_simulation,
-        paste(scenario_id, "simulation_coverage", sep = "_"),
-        width = plot_size$width,
-        height = plot_height
-      )
-      # Save the distribution of the R estimates
-      p_densities <- compose_dens_patches(
-        # Extract only the R estimates
-        list(
-          R_hat = purrr::map(plot_density_panels, "R_hat"),
-          se_hat = purrr::map(plot_density_panels, "se_hat")
-        ),
-        purrr::map(plot_panels, "meta"),
-        global_params$short_window,
-        global_params$long_window
-      )
-      save_plot(
-        p_densities,
-        paste(scenario_id, "Rhat_density", sep = "_"),
-        width = plot_size$width,
-        height = plot_height
+        plot_density_panels,
+        unlist(global_params[c("short_window", "long_window")]),
+        plot_size,
+        scenario_id,
+        plot_halving_coeff
       )
     }),
     tar_target(
@@ -282,8 +266,8 @@ list(
             p_simulation_poster,
             paste(scenario_id, "simulation_coverage_poster", sep = "_"),
             # Figure dimensions must be set manually to fit the poster page
-            width = plot_size$width / 1.4,
-            height = (plot_size$height / 1.4) / 2.35
+            width = plot_size["width"] / 1.4,
+            height = (plot_size["height"] / 1.4) / 2.35
           )
         }
       }
@@ -308,8 +292,8 @@ list(
     save_plot(
       p_overdisp,
       "overdisp_estimates",
-      width = plot_size$width,
-      height = plot_size$height
+      width = plot_size["width"],
+      height = plot_size["height"]
     )
   })
 )

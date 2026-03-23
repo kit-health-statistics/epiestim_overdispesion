@@ -38,28 +38,35 @@ get_legend_theme <- function() {
 get_xlim <- function(R_true, overdisp_true, magnitude, distribution) {
   if (distribution == "NegBin-L") {
     se_limits <- if (magnitude == "high") {
-      c(0, 0.15)
+      c(0, 0.075)
     } else if (magnitude == "low") {
-      c(0, 0.6)
+      c(0, 0.4)
     }
     overdisp_limits <- c(-1, min(10, 5 * overdisp_true))
   } else if (distribution == "NegBin-Q") {
     se_limits <- if (magnitude == "high") {
       c(0, 0.2)
     } else if (magnitude == "low") {
-      c(0, 0.4)
+      c(0, 0.3)
     }
-    overdisp_limits <- c(0, overdisp_true + 0.08)
+    overdisp_limits <- c(0, overdisp_true + 0.065)
   } else if (distribution == "Poiss") {
     se_limits <- if (magnitude == "high") {
       c(0, 0.05)
     } else if (magnitude == "low") {
-      c(0, 0.3)
+      c(0, 0.2)
+    }
+    overdisp_limits <- c(NA, NA)
+  } else if (distribution == "Branching") {
+    se_limits <- if (magnitude == "high") {
+      c(0, 0.04)
+    } else if (magnitude == "low") {
+      c(0, 0.4)
     }
     overdisp_limits <- c(NA, NA)
   }
   list(
-    R_hat = R_true + c(-0.8, 0.8),
+    R_hat = R_true + c(-0.7, 0.7),
     se_hat = se_limits,
     overdisp_hat = overdisp_limits
   )
@@ -91,8 +98,8 @@ plot_dens <- function(
   R_true,
   overdisp_true,
   magnitude,
-  dist_true,
-  model_colors
+  model_colors,
+  dist_true = c("Poiss", "NegBin-Q", "NegBin-L", "Branching")
 ) {
   # Create a denser grid where we want `geom_line(stat = "density")` to
   # calculate the density estimate. the default 512 occasionally creates a
@@ -108,7 +115,7 @@ plot_dens <- function(
 
   # Calculate the x-limits for the plot of R estimates, its standard errors and
   # the dispersion parameter estimates
-  limits_x <- get_xlim(R_true, overdisp_true, magnitude, dist_true)
+  limits_x <- get_xlim(R_true, 1 / overdisp_true, magnitude, dist_true)
 
   p_R_hat <- p_se_hat <- p_overdisp_hat <- vector("list", 2)
   names(p_R_hat) <- names(p_se_hat) <- names(df_R_hat_split)
@@ -147,9 +154,9 @@ plot_dens <- function(
         na.rm = TRUE,
         bounds = c(0, Inf),
         # Increase the grid density a little more for the Poison SEs, where
-        # the line is more rough than for the rest.
+        # the line is rougher than for the rest.
         n = if (dist_true == "Poiss") {
-          2 * density_estimation_grid
+          3 * density_estimation_grid
         } else {
           density_estimation_grid
         }
@@ -167,8 +174,8 @@ plot_dens <- function(
 
   # Plot the point estimates of the overdispersion parameter. We use 2 facets
   # for 2 window lengths, therefore, we create the plot outside the for loop.
-  if (dist_true == "Poiss") {
-    # For the Poisson ground truth we don't plot anything
+  if (dist_true == "Poiss" || dist_true == "Branching") {
+    # For the Poisson, or branching process ground truth we don't plot anything
     p_overdisp_hat <- NULL
   } else {
     # We plot only parameters on the same scale. If the ground truth is
@@ -177,7 +184,7 @@ plot_dens <- function(
     # estimate.
     if (dist_true == "NegBin-Q") {
       # set the x-axis label to psi for NegBin-Q
-      x_label <- expression(psi)
+      x_label <- expression(frac(1, psi))
       # Plot the geometries
       p_overdisp_hat <- ggplot() +
         geom_line(
@@ -188,11 +195,13 @@ plot_dens <- function(
           alpha = 0.6,
           na.rm = TRUE,
           bounds = c(0, Inf),
-          n = density_estimation_grid
+          # For the dispersion parameter, we sometimes need a denser grid to
+          # avoid ragged density lines
+          n = 3 * density_estimation_grid
         )
     } else if (dist_true == "NegBin-L") {
       # set the x-axis label to xi for NegBin-L
-      x_label <- expression(xi)
+      x_label <- expression(frac(1, xi))
       # Plot the geometries
       p_overdisp_hat <- ggplot() +
         geom_line(
@@ -207,7 +216,9 @@ plot_dens <- function(
           # Where the density shall be calculated. We need to plot quasi-Poisson
           # and NegBin-L separately to be able to set different bounds.
           bounds = c(-1, Inf),
-          n = density_estimation_grid
+          # For the dispersion parameter, we sometimes need a denser grid to
+          # avoid ragged density lines
+          n = 3 * density_estimation_grid
         ) +
         geom_line(
           data = filter(df_R_hat, model == "NegBin-L"),
@@ -217,9 +228,12 @@ plot_dens <- function(
           alpha = 0.6,
           na.rm = TRUE,
           bounds = c(0, Inf),
-          n = density_estimation_grid
+          # For the dispersion parameter, we sometimes need a denser grid to
+          # avoid ragged density lines
+          n = 3 * density_estimation_grid
         ) +
-        # A dummy line to achieve including the "NegBin-Q" label in the legend
+        # A dummy line to achieve the inclusion of the "NegBin-Q" label in the
+        # legend
         geom_line(
           aes(x = c(-10, -11), y = c(0, 0), color = "NegBin-Q"),
           linewidth = 1,
@@ -233,7 +247,7 @@ plot_dens <- function(
 
     p_overdisp_hat <- p_overdisp_hat +
       geom_vline(
-        aes(xintercept = overdisp_true, linetype = "overdisp_true"),
+        aes(xintercept = 1 / overdisp_true, linetype = "overdisp_true"),
         color = "red"
       ) +
       scale_color_manual(
@@ -248,7 +262,7 @@ plot_dens <- function(
           "long" = "solid"
         ),
         labels = c(
-          "overdisp_true" = "overdispersion\nparameter",
+          "overdisp_true" = "inverse of\nthe true value",
           "short" = paste0(min(window_lengths), "-day window"),
           "long" = paste0(max(window_lengths), "-day window")
         )
@@ -392,9 +406,9 @@ plot_coverage <- function(
 #' @param short_window an integer, the length of the short estimation window
 #' @param n_init an integer, the number of initial values of the trajectory
 #' @return a ggplot object
-plot_trajectories <- function(X, short_window, n_init) {
+plot_trajectories <- function(X, short_window, n_init, n_burnin) {
   df_trajectories <- reshape2::melt(
-    # Display only the first 100 simulation runs to make the plot readable
+    # Display only the first 100 simulation runs to keep the plot readable
     X[, seq_len(min(100, ncol(X)))],
     varnames = c("day", "trajectory"),
     value.name = "cases"
@@ -402,8 +416,10 @@ plot_trajectories <- function(X, short_window, n_init) {
     mutate(
       segment = dplyr::case_when(
         day < n_init ~ "Initial",
-        day >= n_init & day < short_window + n_init ~ "Short window",
-        day >= short_window + n_init ~ "Long window"
+        day >= n_init & day < n_init + n_burnin ~ "Burn-in",
+        day >= n_init + n_burnin &
+          day < short_window + n_init + n_burnin ~ "Short window",
+        day >= short_window + n_init + n_burnin ~ "Long window"
       )
     )
 
@@ -412,9 +428,9 @@ plot_trajectories <- function(X, short_window, n_init) {
   bracket_offset <- max_cases * 0.08  # 8% of the max value
 
   # The long window is the length of the trajectory minus the initialization
-  long_window <- nrow(X) - n_init
+  long_window <- nrow(X) - n_init - n_burnin
 
-  ggplot() +
+  p <- ggplot() +
     geom_line(
       data = df_trajectories,
       mapping = aes(
@@ -423,33 +439,36 @@ plot_trajectories <- function(X, short_window, n_init) {
         group = trajectory,
         color = segment,
         alpha = segment
-      )
+      ),
+      linewidth = 0.3
     ) +
     ggpubr::geom_bracket(
-      xmin = n_init + 1,
+      xmin = n_init + n_burnin + 1,
       xmax = nrow(X),
       y.position = max_cases + 2.5 * bracket_offset,
       label = paste0(long_window, "-day window"),
       label.size = 3
     ) +
     ggpubr::geom_bracket(
-      xmin = n_init + 1,
-      xmax = n_init + short_window,
-      y.position = max_cases + 0.5 * bracket_offset,
+      xmin = n_init + n_burnin + 1,
+      xmax = n_init + n_burnin + short_window,
+      y.position = max_cases + 0.1 * bracket_offset,
       label = paste0(short_window, "-day window"),
       label.size = 3
     ) +
     scale_color_manual(
       values = c(
         "Initial" = "black",
-        "Short window" = "black",
-        "Long window" = "gray30"
+        "Burn-in" = "black",
+        "Short window" = "gray30",
+        "Long window" = "gray60"
       ),
       guide = "none"
     ) +
     scale_alpha_manual(
       values = c(
         "Initial" = 1,
+        "Burn-in" = 0.1,
         "Short window" = 0.1,
         "Long window" = 0.1
       ),
@@ -458,6 +477,30 @@ plot_trajectories <- function(X, short_window, n_init) {
     coord_cartesian(ylim = c(0, max_cases + 3.5 * bracket_offset)) +
     labs(x = "Day", y = "Cases") +
     theme(axis.title = element_text(size = 16))
+
+  # Add the brace for the initialization period, if present
+  if (n_init > 0) {
+    p <- p +
+      ggpubr::geom_bracket(
+        xmin = 1,
+        xmax = n_init,
+        y.position = max_cases + 2.5 * bracket_offset,
+        label = "Initialization",
+        label.size = 3
+      )
+  }
+  # Add the brace for the burn-in period, if present
+  if (n_burnin > 0) {
+    p <- p +
+      ggpubr::geom_bracket(
+        xmin = n_init + 1,
+        xmax = n_init + n_burnin,
+        y.position = max_cases + 2.5 * bracket_offset,
+        label = "Burn-in period",
+        label.size = 3
+      )
+  }
+  p
 }
 
 #' Plots the metadata of the simulation scenario
@@ -470,21 +513,35 @@ plot_trajectories <- function(X, short_window, n_init) {
 #' @param magnitude string values, either "high", or "low"
 #' @param distribution string value indicating the count distribution:
 #'   "NegBin-L", "NegBin-Q", or "Poiss"
+#' @param offspring_disp a real number larger than 1, the dispersion parameter
+#'   of the offspring distribution in the branching process scenarios
 #' @return a ggplot object
-plot_metadata <- function(R_eff, nb_size, magnitude, distribution) {
+plot_metadata <- function(
+  R_eff,
+  nb_size,
+  magnitude,
+  distribution,
+  offspring_disp = NULL
+) {
   df_text <- data.frame(
     x = rep(1, 3),
     y = c(1, 0, -1),
     label = c(
       paste0("R[t] == ", R_eff),
       if (distribution == "NegBin-L") {
-        paste0("xi == ", 1 / nb_size)
+        paste0("xi == ", nb_size)
       } else if (distribution == "NegBin-Q") {
-        paste0("psi == ", 1 / nb_size)
+        paste0("psi == ", nb_size)
+      } else if (distribution == "Branching") {
+        paste0("gamma == ", offspring_disp)
       } else {
         NA
       },
-      paste0("Magn.: ", gsub("_.*", "", magnitude))
+      if (distribution == "Branching") {
+        NA
+      } else {
+        paste0("Init.: ", gsub("_.*", "", magnitude))
+      }
     )
   )
   # Remove the dispersion parameter, when it's not present for the Poisson
@@ -729,7 +786,7 @@ compose_overdisp_patches <- function(
       ncol = 2,
       byrow = FALSE,
       heights = get_header_proportions(n_rows),
-      widths = c(2, 6),
+      widths = c(2, 5),
       guides = "collect",
       axes = "collect_x",
       axis_titles = "collect"
@@ -751,7 +808,7 @@ compose_overdisp_patches <- function(
       ncol = 2,
       byrow = FALSE,
       heights = get_header_proportions(n_rows),
-      widths = c(2, 6),
+      widths = c(2, 5),
       guides = "collect",
       axes = "collect"
     ) &
@@ -771,4 +828,107 @@ compose_overdisp_patches <- function(
     p_legend +
     plot_layout(widths = c(6, 1))
   p_main
+}
+
+#' Save final plots based on the model type
+#'
+#' @description This function is a wrapper around the
+#'   \code{compose_coverage_patches} and \code{compose_dens_patches}. The plots
+#'   are arranged according to the requirements for the given distribution
+#'   (Poisson, NegBin-L and NegBin-Q) and saved in the PDF and PNG format.
+#' @param plot_panels_coverage a list of lists of patchwork patches
+#'   corresponding to the coverage plot that are composed using the
+#'   \code{compose_coverage_patches} function.
+#' @param plot_panels_density a list of lists of patchwork patches
+#'   corresponding to the density plot that are composed using the
+#'   \code{compose_dens_patches} function.
+#' @param window_lengths a named integer vector stating the length of the short
+#'   and long estimation windows.
+#' @param plot_size a named vector stating the width and height of the saved
+#'   plot.
+#' @param scenario_id a string identifying the scenario block (Poisson, NegBin-L
+#'   or NegBin-Q)
+#' @param plot_halving_coeff a numeric value dividing the final plot height,
+#'   when we want to display only half of the scenarios in the plot. This is not
+#'   exactly 2 and must be found by trial and error.
+compose_and_save_plots <- function(
+  distribution,
+  plot_panels_coverage,
+  plot_panels_density,
+  window_lengths,
+  plot_size,
+  scenario_id,
+  plot_halving_coeff
+) {
+  if (distribution %in% c("Poiss", "Branching")) {
+    # For Poisson, we have only half the scenarios as for the rest, so the
+    # height of the resulting plot must be divided by 2. We divide by less
+    # than 2 to allow for some space for the title.
+    plot_height <- plot_size["height"] / plot_halving_coeff
+  } else {
+    plot_height <- plot_size["height"]
+  }
+
+  # For NegBin-L, we split the coverage plots from high and low magnitude
+  # scenarios. The scenarios must be ordered in a way that the low magnitude
+  # ones comes first.
+  if (distribution == "NegBin-L") {
+    # Number of plots must be even
+    n_plots <- length(plot_panels_coverage)
+    # Coverage plots
+    p_coverage_low_magnitude <- compose_coverage_patches(
+      plot_panels_coverage[seq_len(n_plots / 2)],
+      window_lengths["short_window"],
+      window_lengths["long_window"]
+    )
+    p_coverage_high_magnitude <- compose_coverage_patches(
+      plot_panels_coverage[seq(n_plots / 2 + 1, n_plots)],
+      window_lengths["short_window"],
+      window_lengths["long_window"]
+    )
+    save_plot(
+      p_coverage_low_magnitude,
+      paste(scenario_id, "simulation_coverage", "low_magn", sep = "_"),
+      width = plot_size["width"],
+      height = plot_height / plot_halving_coeff
+    )
+    save_plot(
+      p_coverage_high_magnitude,
+      paste(scenario_id, "simulation_coverage", "high_magn", sep = "_"),
+      width = plot_size["width"],
+      height = plot_height / plot_halving_coeff
+    )
+  } else {
+    # For the rest of the scenarios, we plot the coverage from all scenarios in
+    # a single figure
+    p_coverage <- compose_coverage_patches(
+      plot_panels_coverage,
+      window_lengths["short_window"],
+      window_lengths["long_window"]
+    )
+    save_plot(
+      p_coverage,
+      paste(scenario_id, "simulation_coverage", sep = "_"),
+      width = plot_size["width"],
+      height = plot_height
+    )
+  }
+  # Distribution of the R estimates and its standard errors. There is always one
+  # plot for all scenarios.
+  p_densities <- compose_dens_patches(
+    # Extract only the R estimates and its standard errors
+    list(
+      R_hat = purrr::map(plot_panels_density, "R_hat"),
+      se_hat = purrr::map(plot_panels_density, "se_hat")
+    ),
+    purrr::map(plot_panels_coverage, "meta"),
+    window_lengths["short_window"],
+    window_lengths["long_window"]
+  )
+  save_plot(
+    p_densities,
+    paste(scenario_id, "Rhat_density", sep = "_"),
+    width = plot_size["width"],
+    height = plot_height
+  )
 }
