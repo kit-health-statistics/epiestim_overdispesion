@@ -289,6 +289,13 @@ simulate_branching <- function(
 #'   without the effect, all its elements shall equal to 1. The choice of the
 #'   default to be of length 2 is arbitrary and has no effect compared to other
 #'   vector lengths.
+#' @param offspring_disp a positive real value larger than 1 indicating the
+#'   degree of overdispersion in the offspring distribution. The variance of the
+#'   offspring distribution is \code{R_eff * offspring_disp}
+#' @param reporting_prob a real value between 0 and 1, the proportion of
+#'   reported cases in the branching process simulation
+#' @param seed the value of the seed that is set before generating all
+#'   trajectories
 #' @return a named list with two elements
 #'   \describe{
 #'     \item{\code{X}}{integer matrix, the simulated incidence, each column
@@ -315,6 +322,9 @@ generate_trajectories <- function(
     model == "Branching" && (is.na(offspring_disp) || is.na(reporting_prob))
   ) {
     stop("For the branching process option, 'offspring_disp' and 'reporting_prob' must be specified") # nolint
+    if (offspring_disp < 1) {
+      stop("For the branching process option, 'offspring_disp' must be larger than 1") # nolint
+    }
   } else if ((model == "NegBin-Q" || model == "NegBin-L") && is.na(nb_size)) {
     stop("For the negative binomial options, 'nb_size' must be specified.")
   }
