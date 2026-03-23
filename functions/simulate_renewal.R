@@ -282,8 +282,6 @@ simulate_branching <- function(
 #'   and "Branching"
 #' @param nb_size positive real value, the size parameter of the negative
 #'   binomial distribution for "NegBin-Q" and "NegBin-L"
-#' @param seed an integer, seed to be set before the `n_sim` replications of the
-#'   trajectory simulation
 #' @param weekday_effect a vector, the potential weekday effects. For scenarios
 #'   with a weekday effect, the mean of the vector must be 1. For scenarios
 #'   without the effect, all its elements shall equal to 1. The choice of the
@@ -294,8 +292,8 @@ simulate_branching <- function(
 #'   offspring distribution is \code{R_eff * offspring_disp}
 #' @param reporting_prob a real value between 0 and 1, the proportion of
 #'   reported cases in the branching process simulation
-#' @param seed the value of the seed that is set before generating all
-#'   trajectories
+#' @param seed an integer, seed to be set before the `n_sim` replications of the
+#'   trajectory simulation
 #' @return a named list with two elements
 #'   \describe{
 #'     \item{\code{X}}{integer matrix, the simulated incidence, each column
