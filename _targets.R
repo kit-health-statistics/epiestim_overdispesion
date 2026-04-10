@@ -45,9 +45,6 @@ global_params <- list(
   short_window = 7,
   long_window = 14,
   n_sim = 1000L,
-  # We don't use the weekday effects in the simulation. However, they are left
-  # here just in case we need them in the future.
-  weekday = c(1.05, 1.40, 1.75, 1.40, 1.05, 0.21, 0.14),
   base_seed = 9786L
 )
 
@@ -61,15 +58,13 @@ plot_halving_coeff <- 1.75
 # NegBin-L
 # NegBin-Q
 # Poisson
-# None of them involves weekday effects, but they can be added by using
-# "weekday_yes"
 outer_scenarios <- data.frame(
-  distribution = c("NegBin-L", "NegBin-Q", "Poiss", "Branching"),
-  weekday_effect = c("weekday_no", "weekday_no", "weekday_no", "weekday_no")
+  distribution = c("NegBin-L", "NegBin-Q", "Poiss", "Branching")
 ) |>
   dplyr::mutate(
-    scenario_id = paste(distribution, weekday_effect, sep = "_")
+    scenario_id = distribution
   )
+
 
 # Define pipeline ==============================================================
 list(
@@ -85,17 +80,6 @@ list(
     names = scenario_id,
     # Get the data frame with scenario parameters
     tar_target(scenarios, create_scenario_grid(distribution)),
-    # Set the weekday effect. If the weekday effect is not present, we multiply
-    # the simulated mean value by 1 under the hood, so there is indeed no
-    # effect.
-    tar_target(
-      weekday_effect_vector,
-      if (weekday_effect == "weekday_yes") {
-        global_params$weekday
-      } else {
-        rep(1, global_params$n_init)
-      }
-    ),
     # Initial values. Sample iid counts using a reasonable data generating
     # mechanism.
     tar_target(
@@ -104,7 +88,6 @@ list(
         global_params$n_init,
         scenarios$init_magnitude,
         scenarios$init_sd,
-        weekday_effect = weekday_effect_vector,
         seed = global_params$base_seed + scenarios$init_seed,
         model = distribution
       ),
@@ -125,7 +108,6 @@ list(
           lgt = long_window,
           model = distribution,
           nb_size = scenarios$nb_size,
-          weekday_effect = weekday_effect_vector,
           offspring_disp = scenarios$offspring_disp,
           reporting_prob = scenarios$reporting_prob,
           seed = global_params$base_seed + scenarios$scenario_number
@@ -174,7 +156,6 @@ list(
           df_R_hat,
           seq(0, 1, by = 0.01),
           distribution,
-          weekday_effect,
           model_colors
         ),
         meta = plot_metadata(
@@ -253,7 +234,7 @@ list(
         # CURRENTLY, THIS PLOT NEEDS ADJUSTMENTS REGARDING THE TEXT SIZES.
         # NEEDS TO BE RESOLVED BEFORE GENERATING THE PLOTS FOR THE POSTER.
         generate_poster_figure <- distribution == "NegBin-Q" ||
-          (distribution == "NegBin-L" && weekday_effect == "weekday_no")
+          (distribution == "NegBin-L")
         if (generate_poster_figure) {
           p_simulation_poster <- compose_coverage_patches(
             plot_panels[scenarios$R_eff == 1.5 & scenarios$magnitude == "low"],
@@ -275,18 +256,12 @@ list(
   ),
   tar_target(saved_overdisp_est_plots, {
     overdisp_panels <- list(
-      NegBin.L_weekday_no = purrr::map(
-        plot_density_panels_NegBin.L_weekday_no,
-        "overdisp_hat"
-      ),
-      NegBin.Q_weekday_no = purrr::map(
-        plot_density_panels_NegBin.Q_weekday_no,
-        "overdisp_hat"
-      )
+      NegBin.L = purrr::map(plot_density_panels_NegBin.L, "overdisp_hat"),
+      NegBin.Q = purrr::map(plot_density_panels_NegBin.Q, "overdisp_hat")
     )
     meta_panels <- list(
-      NegBin.L = purrr::map(plot_panels_NegBin.L_weekday_no, "meta"),
-      NegBin.Q = purrr::map(plot_panels_NegBin.Q_weekday_no, "meta")
+      NegBin.L = purrr::map(plot_panels_NegBin.L, "meta"),
+      NegBin.Q = purrr::map(plot_panels_NegBin.Q, "meta")
     )
     p_overdisp <- compose_overdisp_patches(overdisp_panels, meta_panels)
     save_plot(
