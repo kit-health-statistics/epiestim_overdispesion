@@ -8,8 +8,6 @@
 #' @param init_magnitude the mean of the normal distribution to sample from
 #' @param init_sd the standard deviation of the normal distribution to sample
 #'   from
-#' @param weekday_effect vector of real values, potential multiplicative weekday
-#'   effect. Currently not used.
 #' @param seed seed value for sampling the initial values
 #' @param model the count distribution, one of "Poiss", "NegBin-Q", "NegBin-L"
 #'   and "Branching"
@@ -18,7 +16,6 @@ initialize_trajectory <- function(
   n_init,
   init_magnitude,
   init_sd,
-  weekday_effect,
   seed,
   model = c("Poiss", "NegBin-Q", "NegBin-L", "Branching")
 ) {
@@ -27,7 +24,7 @@ initialize_trajectory <- function(
   # magnitude. Creates redundant copies (nrow(scenarios) instead of 2) but
   # simplifies pipeline structure with negligible computational cost.
   set.seed(seed)
-  abs(round(rnorm(n_init, init_magnitude * weekday_effect, init_sd)))
+  abs(round(rnorm(n_init, init_magnitude, init_sd)))
 }
 
 #' Generate the incidence counts from the corresponding distribution
@@ -71,15 +68,6 @@ generate_from_obs_mod <- function(
 #'   "NegBin-L"
 #' @param nb_size positive real value, the size parameter of the negative
 #'   binomial distribution for "NegBin-Q" and "NegBin-L"
-#' @param weekday_effect a vector, the potential weekday effects. For scenarios
-#'   with a weekday effect, the mean of the vector must be 1. For scenarios
-#'   without the effect, all its elements shall equal to 1.  The choice of the
-#'   default to be of length 2 is arbitrary and has no effect compared to other
-#'   vector lengths. If the length of the initialization is not a multiple of
-#'   the number of weekday effects, we align the beginnings of both vectors and
-#'   recycle the weekday effects. For example, if the initialization has length
-#'   8 and the weekday effect 7, the first incidence value after the
-#'   initialization will be sampled with the 2nd element of the weekday effect.
 #' @return a named list with two elements
 #'   \describe{
 #'     \item{\code{X}}{integer vector, the simulated incidence}
@@ -92,20 +80,15 @@ simulate_renewal <- function(
   si,
   lgt,
   model = c("Poiss", "NegBin-Q", "NegBin-L"),
-  nb_size = NULL,
-  weekday_effect = c(1, 1)
+  nb_size = NULL
 ) {
   model <- match.arg(model)
   X <- Lambda <- numeric(lgt)
   X[seq_along(init)] <- init
   Lambda[seq_along(init)] <- NA
-  len_weekday_eff <- length(weekday_effect)
 
   for (t in (length(init) + 1):(lgt)) {
-    Lambda[t] <- sum(si * X[t - seq_along(si)]) *
-      # Multiply by the weekday effect, `weekday_effect` is all ones, when none
-      # is present.
-      weekday_effect[(t - 1) %% len_weekday_eff + 1]
+    Lambda[t] <- sum(si * X[t - seq_along(si)])
     X[t] <- generate_from_obs_mod(
       R * Lambda[t],
       model = model,
@@ -282,11 +265,6 @@ simulate_branching <- function(
 #'   and "Branching"
 #' @param nb_size positive real value, the size parameter of the negative
 #'   binomial distribution for "NegBin-Q" and "NegBin-L"
-#' @param weekday_effect a vector, the potential weekday effects. For scenarios
-#'   with a weekday effect, the mean of the vector must be 1. For scenarios
-#'   without the effect, all its elements shall equal to 1. The choice of the
-#'   default to be of length 2 is arbitrary and has no effect compared to other
-#'   vector lengths.
 #' @param offspring_disp a positive real value larger than 1 indicating the
 #'   degree of overdispersion in the offspring distribution. The variance of the
 #'   offspring distribution is \code{R_eff * offspring_disp}
@@ -310,7 +288,6 @@ generate_trajectories <- function(
   lgt,
   model = c("Poiss", "NegBin-Q", "NegBin-L", "Branching"),
   nb_size = NA,
-  weekday_effect = c(1, 1),
   offspring_disp = NA,
   reporting_prob = NA,
   seed = 432
@@ -350,8 +327,7 @@ generate_trajectories <- function(
         si,
         lgt + n_burnin + length(init),
         model,
-        nb_size,
-        weekday_effect
+        nb_size
       ),
       simplify = FALSE
     )

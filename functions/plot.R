@@ -303,7 +303,6 @@ plot_coverage <- function(
   df_R_hat,
   nominal_covr,
   distribution,
-  weekday_effect,
   model_colors
 ) {
   df_coverage <- create_coverage_df(
@@ -311,8 +310,7 @@ plot_coverage <- function(
     nb_size,
     df_R_hat,
     nominal_covr,
-    distribution,
-    weekday_effect
+    distribution
   )
 
   # Split the data frames to create 2 separate plots instead of facets. This
@@ -753,8 +751,8 @@ compose_dens_patches <- function(
 #'
 #' @description This function composes plots of the distribution of the
 #'   overdispersion parameter estimates from all the scenario runs and also
-#'   all applicable scenario blocks: NegBin-L, NegBin-L with weekday effects
-#'   and NegBin-Q. The patchwork approach is used to add labels and titles.
+#'   all applicable scenario blocks: NegBin-L and NegBin-Q. The patchwork
+#'   approach is used to add labels and titles.
 #' @param plot_panels a list of lists of patchwork patches.
 #' @param plot_meta_panels a list containing plots of the parameter values used
 #'   in the simulation scenario.
@@ -780,7 +778,7 @@ compose_overdisp_patches <- function(
       size = 4.6
     ) +
     theme_void() +
-    plot_panels$NegBin.L_weekday_no +
+    plot_panels$NegBin.L +
     plot_layout(
       nrow = n_rows + 1,
       ncol = 2,
@@ -802,7 +800,7 @@ compose_overdisp_patches <- function(
       size = 4.6
     ) +
     theme_void() +
-    plot_panels$NegBin.Q_weekday_no +
+    plot_panels$NegBin.Q +
     plot_layout(
       nrow = n_rows + 1,
       ncol = 2,
@@ -818,7 +816,7 @@ compose_overdisp_patches <- function(
 
   # Extract the legend from one of the partial plots
   p_legend <- wrap_elements(
-    ggpubr::get_legend(plot_panels$NegBin.L_weekday_no[[1]])
+    ggpubr::get_legend(plot_panels$NegBin.L[[1]])
   )
 
   # Combine everything
