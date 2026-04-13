@@ -224,7 +224,7 @@ list(
         plot_density_panels,
         unlist(global_params[c("short_window", "long_window")]),
         plot_size,
-        scenario_id,
+        scenarios[, "scenario_id"],
         plot_halving_coeff
       )
     }),

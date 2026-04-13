@@ -834,6 +834,8 @@ compose_overdisp_patches <- function(
 #'   \code{compose_coverage_patches} and \code{compose_dens_patches}. The plots
 #'   are arranged according to the requirements for the given distribution
 #'   (Poisson, NegBin-L and NegBin-Q) and saved in the PDF and PNG format.
+#' @param distribution a string identifying the scenario block (Poisson,
+#'   NegBin-L, NegBin-Q or Branching)
 #' @param plot_panels_coverage a list of lists of patchwork patches
 #'   corresponding to the coverage plot that are composed using the
 #'   \code{compose_coverage_patches} function.
@@ -844,8 +846,8 @@ compose_overdisp_patches <- function(
 #'   and long estimation windows.
 #' @param plot_size a named vector stating the width and height of the saved
 #'   plot.
-#' @param scenario_id a string identifying the scenario block (Poisson, NegBin-L
-#'   or NegBin-Q)
+#' @param scenario_id a character vector identifying the inner scenarios in the
+#'   order, all results (data frames and plots) are stored
 #' @param plot_halving_coeff a numeric value dividing the final plot height,
 #'   when we want to display only half of the scenarios in the plot. This is not
 #'   exactly 2 and must be found by trial and error.
@@ -858,44 +860,50 @@ compose_and_save_plots <- function(
   scenario_id,
   plot_halving_coeff
 ) {
-  if (distribution %in% c("Poiss", "Branching")) {
-    # For Poisson, we have only half the scenarios as for the rest, so the
-    # height of the resulting plot must be divided by 2. We divide by less
+  if (distribution %in% c("Poiss", "NegBin-L", "Branching")) {
+    # For Poisson and the Branching process, we have only half the scenarios as
+    # for the rest, so the height of the resulting plot must be divided by 2.
+    # For NegBin-L we display the results in smaller blocks. We divide by less
     # than 2 to allow for some space for the title.
     plot_height <- plot_size["height"] / plot_halving_coeff
   } else {
     plot_height <- plot_size["height"]
   }
 
-  # For NegBin-L, we split the coverage plots from high and low magnitude
-  # scenarios. The scenarios must be ordered in a way that the low magnitude
-  # ones comes first.
+  # For NegBin-L, we split the coverage plots for high and low magnitude
+  # scenarios and also for different generation times.
   if (distribution == "NegBin-L") {
-    # Number of plots must be even
-    n_plots <- length(plot_panels_coverage)
-    # Coverage plots
-    p_coverage_low_magnitude <- compose_coverage_patches(
-      plot_panels_coverage[seq_len(n_plots / 2)],
-      window_lengths["short_window"],
-      window_lengths["long_window"]
+    # How we arrange scenarios into sub-blocks. Each sub-block produces a figure
+    # showing the coverage.
+    subblocks <- data.frame(
+      gen_time = c("RSV", "RSV", "measles", "influenza"),
+      magnitude = c("005", "100", "005", "005"),
+      magnitude_string = c("low", "high", "low", "low")
     )
-    p_coverage_high_magnitude <- compose_coverage_patches(
-      plot_panels_coverage[seq(n_plots / 2 + 1, n_plots)],
-      window_lengths["short_window"],
-      window_lengths["long_window"]
-    )
-    save_plot(
-      p_coverage_low_magnitude,
-      paste(scenario_id, "simulation_coverage", "low_magn", sep = "_"),
-      width = plot_size["width"],
-      height = plot_height / plot_halving_coeff
-    )
-    save_plot(
-      p_coverage_high_magnitude,
-      paste(scenario_id, "simulation_coverage", "high_magn", sep = "_"),
-      width = plot_size["width"],
-      height = plot_height / plot_halving_coeff
-    )
+    # Loop over the sub-blocks
+    for (k in seq_len(nrow(subblocks))) {
+      plot_indicator <- grepl(subblocks$magnitude[k], scenario_id) &
+        grepl(subblocks$gen_time[k], scenario_id)
+      # Coverage plots
+      p_coverage <- compose_coverage_patches(
+        plot_panels_coverage[plot_indicator],
+        window_lengths["short_window"],
+        window_lengths["long_window"]
+      )
+      save_plot(
+        p_coverage,
+        paste(
+          distribution,
+          "simulation_coverage",
+          subblocks$magnitude_string[k],
+          "magn",
+          subblocks$gen_time[k],
+          sep = "_"
+        ),
+        width = plot_size["width"],
+        height = plot_height
+      )
+    }
   } else {
     # For the rest of the scenarios, we plot the coverage from all scenarios in
     # a single figure
@@ -906,7 +914,7 @@ compose_and_save_plots <- function(
     )
     save_plot(
       p_coverage,
-      paste(scenario_id, "simulation_coverage", sep = "_"),
+      paste(distribution, "simulation_coverage", sep = "_"),
       width = plot_size["width"],
       height = plot_height
     )
@@ -925,7 +933,7 @@ compose_and_save_plots <- function(
   )
   save_plot(
     p_densities,
-    paste(scenario_id, "Rhat_density", sep = "_"),
+    paste(distribution, "Rhat_density", sep = "_"),
     width = plot_size["width"],
     height = plot_height
   )
