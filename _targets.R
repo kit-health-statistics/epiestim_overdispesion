@@ -179,6 +179,7 @@ list(
         scenarios$magnitude,
         scenarios$nb_size,
         scenarios$R_eff,
+        scenarios$serial_interval,
         # Model name from the outer scenarios data frame
         distribution
       ),
