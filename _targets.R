@@ -37,8 +37,6 @@ model_colors <- c(
 
 # Parameters common for all simulation runs
 global_params <- list(
-  mean_si = 7.5,
-  std_si = 2.1,
   n_init = 14,
   # Length of the generated trajectory, before the estimation window begins.
   n_burnin = 14,
@@ -68,11 +66,6 @@ outer_scenarios <- data.frame(
 
 # Define pipeline ==============================================================
 list(
-  # Serial interval, common for all scenarios
-  tar_target(
-    si,
-    with(global_params, discr_si(seq_len(n_init), mean_si, std_si))
-  ),
   # Static branching over 4 scenario blocks defined in `outer_scenarios`
   tar_map(
     unlist = FALSE,
@@ -80,6 +73,15 @@ list(
     names = scenario_id,
     # Get the data frame with scenario parameters
     tar_target(scenarios, create_scenario_grid(distribution)),
+    # Serial interval, depends on the scenario
+    tar_target(
+      si,
+      with(
+        global_params,
+        discr_si(seq_len(n_init), scenarios$mean_si, scenarios$std_si)
+      ),
+      pattern = map(scenarios)
+    ),
     # Initial values. Sample iid counts using a reasonable data generating
     # mechanism.
     tar_target(
@@ -113,7 +115,7 @@ list(
           seed = global_params$base_seed + scenarios$scenario_number
         )
       ),
-      pattern = map(init, scenarios),
+      pattern = map(init, scenarios, si),
       iteration = "list"
     ),
     # Estimation
