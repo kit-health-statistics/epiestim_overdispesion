@@ -903,10 +903,34 @@ compose_and_save_plots <- function(
         width = plot_size["width"],
         height = plot_height
       )
+      # Distribution of the R estimates and its standard errors.
+      p_densities <- compose_dens_patches(
+        # Extract only the R estimates and its standard errors
+        list(
+          R_hat = purrr::map(plot_panels_density[plot_indicator], "R_hat"),
+          se_hat = purrr::map(plot_panels_density[plot_indicator], "se_hat")
+        ),
+        purrr::map(plot_panels_coverage[plot_indicator], "meta"),
+        window_lengths["short_window"],
+        window_lengths["long_window"]
+      )
+      save_plot(
+        p_densities,
+        paste(
+          distribution,
+          "Rhat_density",
+          subblocks$magnitude_string[k],
+          "magn",
+          subblocks$gen_time[k],
+          sep = "_"
+        ),
+        width = plot_size["width"],
+        height = plot_height
+      )
     }
   } else {
-    # For the rest of the scenarios, we plot the coverage from all scenarios in
-    # a single figure
+    # For the rest of the scenarios, we plot all scenarios in a single figure
+    # Coverage plots
     p_coverage <- compose_coverage_patches(
       plot_panels_coverage,
       window_lengths["short_window"],
@@ -918,23 +942,22 @@ compose_and_save_plots <- function(
       width = plot_size["width"],
       height = plot_height
     )
+    # Distribution of the R estimates and its standard errors.
+    p_densities <- compose_dens_patches(
+      # Extract only the R estimates and its standard errors
+      list(
+        R_hat = purrr::map(plot_panels_density, "R_hat"),
+        se_hat = purrr::map(plot_panels_density, "se_hat")
+      ),
+      purrr::map(plot_panels_coverage, "meta"),
+      window_lengths["short_window"],
+      window_lengths["long_window"]
+    )
+    save_plot(
+      p_densities,
+      paste(distribution, "Rhat_density", sep = "_"),
+      width = plot_size["width"],
+      height = plot_height
+    )
   }
-  # Distribution of the R estimates and its standard errors. There is always one
-  # plot for all scenarios.
-  p_densities <- compose_dens_patches(
-    # Extract only the R estimates and its standard errors
-    list(
-      R_hat = purrr::map(plot_panels_density, "R_hat"),
-      se_hat = purrr::map(plot_panels_density, "se_hat")
-    ),
-    purrr::map(plot_panels_coverage, "meta"),
-    window_lengths["short_window"],
-    window_lengths["long_window"]
-  )
-  save_plot(
-    p_densities,
-    paste(distribution, "Rhat_density", sep = "_"),
-    width = plot_size["width"],
-    height = plot_height
-  )
 }
