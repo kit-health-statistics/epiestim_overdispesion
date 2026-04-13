@@ -164,6 +164,8 @@ list(
           scenarios$R_eff,
           scenarios$nb_size,
           scenarios$magnitude,
+          scenarios$mean_si,
+          scenarios$std_si,
           distribution,
           scenarios$offspring_disp
         )
@@ -256,22 +258,5 @@ list(
         }
       }
     )
-  ),
-  tar_target(saved_overdisp_est_plots, {
-    overdisp_panels <- list(
-      NegBin.L = purrr::map(plot_density_panels_NegBin.L, "overdisp_hat"),
-      NegBin.Q = purrr::map(plot_density_panels_NegBin.Q, "overdisp_hat")
-    )
-    meta_panels <- list(
-      NegBin.L = purrr::map(plot_panels_NegBin.L, "meta"),
-      NegBin.Q = purrr::map(plot_panels_NegBin.Q, "meta")
-    )
-    p_overdisp <- compose_overdisp_patches(overdisp_panels, meta_panels)
-    save_plot(
-      p_overdisp,
-      "overdisp_estimates",
-      width = plot_size["width"],
-      height = plot_size["height"]
-    )
-  })
+  )
 )
