@@ -795,7 +795,7 @@ compose_overdisp_patches <- function(
     4
   } else {
     message("Density of the dispersion parameter estimates can be plotted only for 'NegBin-L', or 'NegBin-Q'.") # nolint
-    return(0)
+    return(NULL)
   }
 
   # Create a list of plots alternating between the meta panels and the density
