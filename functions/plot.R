@@ -31,16 +31,24 @@ get_legend_theme <- function() {
 #'   generate the trajectory
 #' @param magnitude string indicating whether the scenario operates with low, or
 #'   high magnitudes.
+#' @param serial_interval string indicating the disease of the corresponding
+#'   serial interval
 #' @param distribution the true underlying count distribution
 #' @return a list of 3 vectors of 2 elements - the limits for R estimate,
 #'   the limits for its standard errors and the limits of the overdispersion
 #'   estimates
-get_xlim <- function(R_true, overdisp_true, magnitude, distribution) {
+get_xlim <- function(
+    R_true,
+    overdisp_true,
+    magnitude,
+    serial_interval,
+    distribution
+) {
   if (distribution == "NegBin-L") {
     se_limits <- if (magnitude == "high") {
       c(0, 0.075)
     } else if (magnitude == "low") {
-      c(0, 0.4)
+      if (serial_interval == "measles") c(0, 0.6) else c(0, 0.4)
     }
     overdisp_limits <- c(-1, min(10, 5 * overdisp_true))
   } else if (distribution == "NegBin-Q") {
@@ -98,6 +106,7 @@ plot_dens <- function(
   R_true,
   overdisp_true,
   magnitude,
+  serial_interval,
   model_colors,
   dist_true = c("Poiss", "NegBin-Q", "NegBin-L", "Branching")
 ) {
@@ -115,7 +124,13 @@ plot_dens <- function(
 
   # Calculate the x-limits for the plot of R estimates, its standard errors and
   # the dispersion parameter estimates
-  limits_x <- get_xlim(R_true, 1 / overdisp_true, magnitude, dist_true)
+  limits_x <- get_xlim(
+    R_true,
+    1 / overdisp_true,
+    magnitude,
+    serial_interval,
+    dist_true
+  )
 
   p_R_hat <- p_se_hat <- p_overdisp_hat <- vector("list", 2)
   names(p_R_hat) <- names(p_se_hat) <- names(df_R_hat_split)
@@ -231,13 +246,6 @@ plot_dens <- function(
           # For the dispersion parameter, we sometimes need a denser grid to
           # avoid ragged density lines
           n = 3 * density_estimation_grid
-        ) +
-        # A dummy line to achieve the inclusion of the "NegBin-Q" label in the
-        # legend
-        geom_line(
-          aes(x = c(-10, -11), y = c(0, 0), color = "NegBin-Q"),
-          linewidth = 1,
-          alpha = 0.6
         )
     }
 
@@ -509,6 +517,8 @@ plot_trajectories <- function(X, short_window, n_init, n_burnin) {
 #'   number
 #' @param nb_size a positive real, the true value of the dispersion parameter
 #' @param magnitude string values, either "high", or "low"
+#' @param mean_si a positive real, the mean of the serial interval
+#' @param std_si a positive real, the standard deviation of the serial interval
 #' @param distribution string value indicating the count distribution:
 #'   "NegBin-L", "NegBin-Q", or "Poiss"
 #' @param offspring_disp a real number larger than 1, the dispersion parameter
@@ -518,12 +528,13 @@ plot_metadata <- function(
   R_eff,
   nb_size,
   magnitude,
+  mean_si,
+  std_si,
   distribution,
   offspring_disp = NULL
 ) {
   df_text <- data.frame(
-    x = rep(1, 3),
-    y = c(1, 0, -1),
+    x = rep(1, 5),
     label = c(
       paste0("R[t] == ", R_eff),
       if (distribution == "NegBin-L") {
@@ -538,18 +549,25 @@ plot_metadata <- function(
       if (distribution == "Branching") {
         NA
       } else {
-        paste0("Init.: ", gsub("_.*", "", magnitude))
-      }
+        paste0("Initialization: ", gsub("_.*", "", magnitude))
+      },
+      paste0("SI~mean: ", mean_si, "~days"),
+      paste0("SI~std: ", std_si, "~days")
     )
   )
   # Remove the dispersion parameter, when it's not present for the Poisson
-  # distribution.
-  if (distribution == "Poiss") {
+  # distribution, or the initialization string when it's not there for the
+  # branching process.
+  if (distribution %in% c("Poiss", "Branching")) {
     df_text <- df_text |> filter(!is.na(label))
   }
+  # Set y-coordinates for the labels.
+  df_text <- df_text |>
+    mutate(y = rev(seq_len(nrow(df_text))))
+  # Plot the metadata, which is 4-5 rows of labels
   ggplot(df_text, aes(x = x, y = y, label = label)) +
     geom_text(hjust = 0, parse = TRUE) +
-    coord_cartesian(ylim = c(-3, 3), xlim = c(0.997, 1.02)) +
+    coord_cartesian(ylim = c(0, 6), xlim = c(1, 1.02)) +
     theme_void()
 }
 
@@ -572,7 +590,7 @@ compose_coverage_patches <- function(
   plot_panels,
   short_window,
   long_window,
-  panel_widths = c(0.8, 3, 2)
+  panel_widths = c(1.2, 2.6, 2)
 ) {
   # We will have as many rows as the simulation scenarios
   n_rows <- length(plot_panels)
@@ -703,12 +721,12 @@ compose_dens_patches <- function(
   )
   p_R_hat <- wrap_elements(
     (p_meta | p_R_hat) +
-      plot_layout(widths = c(2, 6)) &
+      plot_layout(widths = c(2.5, 5.3)) &
       theme(legend.position = "none")
   )
   p_se_hat <- wrap_elements(
     (plot_spacer() | p_se_hat) +
-      plot_layout(widths = c(0.2, 6)) & theme(legend.position = "none")
+      plot_layout(widths = c(0.01, 5.8)) & theme(legend.position = "none")
   )
 
   # Create the upper titles
@@ -720,7 +738,7 @@ compose_dens_patches <- function(
       parse = TRUE
     ) +
     theme_void() +
-    plot_layout(widths = c(2, 6))
+    plot_layout(widths = c(3, 6))
   p_headline_se_hat <- plot_spacer() +
     ggplot() +
     geom_text(
@@ -734,16 +752,16 @@ compose_dens_patches <- function(
 
   # Combine into 2 big panels
   p_headline <- (p_headline_R_hat | p_headline_se_hat) +
-    plot_layout(widths = c(6, 5))
+    plot_layout(widths = c(6, 4.55))
   p_plot <- (p_R_hat | p_se_hat) +
-    plot_layout(widths = c(6, 5))
+    plot_layout(widths = c(6, 4.55))
 
   # Combine everything
   p_main <- wrap_elements(
     ((p_headline / p_plot) + plot_layout(heights = c(1, 22)))
   ) +
     p_legend +
-    plot_layout(widths = c(10, 1))
+    plot_layout(widths = c(10, 0.9))
   p_main
 }
 
@@ -753,79 +771,55 @@ compose_dens_patches <- function(
 #'   overdispersion parameter estimates from all the scenario runs and also
 #'   all applicable scenario blocks: NegBin-L and NegBin-Q. The patchwork
 #'   approach is used to add labels and titles.
+#' @param distribution a string identifying the scenario block (NegBin-L, or
+#' NegBin-Q)
 #' @param plot_panels a list of lists of patchwork patches.
 #' @param plot_meta_panels a list containing plots of the parameter values used
 #'   in the simulation scenario.
 #' @return a patchwork plot
 compose_overdisp_patches <- function(
+  distribution,
   plot_panels,
   plot_meta_panels
 ) {
-  # How many vertical strips we have
-  n_strips <- length(plot_panels)
-  # How many rows there are in each strip
-  n_rows <- length(plot_panels[[1]])
+  # How many vertical strips we have.
+  n_strips <- 2
+  # How many rows there are in each strip. For NegBin-Q we have 8 scenarios
+  # total, which are divided into 4 rows and 2 vertical strips. For NegBin-L,
+  # there is 16 scenarios, which we divide into 8 rows and 2 vertical strips.
+  # Each strip contains the meta panel with parameter values and plots of the
+  # density estimates.
+  n_rows <- if (distribution == "NegBin-L") {
+    8
+  } else if (distribution == "NegBin-Q") {
+    4
+  } else {
+    message("Density of the dispersion parameter estimates can be plotted only for 'NegBin-L', or 'NegBin-Q'.") # nolint
+    return(NULL)
+  }
 
-  strips <- vector("list", n_strips)
-  names(strips) <- names(plot_panels)
-
-  p_negbin_l <- plot_spacer() +
-    plot_meta_panels$NegBin.L +
-    # NegBin-L true data generating process
-    ggplot() +
-    geom_text(
-      aes(x = 1, y = 1, label = "NegBin-L ground truth"),
-      size = 4.6
-    ) +
-    theme_void() +
-    plot_panels$NegBin.L +
-    plot_layout(
-      nrow = n_rows + 1,
-      ncol = 2,
-      byrow = FALSE,
-      heights = get_header_proportions(n_rows),
-      widths = c(2, 5),
-      guides = "collect",
-      axes = "collect_x",
-      axis_titles = "collect"
-    ) &
-    theme(legend.position = "none")
-
-  p_negbin_q <- plot_spacer() +
-    plot_meta_panels$NegBin.Q +
-    # NegBin-Q true data generating process
-    ggplot() +
-    geom_text(
-      aes(x = 1, y = 1, label = "NegBin-Q ground truth"),
-      size = 4.6
-    ) +
-    theme_void() +
-    plot_panels$NegBin.Q +
-    plot_layout(
-      nrow = n_rows + 1,
-      ncol = 2,
-      byrow = FALSE,
-      heights = get_header_proportions(n_rows),
-      widths = c(2, 5),
-      guides = "collect",
-      axes = "collect"
-    ) &
-    theme(
-      legend.position = "none"
-    )
-
-  # Extract the legend from one of the partial plots
-  p_legend <- wrap_elements(
-    ggpubr::get_legend(plot_panels$NegBin.L[[1]])
+  # Create a list of plots alternating between the meta panels and the density
+  # panels.
+  plot_list <- c(
+    plot_meta_panels[seq_len(n_rows)],
+    plot_panels[seq_len(n_rows)],
+    plot_meta_panels[n_rows + seq_len(n_rows)],
+    plot_panels[n_rows + seq_len(n_rows)]
   )
 
   # Combine everything
-  p_main <- wrap_elements(
-    ((p_negbin_l | p_negbin_q) + plot_layout(widths = c(8, 8)))
-  ) +
-    p_legend +
-    plot_layout(widths = c(6, 1))
-  p_main
+  p_disp <- patchwork::wrap_plots(plot_list) +
+    plot_layout(
+      nrow = n_rows,
+      ncol = 2 * n_strips,
+      byrow = FALSE,
+      heights = rep(1, n_rows),
+      widths = rep(c(2.7, 4.3), times = n_strips),
+      guides = "collect",
+      axes = "collect_x",
+      axis_titles = "collect"
+    )
+  p_disp
 }
 
 #' Save final plots based on the model type
@@ -834,6 +828,8 @@ compose_overdisp_patches <- function(
 #'   \code{compose_coverage_patches} and \code{compose_dens_patches}. The plots
 #'   are arranged according to the requirements for the given distribution
 #'   (Poisson, NegBin-L and NegBin-Q) and saved in the PDF and PNG format.
+#' @param distribution a string identifying the scenario block (Poisson,
+#'   NegBin-L, NegBin-Q or Branching)
 #' @param plot_panels_coverage a list of lists of patchwork patches
 #'   corresponding to the coverage plot that are composed using the
 #'   \code{compose_coverage_patches} function.
@@ -844,8 +840,8 @@ compose_overdisp_patches <- function(
 #'   and long estimation windows.
 #' @param plot_size a named vector stating the width and height of the saved
 #'   plot.
-#' @param scenario_id a string identifying the scenario block (Poisson, NegBin-L
-#'   or NegBin-Q)
+#' @param scenario_id a character vector identifying the inner scenarios in the
+#'   order, all results (data frames and plots) are stored
 #' @param plot_halving_coeff a numeric value dividing the final plot height,
 #'   when we want to display only half of the scenarios in the plot. This is not
 #'   exactly 2 and must be found by trial and error.
@@ -858,47 +854,77 @@ compose_and_save_plots <- function(
   scenario_id,
   plot_halving_coeff
 ) {
-  if (distribution %in% c("Poiss", "Branching")) {
-    # For Poisson, we have only half the scenarios as for the rest, so the
-    # height of the resulting plot must be divided by 2. We divide by less
+  if (distribution %in% c("Poiss", "NegBin-L", "Branching")) {
+    # For Poisson and the Branching process, we have only half the scenarios as
+    # for the rest, so the height of the resulting plot must be divided by 2.
+    # For NegBin-L we display the results in smaller blocks. We divide by less
     # than 2 to allow for some space for the title.
     plot_height <- plot_size["height"] / plot_halving_coeff
   } else {
     plot_height <- plot_size["height"]
   }
 
-  # For NegBin-L, we split the coverage plots from high and low magnitude
-  # scenarios. The scenarios must be ordered in a way that the low magnitude
-  # ones comes first.
+  # For NegBin-L, we split the coverage plots for high and low magnitude
+  # scenarios and also for different generation times.
   if (distribution == "NegBin-L") {
-    # Number of plots must be even
-    n_plots <- length(plot_panels_coverage)
-    # Coverage plots
-    p_coverage_low_magnitude <- compose_coverage_patches(
-      plot_panels_coverage[seq_len(n_plots / 2)],
-      window_lengths["short_window"],
-      window_lengths["long_window"]
+    # How we arrange scenarios into sub-blocks. Each sub-block produces a figure
+    # showing the coverage.
+    subblocks <- data.frame(
+      gen_time = c("RSV", "RSV", "measles", "influenza"),
+      magnitude = c("005", "100", "005", "005"),
+      magnitude_string = c("low", "high", "low", "low")
     )
-    p_coverage_high_magnitude <- compose_coverage_patches(
-      plot_panels_coverage[seq(n_plots / 2 + 1, n_plots)],
-      window_lengths["short_window"],
-      window_lengths["long_window"]
-    )
-    save_plot(
-      p_coverage_low_magnitude,
-      paste(scenario_id, "simulation_coverage", "low_magn", sep = "_"),
-      width = plot_size["width"],
-      height = plot_height / plot_halving_coeff
-    )
-    save_plot(
-      p_coverage_high_magnitude,
-      paste(scenario_id, "simulation_coverage", "high_magn", sep = "_"),
-      width = plot_size["width"],
-      height = plot_height / plot_halving_coeff
-    )
+    # Loop over the sub-blocks
+    for (k in seq_len(nrow(subblocks))) {
+      plot_indicator <- grepl(subblocks$magnitude[k], scenario_id) &
+        grepl(subblocks$gen_time[k], scenario_id)
+      # Coverage plots
+      p_coverage <- compose_coverage_patches(
+        plot_panels_coverage[plot_indicator],
+        window_lengths["short_window"],
+        window_lengths["long_window"]
+      )
+      save_plot(
+        p_coverage,
+        paste(
+          distribution,
+          "simulation_coverage",
+          subblocks$magnitude_string[k],
+          "magn",
+          subblocks$gen_time[k],
+          sep = "_"
+        ),
+        width = plot_size["width"],
+        height = plot_height
+      )
+      # Distribution of the R estimates and its standard errors.
+      p_densities <- compose_dens_patches(
+        # Extract only the R estimates and its standard errors
+        list(
+          R_hat = purrr::map(plot_panels_density[plot_indicator], "R_hat"),
+          se_hat = purrr::map(plot_panels_density[plot_indicator], "se_hat")
+        ),
+        purrr::map(plot_panels_coverage[plot_indicator], "meta"),
+        window_lengths["short_window"],
+        window_lengths["long_window"]
+      )
+      save_plot(
+        p_densities,
+        paste(
+          distribution,
+          "Rhat_density",
+          subblocks$magnitude_string[k],
+          "magn",
+          subblocks$gen_time[k],
+          sep = "_"
+        ),
+        width = plot_size["width"],
+        height = plot_height
+      )
+    }
   } else {
-    # For the rest of the scenarios, we plot the coverage from all scenarios in
-    # a single figure
+    # For the rest of the scenarios, we plot all scenarios in a single figure
+    # Coverage plots
     p_coverage <- compose_coverage_patches(
       plot_panels_coverage,
       window_lengths["short_window"],
@@ -906,27 +932,49 @@ compose_and_save_plots <- function(
     )
     save_plot(
       p_coverage,
-      paste(scenario_id, "simulation_coverage", sep = "_"),
+      paste(distribution, "simulation_coverage", sep = "_"),
+      width = plot_size["width"],
+      height = plot_height
+    )
+    # Distribution of the R estimates and its standard errors.
+    p_densities <- compose_dens_patches(
+      # Extract only the R estimates and its standard errors
+      list(
+        R_hat = purrr::map(plot_panels_density, "R_hat"),
+        se_hat = purrr::map(plot_panels_density, "se_hat")
+      ),
+      purrr::map(plot_panels_coverage, "meta"),
+      window_lengths["short_window"],
+      window_lengths["long_window"]
+    )
+    save_plot(
+      p_densities,
+      paste(distribution, "Rhat_density", sep = "_"),
       width = plot_size["width"],
       height = plot_height
     )
   }
-  # Distribution of the R estimates and its standard errors. There is always one
-  # plot for all scenarios.
-  p_densities <- compose_dens_patches(
-    # Extract only the R estimates and its standard errors
-    list(
-      R_hat = purrr::map(plot_panels_density, "R_hat"),
-      se_hat = purrr::map(plot_panels_density, "se_hat")
-    ),
-    purrr::map(plot_panels_coverage, "meta"),
-    window_lengths["short_window"],
-    window_lengths["long_window"]
-  )
-  save_plot(
-    p_densities,
-    paste(scenario_id, "Rhat_density", sep = "_"),
-    width = plot_size["width"],
-    height = plot_height
-  )
+
+  # Distribution of the dispersion parameter estimates. It can be compared with
+  # the true value only for the NegBin scenarios
+  if (distribution %in% c("NegBin-L", "NegBin-Q")) {
+    p_disp <- compose_overdisp_patches(
+      distribution,
+      purrr::map(plot_panels_density, "overdisp_hat"),
+      purrr::map(plot_panels_coverage, "meta")
+    )
+    save_plot(
+      p_disp,
+      paste(distribution, "overdisp_estimates", sep = "_"),
+      width = plot_size["width"],
+      # For NegBin-L we'll have 8 rows, so we don't halve the plot height. For
+      # NegBin-Q, we have 4 rows, so we'll halve the height. We can halve
+      # directly, as this plot has no headings/titles.
+      height = if (distribution == "NegBin-L") {
+        plot_size["height"]
+      } else {
+        plot_size["height"] / 2
+      }
+    )
+  }
 }

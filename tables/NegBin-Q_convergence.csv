@@ -1,0 +1,17 @@
+serial_interval,magnitude,R_eff,overdispersion,window_len_fct,NegBin-L,NegBin-Q,Poiss,Q-Poiss
+RSV,low,1.5,0.02,long,730,729,1000,1000
+RSV,low,1.5,0.02,short,532,520,1000,1000
+RSV,low,1.5,0.06,long,948,939,1000,1000
+RSV,low,1.5,0.06,short,757,747,1000,1000
+RSV,low,2.5,0.02,long,997,992,1000,1000
+RSV,low,2.5,0.02,short,852,849,1000,1000
+RSV,low,2.5,0.06,long,1000,1000,1000,1000
+RSV,low,2.5,0.06,short,983,984,1000,1000
+RSV,high,1.5,0.02,long,1000,1000,1000,1000
+RSV,high,1.5,0.02,short,985,983,1000,1000
+RSV,high,1.5,0.06,long,1000,1000,1000,1000
+RSV,high,1.5,0.06,short,1000,1000,1000,1000
+RSV,high,2.5,0.02,long,1000,1000,1000,1000
+RSV,high,2.5,0.02,short,999,999,1000,1000
+RSV,high,2.5,0.06,long,1000,1000,1000,1000
+RSV,high,2.5,0.06,short,1000,1000,1000,1000

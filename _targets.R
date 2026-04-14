@@ -37,8 +37,6 @@ model_colors <- c(
 
 # Parameters common for all simulation runs
 global_params <- list(
-  mean_si = 7.5,
-  std_si = 2.1,
   n_init = 14,
   # Length of the generated trajectory, before the estimation window begins.
   n_burnin = 14,
@@ -68,11 +66,6 @@ outer_scenarios <- data.frame(
 
 # Define pipeline ==============================================================
 list(
-  # Serial interval, common for all scenarios
-  tar_target(
-    si,
-    with(global_params, discr_si(seq_len(n_init), mean_si, std_si))
-  ),
   # Static branching over 4 scenario blocks defined in `outer_scenarios`
   tar_map(
     unlist = FALSE,
@@ -80,6 +73,15 @@ list(
     names = scenario_id,
     # Get the data frame with scenario parameters
     tar_target(scenarios, create_scenario_grid(distribution)),
+    # Serial interval, depends on the scenario
+    tar_target(
+      si,
+      with(
+        global_params,
+        discr_si(seq_len(n_init), scenarios$mean_si, scenarios$std_si)
+      ),
+      pattern = map(scenarios)
+    ),
     # Initial values. Sample iid counts using a reasonable data generating
     # mechanism.
     tar_target(
@@ -113,7 +115,7 @@ list(
           seed = global_params$base_seed + scenarios$scenario_number
         )
       ),
-      pattern = map(init, scenarios),
+      pattern = map(init, scenarios, si),
       iteration = "list"
     ),
     # Estimation
@@ -162,6 +164,8 @@ list(
           scenarios$R_eff,
           scenarios$nb_size,
           scenarios$magnitude,
+          scenarios$mean_si,
+          scenarios$std_si,
           distribution,
           scenarios$offspring_disp
         )
@@ -177,6 +181,7 @@ list(
         scenarios$magnitude,
         scenarios$nb_size,
         scenarios$R_eff,
+        scenarios$serial_interval,
         # Model name from the outer scenarios data frame
         distribution
       ),
@@ -208,6 +213,7 @@ list(
         scenarios$R_eff,
         scenarios$nb_size,
         scenarios$magnitude,
+        scenarios$serial_interval,
         model_colors,
         distribution
       ),
@@ -222,7 +228,7 @@ list(
         plot_density_panels,
         unlist(global_params[c("short_window", "long_window")]),
         plot_size,
-        scenario_id,
+        scenarios[, "scenario_id"],
         plot_halving_coeff
       )
     }),
@@ -253,22 +259,5 @@ list(
         }
       }
     )
-  ),
-  tar_target(saved_overdisp_est_plots, {
-    overdisp_panels <- list(
-      NegBin.L = purrr::map(plot_density_panels_NegBin.L, "overdisp_hat"),
-      NegBin.Q = purrr::map(plot_density_panels_NegBin.Q, "overdisp_hat")
-    )
-    meta_panels <- list(
-      NegBin.L = purrr::map(plot_panels_NegBin.L, "meta"),
-      NegBin.Q = purrr::map(plot_panels_NegBin.Q, "meta")
-    )
-    p_overdisp <- compose_overdisp_patches(overdisp_panels, meta_panels)
-    save_plot(
-      p_overdisp,
-      "overdisp_estimates",
-      width = plot_size["width"],
-      height = plot_size["height"]
-    )
-  })
+  )
 )

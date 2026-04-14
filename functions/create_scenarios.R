@@ -2,14 +2,16 @@
 #'
 #' @description Creates the scenario grid of the simulation with
 #'   \itemize{
-#'     \item 2 orders of magnitude (5 and 100)
+#'     \item 2 orders of magnitude (around 5 and 100), does not apply for the
+#'     Branching process, where we have only lower magnitude
 #'     \item 2 degrees of dispersion (low and high), does not apply for the
 #'     Poisson distribution
 #'     \item 2 true values of the effective reproduction number R
-#'     \item 1 serial interval distribution
+#'     \item 3 serial interval distributions for selected NegBin-L scenarios,
+#'     1 serial interval distribution fo the rest
 #'   }
-#'  The final number of simulation scenarios is 8 for "NegBin-L", or "NegBin-Q"
-#'  and 4 for "Poiss"
+#'  The final number of simulation scenarios is 8 for "NegBin-Q", 4 for "Poiss",
+#'  4 for a branching process and 16 "NegBin-L"
 #' @param distribution the count distribution used in the 8 scenarios (or 4 for
 #'   Poisson and Branching). Possible values: "Poiss", "NegBin-L", "NegBin-Q",
 #'   or "Branching"
@@ -24,6 +26,7 @@ create_scenario_grid <- function(
     dispersion = c("low", "high"),
     R_eff = c(1.5, 2.5),
     magnitude = c("low", "high"),
+    serial_interval = c("RSV", "measles", "influenza"),
     KEEP.OUT.ATTRS = FALSE,
     stringsAsFactors = FALSE
   )
@@ -73,29 +76,59 @@ create_scenario_grid <- function(
     )
   }
 
+  # Pair the disease name and values of the corresponding serial interval
+  # parameters
+  serial_interval <- data.frame(
+    serial_interval = c("RSV", "influenza", "measles"),
+    mean_si = c(7.5, 3.7, 13.7),
+    std_si = c(2.1, 1.1, 1.5)
+  )
+
   # Join the parameter names and its values
   scenarios <- scenario_grid |>
     dplyr::left_join(dispersion, by = "dispersion") |>
-    dplyr::left_join(magnitude, by = "magnitude")
+    dplyr::left_join(magnitude, by = "magnitude") |>
+    dplyr::left_join(serial_interval, by = "serial_interval")
 
-  # If the data generating process is Poisson, we don't have scenarios for
-  # different dispersion values. Values of the dispersion parameter shall be
-  # all NA, thus the rows will be dropped as duplicates.
+  # Filter non-applicable scenarios.
   if (distribution == "Poiss") {
+    # If the data generating process is Poisson, we don't have scenarios for
+    # different dispersion values. Values of the dispersion parameter shall be
+    # all NA, thus the rows will be dropped as duplicates.
+    # In addition, we will generate only simulation scenarios using the serial
+    # interval of the RSV.
     scenarios <- scenarios |>
       dplyr::select(-dispersion) |>
       dplyr::distinct(.keep_all = FALSE) |>
       # Add the string denoting the dispersion back, even though it's not
       # technically needed.
-      dplyr::mutate(dispersion = "not_applicable")
-  }
-  # If the data generating process is a branching process, we don't have
-  # scenarios for higher magnitudes and we also rewrite the true value of R to
-  # be lower in order to make the trajectories less explosive.
-  if (distribution == "Branching") {
+      dplyr::mutate(dispersion = "not_applicable") |>
+      filter(serial_interval == "RSV")
+  } else if (distribution == "Branching") {
+    # If the data generating process is a branching process, we don't have
+    # scenarios for higher magnitudes and we also rewrite the true value of R to
+    # be lower in order to make the trajectories less explosive.
+    # In addition, we will generate only simulation scenarios using the serial
+    # interval of the RSV.
     scenarios <- scenarios |>
       dplyr::filter(magnitude == "low") |>
-      mutate(R_eff = dplyr::case_when(R_eff == 1.5 ~ 1.2, R_eff == 2.5 ~ 2))
+      mutate(R_eff = dplyr::case_when(R_eff == 1.5 ~ 1.2, R_eff == 2.5 ~ 2)) |>
+      filter(serial_interval == "RSV")
+  } else if (distribution == "NegBin-Q") {
+    # We will generate only simulation scenarios using the serial
+    # interval of the RSV.
+    scenarios <- scenarios |>
+      filter(serial_interval == "RSV")
+  } else if (distribution == "NegBin-L") {
+    scenarios <- scenarios |>
+      # For low magnitude scenarios, which are shown in the main paper, we will
+      # generate scenarios with all 3 generation times. For the high magnitude,
+      # we will generate only simulation scenarios using the serial interval of
+      # the RSV.
+      filter(
+        (magnitude == "high" & serial_interval == "RSV") |
+          magnitude == "low"
+      )
   }
   # Add a scenario number and ID
   scenarios |> dplyr::mutate(
@@ -105,6 +138,7 @@ create_scenario_grid <- function(
       stringr::str_pad(init_magnitude, 3, pad = "0"),
       dispersion,
       paste0("R", R_eff),
+      serial_interval,
       sep = "_"
     )
   )
