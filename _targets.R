@@ -213,6 +213,7 @@ list(
         scenarios$R_eff,
         scenarios$nb_size,
         scenarios$magnitude,
+        scenarios$serial_interval,
         model_colors,
         distribution
       ),

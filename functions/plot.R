@@ -31,16 +31,24 @@ get_legend_theme <- function() {
 #'   generate the trajectory
 #' @param magnitude string indicating whether the scenario operates with low, or
 #'   high magnitudes.
+#' @param serial_interval string indicating the disease of the corresponding
+#'   serial interval
 #' @param distribution the true underlying count distribution
 #' @return a list of 3 vectors of 2 elements - the limits for R estimate,
 #'   the limits for its standard errors and the limits of the overdispersion
 #'   estimates
-get_xlim <- function(R_true, overdisp_true, magnitude, distribution) {
+get_xlim <- function(
+    R_true,
+    overdisp_true,
+    magnitude,
+    serial_interval,
+    distribution
+) {
   if (distribution == "NegBin-L") {
     se_limits <- if (magnitude == "high") {
       c(0, 0.075)
     } else if (magnitude == "low") {
-      c(0, 0.4)
+      if (serial_interval == "measles") c(0, 0.6) else c(0, 0.4)
     }
     overdisp_limits <- c(-1, min(10, 5 * overdisp_true))
   } else if (distribution == "NegBin-Q") {
@@ -98,6 +106,7 @@ plot_dens <- function(
   R_true,
   overdisp_true,
   magnitude,
+  serial_interval,
   model_colors,
   dist_true = c("Poiss", "NegBin-Q", "NegBin-L", "Branching")
 ) {
@@ -115,7 +124,13 @@ plot_dens <- function(
 
   # Calculate the x-limits for the plot of R estimates, its standard errors and
   # the dispersion parameter estimates
-  limits_x <- get_xlim(R_true, 1 / overdisp_true, magnitude, dist_true)
+  limits_x <- get_xlim(
+    R_true,
+    1 / overdisp_true,
+    magnitude,
+    serial_interval,
+    dist_true
+  )
 
   p_R_hat <- p_se_hat <- p_overdisp_hat <- vector("list", 2)
   names(p_R_hat) <- names(p_se_hat) <- names(df_R_hat_split)
@@ -552,7 +567,7 @@ plot_metadata <- function(
   # Plot the metadata, which is 4-5 rows of labels
   ggplot(df_text, aes(x = x, y = y, label = label)) +
     geom_text(hjust = 0, parse = TRUE) +
-    coord_cartesian(ylim = c(0, 6), xlim = c(0.999, 1.02)) +
+    coord_cartesian(ylim = c(0, 6), xlim = c(1, 1.02)) +
     theme_void()
 }
 
@@ -799,7 +814,7 @@ compose_overdisp_patches <- function(
       ncol = 2 * n_strips,
       byrow = FALSE,
       heights = rep(1, n_rows),
-      widths = rep(c(2.5, 4.5), times = n_strips),
+      widths = rep(c(2.7, 4.3), times = n_strips),
       guides = "collect",
       axes = "collect_x",
       axis_titles = "collect"
