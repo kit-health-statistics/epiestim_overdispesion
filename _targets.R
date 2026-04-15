@@ -103,7 +103,7 @@ list(
         global_params,
         generate_trajectories(
           n_sim = n_sim,
-          n_burnin = n_burnin,
+          n_burnin = scenarios$n_burnin,
           init = init,
           R_eff = scenarios$R_eff,
           si = si,
@@ -147,9 +147,9 @@ list(
           if (distribution == "Branching") 0 else global_params$n_init,
           # A longer burn-in period for the branching process to take off
           if (distribution == "Branching") {
-            2 * global_params$n_burnin
+            2 * scenarios$n_burnin
           } else {
-            global_params$n_burnin
+            scenarios$n_burnin
           }
         ),
         coverage = plot_coverage(
