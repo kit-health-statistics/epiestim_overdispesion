@@ -38,11 +38,11 @@ get_legend_theme <- function() {
 #'   the limits for its standard errors and the limits of the overdispersion
 #'   estimates
 get_xlim <- function(
-    R_true,
-    overdisp_true,
-    magnitude,
-    serial_interval,
-    distribution
+  R_true,
+  overdisp_true,
+  magnitude,
+  serial_interval,
+  distribution
 ) {
   if (distribution == "NegBin-L") {
     se_limits <- if (magnitude == "high") {
