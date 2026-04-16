@@ -81,7 +81,15 @@ create_scenario_grid <- function(
   serial_interval <- data.frame(
     serial_interval = c("RSV", "influenza", "measles"),
     mean_si = c(7.5, 3.7, 13.7),
-    std_si = c(2.1, 1.1, 1.5)
+    std_si = c(2.1, 1.1, 1.5),
+    # The burn-in period must be longer for a longer serial interval to keep R
+    # constant long enough.
+    # Initialization and burn-in are handled differently in the branching
+    # process simulation and plotting. For this reason, the length of the
+    # burn-in period depends only on the serial interval. The functions
+    # corresponding to the branching process will take care of the
+    # peculiarities.
+    n_burnin = c(14, 14, 21)
   )
 
   # Join the parameter names and its values

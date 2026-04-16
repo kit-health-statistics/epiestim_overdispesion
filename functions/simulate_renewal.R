@@ -250,11 +250,8 @@ simulate_branching <- function(
 #' @param n_sim an integer, number of trajectories to generate
 #' @param n_burnin an integer, the length of the burn-in period before the
 #'   first estimation window begins.
-#' @param init a vector or a scalar. For the renewal equation models "Poiss",
-#'   "NegBin-Q" and "NegBin-L", this is a vector of the incidence at the
-#'   beginning of the incidence trajectory. For the branching process model,
-#'   this is an integer representing the size of the initial branching process
-#'   generation.
+#' @param init a vector of the incidence at the beginning of the incidence
+#'   trajectory.
 #' @param R_eff positive real value, the value of the effective reproduction
 #'   number, same across the whole trajectory
 #' @param si a non-negative vector, the distribution of the serial interval,
