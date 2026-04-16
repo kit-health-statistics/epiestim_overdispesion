@@ -37,9 +37,6 @@ model_colors <- c(
 
 # Parameters common for all simulation runs
 global_params <- list(
-  n_init = 14,
-  # Length of the generated trajectory, before the estimation window begins.
-  n_burnin = 14,
   short_window = 7,
   long_window = 14,
   n_sim = 1000L,
@@ -78,7 +75,11 @@ list(
       si,
       with(
         global_params,
-        discr_si(seq_len(n_init), scenarios$mean_si, scenarios$std_si)
+        discr_si(
+          seq_len(scenarios$n_burnin),
+          scenarios$mean_si,
+          scenarios$std_si
+        )
       ),
       pattern = map(scenarios)
     ),
@@ -87,7 +88,7 @@ list(
     tar_target(
       init,
       initialize_trajectory(
-        global_params$n_init,
+        scenarios$n_burnin,
         scenarios$init_magnitude,
         scenarios$init_sd,
         seed = global_params$base_seed + scenarios$init_seed,
@@ -144,7 +145,11 @@ list(
         trajectories = plot_trajectories(
           trajectories$X,
           global_params$short_window,
-          if (distribution == "Branching") 0 else global_params$n_init,
+          # Length of the initialization. We don't plot have fixed initial
+          # values to plot for the branching process. For the renewal equation
+          # models, the initialization is always as long as the burn-in period
+          # for the sake of simplicity.
+          if (distribution == "Branching") 0 else scenarios$n_burnin,
           # A longer burn-in period for the branching process to take off
           if (distribution == "Branching") {
             2 * scenarios$n_burnin
