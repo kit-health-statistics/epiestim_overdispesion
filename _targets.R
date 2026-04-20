@@ -97,6 +97,15 @@ list(
       pattern = map(scenarios),
       iteration = "list"
     ),
+    tar_target(
+      R_true,
+      get_true_R(
+        scenarios$R_eff,
+        scenarios$n_burnin + global_params$long_window
+      ),
+      pattern = map(scenarios),
+      iteration = "list"
+    ),
     # Simulations
     tar_target(
       trajectories,
@@ -106,7 +115,7 @@ list(
           n_sim = n_sim,
           n_burnin = scenarios$n_burnin,
           init = init,
-          R_eff = scenarios$R_eff,
+          R_eff = R_true,
           si = si,
           lgt = long_window,
           model = distribution,
@@ -116,7 +125,7 @@ list(
           seed = global_params$base_seed + scenarios$scenario_number
         )
       ),
-      pattern = map(init, scenarios, si),
+      pattern = map(init, scenarios, si, R_true),
       iteration = "list"
     ),
     # Estimation
