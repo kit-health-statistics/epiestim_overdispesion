@@ -411,12 +411,13 @@ plot_coverage <- function(
 #' Plots the fan-out trajectories
 #'
 #' @description This function plots the fan-out of the trajectory from its fixed
-#'   initial values. The next step is plotting the trajectory for the longer
-#'   estimation windows and making the part corresponding to the shorter window
-#'   lighter/darker.
+#'   initial values. The parts corresponding to the burn-in period and
+#'   estimation windows are distinguished by lighter/darker colors.
 #' @param X a matrix of the simulated counts, one column per simulation run
 #' @param short_window an integer, the length of the short estimation window
 #' @param n_init an integer, the number of initial values of the trajectory
+#' @param n_burnin an integer, the the length of the burn-in period of the
+#'   trajectory
 #' @return a ggplot object
 plot_trajectories <- function(X, short_window, n_init, n_burnin) {
   df_trajectories <- reshape2::melt(
@@ -513,6 +514,60 @@ plot_trajectories <- function(X, short_window, n_init, n_burnin) {
       )
   }
   p
+}
+
+#' Plots the trajectory of the time-varying R
+#'
+#' @param R_true a numeric vector of the true values of R
+#' @param short_window an integer, the length of the short estimation window
+#' @param n_init an integer, the number of initial values we use to generate
+#'   the incidence trajectory. Needs to be specified so that the R values are
+#'   aligned with the incidence plots.
+#' @param n_burnin an integer, the the length of the burn-in period of the
+#'   trajectory
+#' @return a ggplot object
+plot_R_true <- function(R_true, short_window, n_init, n_burnin) {
+  df_R_true <- data.frame(
+    R = c(rep(NA, n_init), R_true),
+    Day = seq_len(length(R_true) + n_init)
+  )
+  # Grab values to set the coordinates of the braces
+  long_window <- length(R_true) - n_burnin
+  max_R <- max(R_true)
+  # Plot R with an emphasis on value 1
+  ggplot(df_R_true, aes(x = Day, y = R)) +
+    geom_line() +
+    geom_hline(yintercept = 1, linetype = "dotted") +
+    labs(y = expression(R[t])) +
+    ggpubr::geom_bracket(
+      xmin = 1,
+      xmax = n_init,
+      y.position = max_R + 0.2,
+      label = "Initialization",
+      label.size = 3
+    ) +
+    ggpubr::geom_bracket(
+      xmin = n_init + 1,
+      xmax = n_init + n_burnin,
+      y.position = max_R + 0.2,
+      label = "Burn-in period",
+      label.size = 3
+    ) +
+    ggpubr::geom_bracket(
+      xmin = n_init + n_burnin + 1,
+      xmax = nrow(df_R_true),
+      y.position = max_R + 0.2,
+      label = paste0(long_window, "-day window"),
+      label.size = 3
+    ) +
+    ggpubr::geom_bracket(
+      xmin = n_init + n_burnin + 1,
+      xmax = n_init + n_burnin + short_window,
+      y.position = max_R + 0.05,
+      label = paste0(short_window, "-day window"),
+      label.size = 3
+    ) +
+    coord_cartesian(ylim = c(0, NA))
 }
 
 #' Plots the metadata of the simulation scenario

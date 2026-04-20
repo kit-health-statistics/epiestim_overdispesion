@@ -273,5 +273,22 @@ list(
         }
       }
     )
-  )
+  ),
+  # Save the trajectory of time-varying R
+  tar_target(saved_R_time_dependent, {
+    save_plot(
+      with(
+        global_params,
+        plot_R_true(
+          get_true_R("time_dependent", 2 * long_window),
+          short_window = short_window,
+          n_init = long_window,
+          n_burnin = long_window
+        )
+      ),
+      "R_time_dependent",
+      width = 6,
+      height = 4
+    )
+  })
 )
