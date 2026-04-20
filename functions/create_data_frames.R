@@ -82,7 +82,7 @@ create_coverage_df <- function(
         calc_coverage,
         est = R,
         se = se,
-        true_par = R_eff
+        true_par = mean(R_eff[burnin_end + seq_len(window_len)])
       )
     ) |>
     mutate(

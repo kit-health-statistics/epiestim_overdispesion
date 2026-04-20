@@ -137,7 +137,8 @@ create_scenario_grid <- function(
       # time dependent true values of the reproductive number. This will be done
       # for both high and low magnitude.
       filter(
-        (magnitude == "low" & serial_interval != "RSV" & R_eff != "time_dependent") |
+        (magnitude == "low" & serial_interval != "RSV" &
+           R_eff != "time_dependent") |
           serial_interval == "RSV"
       )
   }

@@ -114,7 +114,7 @@ plot_dens <- function(
   # is no true value of R to compare it to. If R is supposed to be constant,
   # then `R_true` is a string that needs to be converted to a numeric value.
   R_true <- if (R_true == "time_dependent") NA else R_true <- as.numeric(R_true)
-  
+
   # Create a denser grid where we want `geom_line(stat = "density")` to
   # calculate the density estimate. the default 512 occasionally creates a
   # ragged line.
@@ -336,7 +336,7 @@ plot_coverage <- function(
   # Show the legend for the theoretical Poisson coverage only for the simulation
   # scenarios, where it applies. Those are NegBin-L scenarios, where R is
   # constant over the whole trajectory.
-  if (distribution == "NegBin-L" & all(R_eff == R_eff[1])) {
+  if (distribution == "NegBin-L" && all(R_eff == R_eff[1])) {
     linetype_guide <- "legend"
   } else {
     linetype_guide <- "none"
@@ -886,14 +886,22 @@ compose_and_save_plots <- function(
     # How we arrange scenarios into sub-blocks. Each sub-block produces a figure
     # showing the coverage.
     subblocks <- data.frame(
-      gen_time = c("RSV", "RSV", "measles", "influenza"),
-      magnitude = c("005", "100", "005", "005"),
-      magnitude_string = c("low", "high", "low", "low")
+      gen_time = c("RSV", "RSV", "RSV", "measles", "influenza"),
+      magnitude = c("both", "005", "100", "005", "005"),
+      magnitude_string = c("both", "low", "high", "low", "low"),
+      R_eff = c("time_dependent", rep("constant", 4))
     )
     # Loop over the sub-blocks
     for (k in seq_len(nrow(subblocks))) {
-      plot_indicator <- grepl(subblocks$magnitude[k], scenario_id) &
-        grepl(subblocks$gen_time[k], scenario_id)
+      # Select only plots from a single scenario block
+      plot_indicator <- (
+        # scenario blocks with a constant R
+        grepl(subblocks$magnitude[k], scenario_id) &
+          grepl(subblocks$gen_time[k], scenario_id) &
+          !grepl("time_dependent", scenario_id)
+      ) |
+        # Scenario block with a time-varying R
+        grepl(subblocks$R_eff[k], scenario_id)
       # Coverage plots
       p_coverage <- compose_coverage_patches(
         plot_panels_coverage[plot_indicator],
@@ -908,6 +916,8 @@ compose_and_save_plots <- function(
           subblocks$magnitude_string[k],
           "magn",
           subblocks$gen_time[k],
+          "R",
+          subblocks$R_eff[k],
           sep = "_"
         ),
         width = plot_size["width"],
@@ -932,6 +942,8 @@ compose_and_save_plots <- function(
           subblocks$magnitude_string[k],
           "magn",
           subblocks$gen_time[k],
+          "R",
+          subblocks$R_eff[k],
           sep = "_"
         ),
         width = plot_size["width"],
@@ -974,10 +986,17 @@ compose_and_save_plots <- function(
   # Distribution of the dispersion parameter estimates. It can be compared with
   # the true value only for the NegBin scenarios
   if (distribution %in% c("NegBin-L", "NegBin-Q")) {
+    # For NegBin-L, we don't plot the scenarios with time-varying R. For
+    # NegBin-Q, we plot everything.
+    if (distribution == "NegBin-L") {
+      overdisp_plots_ind <- !grepl("time_dependent", scenario_id)
+    } else {
+      overdisp_plots_ind <- rep(TRUE, length(plot_panels_density))
+    }
     p_disp <- compose_overdisp_patches(
       distribution,
-      purrr::map(plot_panels_density, "overdisp_hat"),
-      purrr::map(plot_panels_coverage, "meta")
+      purrr::map(plot_panels_density[overdisp_plots_ind], "overdisp_hat"),
+      purrr::map(plot_panels_coverage[overdisp_plots_ind], "meta")
     )
     save_plot(
       p_disp,
