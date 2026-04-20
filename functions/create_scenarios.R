@@ -151,3 +151,23 @@ create_scenario_grid <- function(
     )
   )
 }
+
+#' Generate a vector of true values of R
+#'
+#' @description Create a vector of the effective reproductive number values,
+#'   which are either constant, or in the form of a cosine wave.
+#'
+#' @param R_eff a value of R, if passed as a string "time_dependent", the
+#'   effective reproductive number will be a sine wave. Otherwise the value of
+#'   `R_eff` will be coerced into a numeric value and repeated as a constant
+#'   vector.
+#' @param lgt an integer, the desired length of the vector of true R values
+#' @return vector of true R values
+get_true_R <- function(R_eff, lgt) {
+  if (R_eff == "time_dependent") {
+    R_vec <- 0.11 * cos(2.5 * pi * seq_len(lgt) / lgt) + 1.5
+  } else {
+    R_vec <- rep(as.numeric(R_eff), lgt)
+  }
+  R_vec
+}
