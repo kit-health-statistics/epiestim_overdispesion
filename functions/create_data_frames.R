@@ -70,6 +70,7 @@ create_coverage_df <- function(
   nominal_covr,
   distribution
 ) {
+  burnin_end <- length(R_eff) - max(df_R_hat$window_len)
   # Calculate the coverage of true value of R. We take the point estimates and
   # the SEs from the fitted model.
   df_coverage_model <- df_R_hat |>
@@ -93,7 +94,7 @@ create_coverage_df <- function(
   # inflated by a factor depending on the dispersion parameter of the NB
   # distribution. For NegBin-L, we have an explicit formula, how much the
   # variance is underestimated, for NegBin-Q, there is no explicit formula.
-  if (distribution == "NegBin-L") {
+  if (distribution == "NegBin-L" && all(R_eff == R_eff[1])) {
     var_infl_factor_true <- (1 + 1 / nb_size)
   } else {
     var_infl_factor_true <- NA

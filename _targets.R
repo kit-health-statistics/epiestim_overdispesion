@@ -167,7 +167,7 @@ list(
           }
         ),
         coverage = plot_coverage(
-          scenarios$R_eff,
+          R_true,
           scenarios$nb_size,
           df_R_hat,
           seq(0, 1, by = 0.01),
@@ -184,7 +184,7 @@ list(
           scenarios$offspring_disp
         )
       ),
-      pattern = map(trajectories, df_R_hat, scenarios),
+      pattern = map(trajectories, df_R_hat, scenarios, R_true),
       iteration = "list"
     ),
     # How many did converge?

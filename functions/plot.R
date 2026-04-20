@@ -110,6 +110,11 @@ plot_dens <- function(
   model_colors,
   dist_true = c("Poiss", "NegBin-Q", "NegBin-L", "Branching")
 ) {
+  # For time dependent R, we don't plot the density of the estimates, as there
+  # is no true value of R to compare it to. If R is supposed to be constant,
+  # then `R_true` is a string that needs to be converted to a numeric value.
+  R_true <- if (R_true == "time_dependent") NA else R_true <- as.numeric(R_true)
+  
   # Create a denser grid where we want `geom_line(stat = "density")` to
   # calculate the density estimate. the default 512 occasionally creates a
   # ragged line.
@@ -294,8 +299,8 @@ plot_dens <- function(
 #'
 #' @description This function plots nominal vs. empirical coverage levels with
 #'   a 45-degree reference line, faceted by model.
-#' @param R_eff the true value of the effective reproduction number used to
-#'   generate the trajectory
+#' @param R_eff a vector of the true values of the effective reproduction number
+#'   used to generate the trajectory.
 #' @param nb_size positive real value, the size parameter of the negative
 #'   binomial distribution for "NegBin-Q" and "NegBin-L"
 #' @param df_R_hat a data frame with R estimates, after replacing the divergent
@@ -328,9 +333,10 @@ plot_coverage <- function(
     df_coverage$window_len_fct
   )
 
-  # Don't show the legend for the theoretical Poisson coverage for the
-  # "NegBin-Q" distribution
-  if (distribution == "NegBin-L") {
+  # Show the legend for the theoretical Poisson coverage only for the simulation
+  # scenarios, where it applies. Those are NegBin-L scenarios, where R is
+  # constant over the whole trajectory.
+  if (distribution == "NegBin-L" & all(R_eff == R_eff[1])) {
     linetype_guide <- "legend"
   } else {
     linetype_guide <- "none"
@@ -534,9 +540,16 @@ plot_metadata <- function(
   offspring_disp = NULL
 ) {
   df_text <- data.frame(
+    # x-coordinate of the labels.
     x = rep(1, 5),
     label = c(
-      paste0("R[t] == ", R_eff),
+      # True value of R we used.
+      if (R_eff == "time_dependent") {
+        "R:~time~varying"
+      } else {
+        paste0("R[t] == ", R_eff)
+      },
+      # True value of dispersion parameter
       if (distribution == "NegBin-L") {
         paste0("xi == ", nb_size)
       } else if (distribution == "NegBin-Q") {
@@ -546,11 +559,14 @@ plot_metadata <- function(
       } else {
         NA
       },
+      # Magnitude of the initial values - "high", "low", or not explicitly
+      # specified for the branching process, which works differently.
       if (distribution == "Branching") {
         NA
       } else {
         paste0("Initialization: ", gsub("_.*", "", magnitude))
       },
+      # Parameters of the serial interval
       paste0("SI~mean: ", mean_si, "~days"),
       paste0("SI~std: ", std_si, "~days")
     )
