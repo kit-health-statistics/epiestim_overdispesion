@@ -59,8 +59,9 @@ generate_from_obs_mod <- function(
 #' distribution.
 #'
 #' @param init a vector, incidence at the beginning of the incidence trajectory
-#' @param R a vector of positive real values, the value of the effective
-#'   reproduction number, same across the whole trajectory
+#' @param R a vector of positive real values, the values of the effective
+#'   reproduction number after the initializiation until the end of the
+#'   trajectory
 #' @param si a non-negative vector, the distribution of the serial interval,
 #'   must not be longer than the \code{init} vector
 #' @param lgt positive integer, total length of the trajectory

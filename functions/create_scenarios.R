@@ -6,20 +6,20 @@
 #'     Branching process, where we have only lower magnitude
 #'     \item 2 degrees of dispersion (low and high), does not apply for the
 #'     Poisson distribution
-#'     \item 2 true values of the effective reproduction number R
+#'     \item 2 true values of the effective reproduction number R +
+#'     time-varying R, the time varying R applies only for selected NegBin-L
+#'     scenarios
 #'     \item 3 serial interval distributions for selected NegBin-L scenarios,
 #'     1 serial interval distribution fo the rest
 #'   }
 #'  The final number of simulation scenarios is 8 for "NegBin-Q", 4 for "Poiss",
-#'  4 for a branching process and 16 "NegBin-L"
-#' @param distribution the count distribution used in the 8 scenarios (or 4 for
-#'   Poisson and Branching). Possible values: "Poiss", "NegBin-L", "NegBin-Q",
-#'   or "Branching"
+#'  4 for a branching process and 20 "NegBin-L"
+#' @param distribution the count distribution used in the scenarios.
+#'   Possible values: "Poiss", "NegBin-L", "NegBin-Q", or "Branching"
 #' @return a data frame with scenario names and parameter values
 create_scenario_grid <- function(
   distribution = c("NegBin-L", "NegBin-Q", "Poiss", "Branching")
 ) {
-
   distribution <- match.arg(distribution)
 
   scenario_grid <- expand.grid(
