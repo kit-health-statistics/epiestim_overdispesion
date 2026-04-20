@@ -97,6 +97,15 @@ list(
       pattern = map(scenarios),
       iteration = "list"
     ),
+    tar_target(
+      R_true,
+      get_true_R(
+        scenarios$R_eff,
+        scenarios$n_burnin + global_params$long_window
+      ),
+      pattern = map(scenarios),
+      iteration = "list"
+    ),
     # Simulations
     tar_target(
       trajectories,
@@ -106,7 +115,7 @@ list(
           n_sim = n_sim,
           n_burnin = scenarios$n_burnin,
           init = init,
-          R_eff = scenarios$R_eff,
+          R_eff = R_true,
           si = si,
           lgt = long_window,
           model = distribution,
@@ -116,7 +125,7 @@ list(
           seed = global_params$base_seed + scenarios$scenario_number
         )
       ),
-      pattern = map(init, scenarios, si),
+      pattern = map(init, scenarios, si, R_true),
       iteration = "list"
     ),
     # Estimation
@@ -158,7 +167,7 @@ list(
           }
         ),
         coverage = plot_coverage(
-          scenarios$R_eff,
+          R_true,
           scenarios$nb_size,
           df_R_hat,
           seq(0, 1, by = 0.01),
@@ -175,7 +184,7 @@ list(
           scenarios$offspring_disp
         )
       ),
-      pattern = map(trajectories, df_R_hat, scenarios),
+      pattern = map(trajectories, df_R_hat, scenarios, R_true),
       iteration = "list"
     ),
     # How many did converge?
@@ -264,5 +273,22 @@ list(
         }
       }
     )
-  )
+  ),
+  # Save the trajectory of time-varying R
+  tar_target(saved_R_time_dependent, {
+    save_plot(
+      with(
+        global_params,
+        plot_R_true(
+          get_true_R("time_dependent", 2 * long_window),
+          short_window = short_window,
+          n_init = long_window,
+          n_burnin = long_window
+        )
+      ),
+      "R_time_dependent",
+      width = 6,
+      height = 4
+    )
+  })
 )

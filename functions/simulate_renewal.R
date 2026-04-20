@@ -59,8 +59,9 @@ generate_from_obs_mod <- function(
 #' distribution.
 #'
 #' @param init a vector, incidence at the beginning of the incidence trajectory
-#' @param R positive real value, the value of the effective reproduction number,
-#'   same across the whole trajectory
+#' @param R a vector of positive real values, the values of the effective
+#'   reproduction number after the initializiation until the end of the
+#'   trajectory
 #' @param si a non-negative vector, the distribution of the serial interval,
 #'   must not be longer than the \code{init} vector
 #' @param lgt positive integer, total length of the trajectory
@@ -90,7 +91,7 @@ simulate_renewal <- function(
   for (t in (length(init) + 1):(lgt)) {
     Lambda[t] <- sum(si * X[t - seq_along(si)])
     X[t] <- generate_from_obs_mod(
-      R * Lambda[t],
+      R[t - length(init)] * Lambda[t],
       model = model,
       nb_size = nb_size
     )
@@ -307,7 +308,10 @@ generate_trajectories <- function(
       n_sim,
       simulate_branching(
         init,
-        R_eff,
+        # When `R_eff` is passed as a vector, the branching process will use
+        # only the first element, which will be regarded as a constant value of
+        # the reproductive number throughout the whole trajectory.
+        R_eff[1],
         si,
         lgt + n_burnin,
         offspring_disp,

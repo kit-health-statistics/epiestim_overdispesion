@@ -6,25 +6,25 @@
 #'     Branching process, where we have only lower magnitude
 #'     \item 2 degrees of dispersion (low and high), does not apply for the
 #'     Poisson distribution
-#'     \item 2 true values of the effective reproduction number R
+#'     \item 2 true values of the effective reproduction number R +
+#'     time-varying R, the time varying R applies only for selected NegBin-L
+#'     scenarios
 #'     \item 3 serial interval distributions for selected NegBin-L scenarios,
 #'     1 serial interval distribution fo the rest
 #'   }
 #'  The final number of simulation scenarios is 8 for "NegBin-Q", 4 for "Poiss",
-#'  4 for a branching process and 16 "NegBin-L"
-#' @param distribution the count distribution used in the 8 scenarios (or 4 for
-#'   Poisson and Branching). Possible values: "Poiss", "NegBin-L", "NegBin-Q",
-#'   or "Branching"
+#'  4 for a branching process and 20 "NegBin-L"
+#' @param distribution the count distribution used in the scenarios.
+#'   Possible values: "Poiss", "NegBin-L", "NegBin-Q", or "Branching"
 #' @return a data frame with scenario names and parameter values
 create_scenario_grid <- function(
   distribution = c("NegBin-L", "NegBin-Q", "Poiss", "Branching")
 ) {
-
   distribution <- match.arg(distribution)
 
   scenario_grid <- expand.grid(
     dispersion = c("low", "high"),
-    R_eff = c(1.5, 2.5),
+    R_eff = c(1.5, 2.5, "time_dependent"),
     magnitude = c("low", "high"),
     serial_interval = c("RSV", "measles", "influenza"),
     KEEP.OUT.ATTRS = FALSE,
@@ -103,39 +103,43 @@ create_scenario_grid <- function(
     # If the data generating process is Poisson, we don't have scenarios for
     # different dispersion values. Values of the dispersion parameter shall be
     # all NA, thus the rows will be dropped as duplicates.
-    # In addition, we will generate only simulation scenarios using the serial
-    # interval of the RSV.
     scenarios <- scenarios |>
       dplyr::select(-dispersion) |>
       dplyr::distinct(.keep_all = FALSE) |>
       # Add the string denoting the dispersion back, even though it's not
       # technically needed.
       dplyr::mutate(dispersion = "not_applicable") |>
-      filter(serial_interval == "RSV")
+      # We will generate only simulation scenarios using the serial interval of
+      # the RSV and constant true values of R.
+      filter(serial_interval == "RSV" & R_eff != "time_dependent")
   } else if (distribution == "Branching") {
     # If the data generating process is a branching process, we don't have
     # scenarios for higher magnitudes and we also rewrite the true value of R to
     # be lower in order to make the trajectories less explosive.
-    # In addition, we will generate only simulation scenarios using the serial
-    # interval of the RSV.
     scenarios <- scenarios |>
       dplyr::filter(magnitude == "low") |>
       mutate(R_eff = dplyr::case_when(R_eff == 1.5 ~ 1.2, R_eff == 2.5 ~ 2)) |>
-      filter(serial_interval == "RSV")
+      # We will generate only simulation scenarios using the serial interval of
+      # the RSV and constant true values of R.
+      filter(serial_interval == "RSV" & R_eff != "time_dependent")
   } else if (distribution == "NegBin-Q") {
-    # We will generate only simulation scenarios using the serial
-    # interval of the RSV.
+    # We will generate only simulation scenarios using the serial interval of
+    # the RSV and constant true values of R.
     scenarios <- scenarios |>
-      filter(serial_interval == "RSV")
+      filter(serial_interval == "RSV" & R_eff != "time_dependent")
   } else if (distribution == "NegBin-L") {
     scenarios <- scenarios |>
       # For low magnitude scenarios, which are shown in the main paper, we will
       # generate scenarios with all 3 generation times. For the high magnitude,
       # we will generate only simulation scenarios using the serial interval of
       # the RSV.
+      # In addition, we generate trajectories with the RSV serial interval and
+      # time dependent true values of the reproductive number. This will be done
+      # for both high and low magnitude.
       filter(
-        (magnitude == "high" & serial_interval == "RSV") |
-          magnitude == "low"
+        (magnitude == "low" & serial_interval != "RSV" &
+           R_eff != "time_dependent") |
+          serial_interval == "RSV"
       )
   }
   # Add a scenario number and ID
@@ -150,4 +154,24 @@ create_scenario_grid <- function(
       sep = "_"
     )
   )
+}
+
+#' Generate a vector of true values of R
+#'
+#' @description Create a vector of the effective reproductive number values,
+#'   which are either constant, or in the form of a cosine wave.
+#'
+#' @param R_eff a value of R, if passed as a string "time_dependent", the
+#'   effective reproductive number will be a sine wave. Otherwise the value of
+#'   `R_eff` will be coerced into a numeric value and repeated as a constant
+#'   vector.
+#' @param lgt an integer, the desired length of the vector of true R values
+#' @return vector of true R values
+get_true_R <- function(R_eff, lgt) {
+  if (R_eff == "time_dependent") {
+    R_vec <- 0.11 * cos(2.5 * pi * seq_len(lgt) / lgt) + 1.5
+  } else {
+    R_vec <- rep(as.numeric(R_eff), lgt)
+  }
+  R_vec
 }

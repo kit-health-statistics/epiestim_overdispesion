@@ -110,6 +110,11 @@ plot_dens <- function(
   model_colors,
   dist_true = c("Poiss", "NegBin-Q", "NegBin-L", "Branching")
 ) {
+  # For time dependent R, we don't plot the density of the estimates, as there
+  # is no true value of R to compare it to. If R is supposed to be constant,
+  # then `R_true` is a string that needs to be converted to a numeric value.
+  R_true <- if (R_true == "time_dependent") NA else R_true <- as.numeric(R_true)
+
   # Create a denser grid where we want `geom_line(stat = "density")` to
   # calculate the density estimate. the default 512 occasionally creates a
   # ragged line.
@@ -294,8 +299,8 @@ plot_dens <- function(
 #'
 #' @description This function plots nominal vs. empirical coverage levels with
 #'   a 45-degree reference line, faceted by model.
-#' @param R_eff the true value of the effective reproduction number used to
-#'   generate the trajectory
+#' @param R_eff a vector of the true values of the effective reproduction number
+#'   used to generate the trajectory.
 #' @param nb_size positive real value, the size parameter of the negative
 #'   binomial distribution for "NegBin-Q" and "NegBin-L"
 #' @param df_R_hat a data frame with R estimates, after replacing the divergent
@@ -328,9 +333,10 @@ plot_coverage <- function(
     df_coverage$window_len_fct
   )
 
-  # Don't show the legend for the theoretical Poisson coverage for the
-  # "NegBin-Q" distribution
-  if (distribution == "NegBin-L") {
+  # Show the legend for the theoretical Poisson coverage only for the simulation
+  # scenarios, where it applies. Those are NegBin-L scenarios, where R is
+  # constant over the whole trajectory.
+  if (distribution == "NegBin-L" && all(R_eff == R_eff[1])) {
     linetype_guide <- "legend"
   } else {
     linetype_guide <- "none"
@@ -405,12 +411,13 @@ plot_coverage <- function(
 #' Plots the fan-out trajectories
 #'
 #' @description This function plots the fan-out of the trajectory from its fixed
-#'   initial values. The next step is plotting the trajectory for the longer
-#'   estimation windows and making the part corresponding to the shorter window
-#'   lighter/darker.
+#'   initial values. The parts corresponding to the burn-in period and
+#'   estimation windows are distinguished by lighter/darker colors.
 #' @param X a matrix of the simulated counts, one column per simulation run
 #' @param short_window an integer, the length of the short estimation window
 #' @param n_init an integer, the number of initial values of the trajectory
+#' @param n_burnin an integer, the the length of the burn-in period of the
+#'   trajectory
 #' @return a ggplot object
 plot_trajectories <- function(X, short_window, n_init, n_burnin) {
   df_trajectories <- reshape2::melt(
@@ -509,6 +516,60 @@ plot_trajectories <- function(X, short_window, n_init, n_burnin) {
   p
 }
 
+#' Plots the trajectory of the time-varying R
+#'
+#' @param R_true a numeric vector of the true values of R
+#' @param short_window an integer, the length of the short estimation window
+#' @param n_init an integer, the number of initial values we use to generate
+#'   the incidence trajectory. Needs to be specified so that the R values are
+#'   aligned with the incidence plots.
+#' @param n_burnin an integer, the the length of the burn-in period of the
+#'   trajectory
+#' @return a ggplot object
+plot_R_true <- function(R_true, short_window, n_init, n_burnin) {
+  df_R_true <- data.frame(
+    R = c(rep(NA, n_init), R_true),
+    Day = seq_len(length(R_true) + n_init)
+  )
+  # Grab values to set the coordinates of the braces
+  long_window <- length(R_true) - n_burnin
+  max_R <- max(R_true)
+  # Plot R with an emphasis on value 1
+  ggplot(df_R_true, aes(x = Day, y = R)) +
+    geom_line() +
+    geom_hline(yintercept = 1, linetype = "dotted") +
+    labs(y = expression(R[t])) +
+    ggpubr::geom_bracket(
+      xmin = 1,
+      xmax = n_init,
+      y.position = max_R + 0.2,
+      label = "Initialization",
+      label.size = 3
+    ) +
+    ggpubr::geom_bracket(
+      xmin = n_init + 1,
+      xmax = n_init + n_burnin,
+      y.position = max_R + 0.2,
+      label = "Burn-in period",
+      label.size = 3
+    ) +
+    ggpubr::geom_bracket(
+      xmin = n_init + n_burnin + 1,
+      xmax = nrow(df_R_true),
+      y.position = max_R + 0.2,
+      label = paste0(long_window, "-day window"),
+      label.size = 3
+    ) +
+    ggpubr::geom_bracket(
+      xmin = n_init + n_burnin + 1,
+      xmax = n_init + n_burnin + short_window,
+      y.position = max_R + 0.05,
+      label = paste0(short_window, "-day window"),
+      label.size = 3
+    ) +
+    coord_cartesian(ylim = c(0, NA))
+}
+
 #' Plots the metadata of the simulation scenario
 #'
 #' @description This function plots the information about the true parameter
@@ -534,9 +595,16 @@ plot_metadata <- function(
   offspring_disp = NULL
 ) {
   df_text <- data.frame(
+    # x-coordinate of the labels.
     x = rep(1, 5),
     label = c(
-      paste0("R[t] == ", R_eff),
+      # True value of R we used.
+      if (R_eff == "time_dependent") {
+        "R:~time~varying"
+      } else {
+        paste0("R[t] == ", R_eff)
+      },
+      # True value of dispersion parameter
       if (distribution == "NegBin-L") {
         paste0("xi == ", nb_size)
       } else if (distribution == "NegBin-Q") {
@@ -546,11 +614,14 @@ plot_metadata <- function(
       } else {
         NA
       },
+      # Magnitude of the initial values - "high", "low", or not explicitly
+      # specified for the branching process, which works differently.
       if (distribution == "Branching") {
         NA
       } else {
         paste0("Initialization: ", gsub("_.*", "", magnitude))
       },
+      # Parameters of the serial interval
       paste0("SI~mean: ", mean_si, "~days"),
       paste0("SI~std: ", std_si, "~days")
     )
@@ -870,14 +941,22 @@ compose_and_save_plots <- function(
     # How we arrange scenarios into sub-blocks. Each sub-block produces a figure
     # showing the coverage.
     subblocks <- data.frame(
-      gen_time = c("RSV", "RSV", "measles", "influenza"),
-      magnitude = c("005", "100", "005", "005"),
-      magnitude_string = c("low", "high", "low", "low")
+      gen_time = c("RSV", "RSV", "RSV", "measles", "influenza"),
+      magnitude = c("both", "005", "100", "005", "005"),
+      magnitude_string = c("both", "low", "high", "low", "low"),
+      R_eff = c("time_dependent", rep("constant", 4))
     )
     # Loop over the sub-blocks
     for (k in seq_len(nrow(subblocks))) {
-      plot_indicator <- grepl(subblocks$magnitude[k], scenario_id) &
-        grepl(subblocks$gen_time[k], scenario_id)
+      # Select only plots from a single scenario block
+      plot_indicator <- (
+        # scenario blocks with a constant R
+        grepl(subblocks$magnitude[k], scenario_id) &
+          grepl(subblocks$gen_time[k], scenario_id) &
+          !grepl("time_dependent", scenario_id)
+      ) |
+        # Scenario block with a time-varying R
+        grepl(subblocks$R_eff[k], scenario_id)
       # Coverage plots
       p_coverage <- compose_coverage_patches(
         plot_panels_coverage[plot_indicator],
@@ -892,6 +971,8 @@ compose_and_save_plots <- function(
           subblocks$magnitude_string[k],
           "magn",
           subblocks$gen_time[k],
+          "R",
+          subblocks$R_eff[k],
           sep = "_"
         ),
         width = plot_size["width"],
@@ -916,6 +997,8 @@ compose_and_save_plots <- function(
           subblocks$magnitude_string[k],
           "magn",
           subblocks$gen_time[k],
+          "R",
+          subblocks$R_eff[k],
           sep = "_"
         ),
         width = plot_size["width"],
@@ -958,10 +1041,17 @@ compose_and_save_plots <- function(
   # Distribution of the dispersion parameter estimates. It can be compared with
   # the true value only for the NegBin scenarios
   if (distribution %in% c("NegBin-L", "NegBin-Q")) {
+    # For NegBin-L, we don't plot the scenarios with time-varying R. For
+    # NegBin-Q, we plot everything.
+    if (distribution == "NegBin-L") {
+      overdisp_plots_ind <- !grepl("time_dependent", scenario_id)
+    } else {
+      overdisp_plots_ind <- rep(TRUE, length(plot_panels_density))
+    }
     p_disp <- compose_overdisp_patches(
       distribution,
-      purrr::map(plot_panels_density, "overdisp_hat"),
-      purrr::map(plot_panels_coverage, "meta")
+      purrr::map(plot_panels_density[overdisp_plots_ind], "overdisp_hat"),
+      purrr::map(plot_panels_coverage[overdisp_plots_ind], "meta")
     )
     save_plot(
       p_disp,
