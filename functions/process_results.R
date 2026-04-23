@@ -167,6 +167,8 @@ calc_coverage <- function(est, se, true_par, level) {
 #'   distribution used in the simulation scenario
 #' @param R_eff numeric, value of the effective reproductive number
 #'   distribution used in the simulation scenario
+#' @param serial_interval string, disease, serial interval of which was used
+#'   to generate simulated trajectories
 #' @param true_model string, count distribution used in the simulation scenario
 #' @return a list with two data frames:
 #'   \itemize{
@@ -182,11 +184,13 @@ summarize_convergence <- function(
   magnitude,
   nb_size,
   R_eff,
+  serial_interval,
   true_model
 ) {
   df_summarized <- df_R_hat |>
     mutate(
       R_eff = R_eff,
+      serial_interval = serial_interval,
       overdispersion = if (true_model %in% c("NegBin-L", "NegBin-Q")) {
         round(1 / nb_size, digits = 2)
       } else {
@@ -194,7 +198,14 @@ summarize_convergence <- function(
       },
       magnitude = magnitude
     ) |>
-    group_by(magnitude, R_eff, overdispersion, window_len_fct, model) |>
+    group_by(
+      serial_interval,
+      magnitude,
+      R_eff,
+      overdispersion,
+      window_len_fct,
+      model
+    ) |>
     summarise(
       converged = sum(converged & !is.na(R), na.rm = TRUE),
       # unstable = convergent but masked/flagged by NA in `R` and `se`columns

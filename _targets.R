@@ -37,17 +37,9 @@ model_colors <- c(
 
 # Parameters common for all simulation runs
 global_params <- list(
-  mean_si = 7.5,
-  std_si = 2.1,
-  n_init = 14,
-  # Length of the generated trajectory, before the estimation window begins.
-  n_burnin = 14,
   short_window = 7,
   long_window = 14,
   n_sim = 1000L,
-  # We don't use the weekday effects in the simulation. However, they are left
-  # here just in case we need them in the future.
-  weekday = c(1.05, 1.40, 1.75, 1.40, 1.05, 0.21, 0.14),
   base_seed = 9786L
 )
 
@@ -61,23 +53,16 @@ plot_halving_coeff <- 1.75
 # NegBin-L
 # NegBin-Q
 # Poisson
-# None of them involves weekday effects, but they can be added by using
-# "weekday_yes"
 outer_scenarios <- data.frame(
-  distribution = c("NegBin-L", "NegBin-Q", "Poiss", "Branching"),
-  weekday_effect = c("weekday_no", "weekday_no", "weekday_no", "weekday_no")
+  distribution = c("NegBin-L", "NegBin-Q", "Poiss", "Branching")
 ) |>
   dplyr::mutate(
-    scenario_id = paste(distribution, weekday_effect, sep = "_")
+    scenario_id = distribution
   )
+
 
 # Define pipeline ==============================================================
 list(
-  # Serial interval, common for all scenarios
-  tar_target(
-    si,
-    with(global_params, discr_si(seq_len(n_init), mean_si, std_si))
-  ),
   # Static branching over 4 scenario blocks defined in `outer_scenarios`
   tar_map(
     unlist = FALSE,
@@ -85,28 +70,38 @@ list(
     names = scenario_id,
     # Get the data frame with scenario parameters
     tar_target(scenarios, create_scenario_grid(distribution)),
-    # Set the weekday effect. If the weekday effect is not present, we multiply
-    # the simulated mean value by 1 under the hood, so there is indeed no
-    # effect.
+    # Serial interval, depends on the scenario
     tar_target(
-      weekday_effect_vector,
-      if (weekday_effect == "weekday_yes") {
-        global_params$weekday
-      } else {
-        rep(1, global_params$n_init)
-      }
+      si,
+      with(
+        global_params,
+        discr_si(
+          seq_len(scenarios$n_burnin),
+          scenarios$mean_si,
+          scenarios$std_si
+        )
+      ),
+      pattern = map(scenarios)
     ),
     # Initial values. Sample iid counts using a reasonable data generating
     # mechanism.
     tar_target(
       init,
       initialize_trajectory(
-        global_params$n_init,
+        scenarios$n_burnin,
         scenarios$init_magnitude,
         scenarios$init_sd,
-        weekday_effect = weekday_effect_vector,
         seed = global_params$base_seed + scenarios$init_seed,
         model = distribution
+      ),
+      pattern = map(scenarios),
+      iteration = "list"
+    ),
+    tar_target(
+      R_true,
+      get_true_R(
+        scenarios$R_eff,
+        scenarios$n_burnin + global_params$long_window
       ),
       pattern = map(scenarios),
       iteration = "list"
@@ -118,20 +113,19 @@ list(
         global_params,
         generate_trajectories(
           n_sim = n_sim,
-          n_burnin = n_burnin,
+          n_burnin = scenarios$n_burnin,
           init = init,
-          R_eff = scenarios$R_eff,
+          R_eff = R_true,
           si = si,
           lgt = long_window,
           model = distribution,
           nb_size = scenarios$nb_size,
-          weekday_effect = weekday_effect_vector,
           offspring_disp = scenarios$offspring_disp,
           reporting_prob = scenarios$reporting_prob,
           seed = global_params$base_seed + scenarios$scenario_number
         )
       ),
-      pattern = map(init, scenarios),
+      pattern = map(init, scenarios, si, R_true),
       iteration = "list"
     ),
     # Estimation
@@ -160,32 +154,37 @@ list(
         trajectories = plot_trajectories(
           trajectories$X,
           global_params$short_window,
-          if (distribution == "Branching") 0 else global_params$n_init,
+          # Length of the initialization. We don't plot have fixed initial
+          # values to plot for the branching process. For the renewal equation
+          # models, the initialization is always as long as the burn-in period
+          # for the sake of simplicity.
+          if (distribution == "Branching") 0 else scenarios$n_burnin,
           # A longer burn-in period for the branching process to take off
           if (distribution == "Branching") {
-            2 * global_params$n_burnin
+            2 * scenarios$n_burnin
           } else {
-            global_params$n_burnin
+            scenarios$n_burnin
           }
         ),
         coverage = plot_coverage(
-          scenarios$R_eff,
+          R_true,
           scenarios$nb_size,
           df_R_hat,
           seq(0, 1, by = 0.01),
           distribution,
-          weekday_effect,
           model_colors
         ),
         meta = plot_metadata(
           scenarios$R_eff,
           scenarios$nb_size,
           scenarios$magnitude,
+          scenarios$mean_si,
+          scenarios$std_si,
           distribution,
           scenarios$offspring_disp
         )
       ),
-      pattern = map(trajectories, df_R_hat, scenarios),
+      pattern = map(trajectories, df_R_hat, scenarios, R_true),
       iteration = "list"
     ),
     # How many did converge?
@@ -196,6 +195,7 @@ list(
         scenarios$magnitude,
         scenarios$nb_size,
         scenarios$R_eff,
+        scenarios$serial_interval,
         # Model name from the outer scenarios data frame
         distribution
       ),
@@ -227,6 +227,7 @@ list(
         scenarios$R_eff,
         scenarios$nb_size,
         scenarios$magnitude,
+        scenarios$serial_interval,
         model_colors,
         distribution
       ),
@@ -241,7 +242,7 @@ list(
         plot_density_panels,
         unlist(global_params[c("short_window", "long_window")]),
         plot_size,
-        scenario_id,
+        scenarios[, "scenario_id"],
         plot_halving_coeff
       )
     }),
@@ -253,7 +254,7 @@ list(
         # CURRENTLY, THIS PLOT NEEDS ADJUSTMENTS REGARDING THE TEXT SIZES.
         # NEEDS TO BE RESOLVED BEFORE GENERATING THE PLOTS FOR THE POSTER.
         generate_poster_figure <- distribution == "NegBin-Q" ||
-          (distribution == "NegBin-L" && weekday_effect == "weekday_no")
+          (distribution == "NegBin-L")
         if (generate_poster_figure) {
           p_simulation_poster <- compose_coverage_patches(
             plot_panels[scenarios$R_eff == 1.5 & scenarios$magnitude == "low"],
@@ -273,27 +274,21 @@ list(
       }
     )
   ),
-  tar_target(saved_overdisp_est_plots, {
-    overdisp_panels <- list(
-      NegBin.L_weekday_no = purrr::map(
-        plot_density_panels_NegBin.L_weekday_no,
-        "overdisp_hat"
-      ),
-      NegBin.Q_weekday_no = purrr::map(
-        plot_density_panels_NegBin.Q_weekday_no,
-        "overdisp_hat"
-      )
-    )
-    meta_panels <- list(
-      NegBin.L = purrr::map(plot_panels_NegBin.L_weekday_no, "meta"),
-      NegBin.Q = purrr::map(plot_panels_NegBin.Q_weekday_no, "meta")
-    )
-    p_overdisp <- compose_overdisp_patches(overdisp_panels, meta_panels)
+  # Save the trajectory of time-varying R
+  tar_target(saved_R_time_dependent, {
     save_plot(
-      p_overdisp,
-      "overdisp_estimates",
-      width = plot_size["width"],
-      height = plot_size["height"]
+      with(
+        global_params,
+        plot_R_true(
+          get_true_R("time_dependent", 2 * long_window),
+          short_window = short_window,
+          n_init = long_window,
+          n_burnin = long_window
+        )
+      ),
+      "R_time_dependent",
+      width = 6,
+      height = 4
     )
   })
 )

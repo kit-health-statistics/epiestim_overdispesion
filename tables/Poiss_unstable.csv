@@ -1,0 +1,9 @@
+serial_interval,magnitude,R_eff,overdispersion,window_len_fct,NegBin-L,NegBin-Q,Poiss,Q-Poiss
+RSV,low,1.5,NA,long,115,623,0,0
+RSV,low,1.5,NA,short,230,686,0,0
+RSV,low,2.5,NA,long,379,681,0,0
+RSV,low,2.5,NA,short,178,708,0,0
+RSV,high,1.5,NA,long,292,682,0,0
+RSV,high,1.5,NA,short,269,712,0,0
+RSV,high,2.5,NA,long,585,766,0,0
+RSV,high,2.5,NA,short,621,699,0,0
